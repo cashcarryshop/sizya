@@ -13,6 +13,9 @@
 
 namespace CashCarryShop\Sizya\Moysklad\Ozon;
 
+use CashCarryShop\Sizya\Moysklad\Stocks as MoyskladStocks;
+use CashCarryShop\Sizya\Ozon\Stocks as OzonStocks;
+
 use CashCarryShop\Synchronizer\SynchronizerFactoryInterface;
 use CashCarryShop\Synchronizer\SynchronizerSourceInterface;
 use CashCarryShop\Synchronizer\SynchronizerTargetInterface;

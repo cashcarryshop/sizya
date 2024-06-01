@@ -11,12 +11,12 @@
  * @link     https://github.com/cashcarryshop/Sizya
  */
 
-namespace CashCarryShop\Sizya\Moysklad\Ozon;
+namespace CashCarryShop\Sizya\Moysklad;
 
 use Respect\Validation\Validator as v;
 use CashCarryShop\Synchronizer\SynchronizerSourceInterface;
+use CashCarryShop\Synchronizer\SynchronizerTargetInterface;
 use CashCarryShop\Sizya\Synchronizer\InteractsWithDeferred;
-use CashCarryShop\Sizya\Moysklad\InteractsWithMoysklad;
 use CashCarryShop\Promise\PromiseInterface;
 
 /**
@@ -31,7 +31,7 @@ use CashCarryShop\Promise\PromiseInterface;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/Sizya
  */
-class MoyskladStocks implements SynchronizerSourceInterface
+class Stocks implements SynchronizerSourceInterface, SynchronizerTargetInterface
 {
     use InteractsWithDeferred;
     use InteractsWithMoysklad;

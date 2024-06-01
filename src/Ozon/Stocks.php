@@ -4,19 +4,19 @@
  *
  * PHP version 8
  *
- * @category Moysklad
+ * @category Ozon
  * @package  Sizya
  * @author   CashCarryShop <cashcarryshop@yandex.ru>
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/Sizya
  */
 
-namespace CashCarryShop\Sizya\Moysklad\Ozon;
+namespace CashCarryShop\Sizya\Ozon;
 
 use Respect\Validation\Validator as v;
+use CashCarryShop\Synchronizer\SynchronizerSourceInterface;
 use CashCarryShop\Synchronizer\SynchronizerTargetInterface;
 use CashCarryShop\Sizya\Synchronizer\InteractsWithDeferred;
-use CashCarryShop\Sizya\Ozon\InteractsWithOzon;
 use CashCarryShop\Promise\PromiseInterface;
 
 /**
@@ -25,16 +25,15 @@ use CashCarryShop\Promise\PromiseInterface;
  *
  * PHP version 8
  *
- * @category Moysklad
+ * @category Ozon
  * @package  Sizya
  * @author   CashCarryShop <cashcarryshop@yandex.ru>
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/Sizya
  */
-class OzonStocks implements SynchronizerTargetInterface
+class Stocks implements SynchronizerSourceInterface, SynchronizerTargetInterface
 {
     use InteractsWithDeferred;
-    use InteractsWithOzon;
 
     /**
      * Настройки
