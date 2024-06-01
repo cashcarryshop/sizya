@@ -24,7 +24,7 @@ use CashCarryShop\Promise\PromiseInterface;
 use CashCarryShop\Sizya\Moysklad\Stocks as MoyskladStocks;
 use CashCarryShop\Sizya\Ozon\Stocks as OzonStocks;
 
-use CashCarryShop\Sizya\Synchronizer\InteractsWithDeferred;
+use CashCarryShop\Sizya\Promise\InteractsWithDeferred;
 use CashCarryShop\Sizya\Events\Syncs\ErrorReceivingArticlesByIds;
 use CashCarryShop\Sizya\Events\Moysklad\ErrorReceivingShortStocks;
 use CashCarryShop\Sizya\Events\Moysklad\ShortStocksReceiving;

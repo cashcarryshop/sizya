@@ -16,7 +16,7 @@ namespace CashCarryShop\Sizya\Moysklad;
 use Respect\Validation\Validator as v;
 use CashCarryShop\Synchronizer\SynchronizerSourceInterface;
 use CashCarryShop\Synchronizer\SynchronizerTargetInterface;
-use CashCarryShop\Sizya\Synchronizer\InteractsWithDeferred;
+use CashCarryShop\Sizya\Promise\InteractsWithDeferred;
 use CashCarryShop\Promise\PromiseInterface;
 
 /**

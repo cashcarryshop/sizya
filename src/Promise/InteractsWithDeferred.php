@@ -1,17 +1,17 @@
 <?php
 /**
- * Класс источника
+ * Трейт для взаимодействия с Deferred
  *
  * PHP version 8
  *
- * @category Moysklad
+ * @category Promise
  * @package  Sizya
  * @author   CashCarryShop <cashcarryshop@yandex.ru>
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/Sizya
  */
 
-namespace CashCarryShop\Sizya\Synchronizer;
+namespace CashCarryShop\Sizya\Promise;
 
 use CashCarryShop\Promise\DeferredFactoryInterface;
 use CashCarryShop\Promise\DeferredInterface;
@@ -20,12 +20,9 @@ use CashCarryShop\Promise\DeferredFactory;
 use Throwable;
 
 /**
- * Класс с настройками и логикой получения
- * остатков Moysklad (source)
+ * Трейт для взаимодействия с Deferred
  *
- * PHP version 8
- *
- * @category Moysklad
+ * @category Promise
  * @package  Sizya
  * @author   CashCarryShop <cashcarryshop@yandex.ru>
  * @license  Unlicense <https://unlicense.org>
