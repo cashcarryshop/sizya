@@ -1,14 +1,14 @@
 <?php
 /**
- * Класс источника
+ * Класс остатков
  *
  * PHP version 8
  *
  * @category Moysklad
  * @package  Sizya
- * @author   CashCarryShop <cashcarryshop@yandex.ru>
+ * @author   TheWhatis <anton-gogo@mail.ru>
  * @license  Unlicense <https://unlicense.org>
- * @link     https://github.com/cashcarryshop/Sizya
+ * @link     https://github.com/cashcarryshop/sizya
  */
 
 namespace CashCarryShop\Sizya\Moysklad;
@@ -21,15 +21,15 @@ use CashCarryShop\Promise\PromiseInterface;
 
 /**
  * Класс с настройками и логикой получения
- * остатков Moysklad (source)
+ * остатков Moysklad
  *
  * PHP version 8
  *
  * @category Moysklad
  * @package  Sizya
- * @author   CashCarryShop <cashcarryshop@yandex.ru>
+ * @author   TheWhatis <anton-gogo@mail.ru>
  * @license  Unlicense <https://unlicense.org>
- * @link     https://github.com/cashcarryshop/Sizya
+ * @link     https://github.com/cashcarryshop/sizya
  */
 class Stocks implements SynchronizerSourceInterface, SynchronizerTargetInterface
 {

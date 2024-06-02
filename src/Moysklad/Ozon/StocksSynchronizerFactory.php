@@ -6,7 +6,7 @@
  *
  * @category Moysklad
  * @package  Sizya
- * @author   CashCarryShop <cashcarryshop@yandex.ru>
+ * @author   TheWhatis <anton-gogo@mail.ru>
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/Sizya
  */
@@ -24,11 +24,11 @@ use DomainException;
 use LogicException;
 
 /**
- * Фабрика для синхронизации остатков
+ * Фабрика для синхронизации остатков МойСклад->Ozon
  *
  * @category Moysklad
  * @package  Sizya
- * @author   CashCarryShop <cashcarryshop@yandex.ru>
+ * @author   TheWhatis <anton-gogo@mail.ru>
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/Sizya
  */
@@ -40,7 +40,7 @@ class StocksSynchronizerFactory implements SynchronizerFactoryInterface
      * @param array $sourceSettings Настройки источника
      * @param array $targetSettings Настройки цели
      *
-     * @return SynchronizerInterface
+     * @return StocksSynchronizer
      */
     public function create(
         array $sourceSettings,
@@ -74,35 +74,5 @@ class StocksSynchronizerFactory implements SynchronizerFactoryInterface
     public function createTarget(array $settings): OzonStocks
     {
         return new OzonStocks($settings);
-    }
-
-    /**
-     * Зарегестрировать источник
-     *
-     * @param string $type  Тип
-     * @param string $class Класс
-     *
-     * @return void
-     * @throws DomainException
-     * @throws LogicException
-     */
-    public function registerSource($type, $class): void
-    {
-        // ...
-    }
-
-    /**
-     * Зарегестрировать цель
-     *
-     * @param string $type  Тип
-     * @param string $class Класс
-     *
-     * @return void
-     * @throws DomainException
-     * @throws LogicException
-     */
-    public function registerTarget($type, $class): void
-    {
-        // ...
     }
 }

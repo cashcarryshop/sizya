@@ -1,12 +1,12 @@
 <?php
 /**
- * Класс цели
+ * Класс остатков
  *
  * PHP version 8
  *
  * @category Ozon
  * @package  Sizya
- * @author   CashCarryShop <cashcarryshop@yandex.ru>
+ * @author   TheWhatis <anton-gogo@mail.ru>
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/Sizya
  */
@@ -21,13 +21,13 @@ use CashCarryShop\Promise\PromiseInterface;
 
 /**
  * Класс с настройками и логикой обновления
- * остатков Ozon (target)
+ * остатков Ozon
  *
  * PHP version 8
  *
  * @category Ozon
  * @package  Sizya
- * @author   CashCarryShop <cashcarryshop@yandex.ru>
+ * @author   TheWhatis <anton-gogo@mail.ru>
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/Sizya
  */

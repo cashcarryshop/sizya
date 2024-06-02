@@ -7,7 +7,7 @@
  *
  * @category Events
  * @package  Sizya
- * @author   CashCarryShop <cashcarryshop@yandex.ru>
+ * @author   TheWhatis <anton-gogo@mail.ru>
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/Sizya
  */
@@ -25,7 +25,7 @@ use Throwable;
  *
  * @category Events
  * @package  Sizya
- * @author   CashCarryShop <cashcarryshop@yandex.ru>
+ * @author   TheWhatis <anton-gogo@mail.ru>
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/Sizya
  */
