@@ -12,13 +12,9 @@
 
 namespace CashCarryShop\Sizya\Ozon;
 
-use CashCarryShop\Synchronizer\SynchronizerSourceInterface;
-use CashCarryShop\Synchronizer\SynchronizerTargetInterface;
-use CashCarryShop\Sizya\Synchronizer\SenderDriven;
-use CashCarryShop\Sizya\Http\InteractsWithDeferred;
+use CashCarryShop\Sizya\Synchronizer\HttpSynchronizerDualRole;
 use CashCarryShop\Sizya\Http\Utils;
 use Psr\Http\Message\RequestInterface;
-use React\Http\Io\ReadableBodyStream;
 use React\Promise\PromiseInterface;
 use Respect\Validation\Validator as v;
 
@@ -32,11 +28,8 @@ use Respect\Validation\Validator as v;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-abstract class AbstractEntity extends SenderDriven
-    implements SynchronizerSourceInterface, SynchronizerTargetInterface
+abstract class AbstractEntity extends HttpSynchronizerDualRole
 {
-    use InteractsWithDeferred;
-
     /**
      * Идентификатор клиента
      *
