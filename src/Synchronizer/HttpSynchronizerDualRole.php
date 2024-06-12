@@ -1,6 +1,6 @@
 <?php
 /**
- * Класс со стандартной реализацией SenderInterface
+ * Элемент синхронизации, взаимодействующий с протоколом Http
  *
  * PHP version 8
  *
@@ -13,11 +13,13 @@
 
 namespace CashCarryShop\Sizya\Synchronizer;
 
+use CashCarryShop\Synchronizer\SynchronizerDualRoleInterface;
+use CashCarryShop\Sizya\Http\InteractsWithDeferred;
 use CashCarryShop\Sizya\Http\SenderInterface;
 use CashCarryShop\Sizya\Http\Sender;
 
 /**
- * Класс со стандартной реализацией SenderInterface
+ * Элемент синхронизации, взаимодействующий с протоколом Http
  *
  * @category Synchronizer
  * @package  Sizya
@@ -25,8 +27,10 @@ use CashCarryShop\Sizya\Http\Sender;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-abstract class SenderDriven implements SenderDrivenInterface
+abstract class HttpSynchronizerDualRole implements SynchronizerDualRoleInterface
 {
+    use InteractsWithDeferred;
+
     /**
      * Отправитель запросов
      *
@@ -41,7 +45,7 @@ abstract class SenderDriven implements SenderDrivenInterface
      *
      * @return static
      */
-    public function withSender(SenderInterface $sender): static
+    final public function withSender(SenderInterface $sender): static
     {
         $this->sender = $sender;
         return $this;
@@ -52,7 +56,7 @@ abstract class SenderDriven implements SenderDrivenInterface
      *
      * @return SenderInterface
      */
-    public function getSender(): SenderInterface
+    final public function getSender(): SenderInterface
     {
         return $this->sender ??= Sender::create();
     }
