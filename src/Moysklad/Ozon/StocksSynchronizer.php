@@ -1,6 +1,6 @@
 <?php
 /**
- * Синхронизация остатков МойСклад->Ozon
+ * Синхронизатор остатков МойСклад->Ozon
  *
  * PHP version 8
  *
@@ -8,52 +8,33 @@
  * @package  Sizya
  * @author   TheWhatis <anton-gogo@mail.ru>
  * @license  Unlicense <https://unlicense.org>
- * @link     https://github.com/cashcarryshop/Sizya
+ * @link     https://github.com/cashcarryshop/sizya
  */
 
 namespace CashCarryShop\Sizya\Moysklad\Ozon;
 
-use Evgeek\Moysklad\Api\Query\QueryBuilder;
-use Respect\Validation\Validator as v;
-
+use CashCarryShop\Synchronizer\AbstractSynchronizer;
 use CashCarryShop\Synchronizer\SynchronizerSourceInterface;
 use CashCarryShop\Synchronizer\SynchronizerTargetInterface;
-use CashCarryShop\Synchronizer\AbstractSynchronizer;
-use CashCarryShop\Promise\PromiseInterface;
-
 use CashCarryShop\Sizya\Moysklad\Stocks as MoyskladStocks;
 use CashCarryShop\Sizya\Ozon\Stocks as OzonStocks;
-
-use CashCarryShop\Sizya\Promise\InteractsWithDeferred;
-use CashCarryShop\Sizya\Events\Syncs\ErrorReceivingArticlesByIds;
-use CashCarryShop\Sizya\Events\Moysklad\ErrorReceivingShortStocks;
-use CashCarryShop\Sizya\Events\Moysklad\ShortStocksReceiving;
-use CashCarryShop\Sizya\Events\Moysklad\ShortStocksReceived;
-use CashCarryShop\Sizya\Events\Syncs\ReceivingArticlesByIds;
-use CashCarryShop\Sizya\Events\Syncs\ReceivedArticlesByIds;
-use CashCarryShop\Sizya\Events\Ozon\ErrorUpdatingStocks;
-use CashCarryShop\Sizya\Events\Ozon\StocksUpdating;
-use CashCarryShop\Sizya\Events\Ozon\StocksUpdated;
 use CashCarryShop\Sizya\Events\Error;
-use Throwable;
+use React\Promise\PromiseInterface;
+use Respect\Validation\Validator as v;
 
 /**
- * Класс синхронизатора остатков Moysklad и Ozon
- *
- * PHP version 8
+ * Синхронизатор остатков МойСклад->Ozon
  *
  * @category Moysklad
  * @package  Sizya
  * @author   TheWhatis <anton-gogo@mail.ru>
  * @license  Unlicense <https://unlicense.org>
- * @link     https://github.com/bcashcarryshop/Sizya
+ * @link     https://github.com/cashcarryshop/sizya
  */
 class StocksSynchronizer extends AbstractSynchronizer
 {
-    use InteractsWithDeferred;
-
     /**
-     * Проверить поддерживается ли источник
+     * Проверить, поддерживается ли источник
      *
      * @param SynchronizerSourceInterface $source Источник
      *
@@ -65,7 +46,7 @@ class StocksSynchronizer extends AbstractSynchronizer
     }
 
     /**
-     * Проверить поддерживается ли цель
+     * Проверить, поддерживается ли цель
      *
      * @param SynchronizerTargetInterface $target Цель
      *
@@ -77,167 +58,7 @@ class StocksSynchronizer extends AbstractSynchronizer
     }
 
     /**
-     * Получить артикулы товаров по идентификаторам
-     * ассортимента (assortmentId)
-     *
-     * @param array $ids Идентификаторы
-     *
-     * @return PromiseInterface
-     */
-    protected function getArticlesByIds(array $ids): PromiseInterface
-    {
-        return $this->resolveThrow(function ($promise) use ($ids) {
-            $query = $this->source->query()->entity()->assortment();
-
-            foreach (array_splice($ids, 0, min(100, count($ids))) as $id) {
-                $query->filter('id', $id);
-            }
-
-            $response = array_map(
-                fn ($item) => [
-                    'id' => $item->id,
-                    'article' => $item->meta->type === 'variant'
-                        ? $item->code ?? 'undefined'
-                        : $item->article ?? 'undefined'
-                ],
-                $query->get()->rows,
-            );
-
-
-            $response = array_combine(
-                array_column($response, 'id'),
-                array_column($response, 'article')
-            );
-
-            if ($ids) {
-                return $this->getArticlesByIds($ids)->then(
-                    fn ($nextResponse) => $promise->resolve(
-                        array_merge($response, $nextResponse)
-                    ),
-                    fn ($exception) => $promise->reject($exception)
-                );
-            }
-
-            $promise->resolve($response);
-        });
-    }
-
-    /**
-     * Собрать массив остатков по складам целей
-     *
-     * @param array $relations Отношения складов источников и целей
-     * @param array $stocks    Полученные остатки
-     *
-     * @return array
-     */
-    protected function buildByWarehouses(array $relations, array $stocks): array
-    {
-        $byWarehouses = [];
-        foreach ($relations as $index => $relation) {
-            $byWarehouses[$relation['target']] = array_merge(
-                ...array_map(
-                    fn ($storeId) => array_map(
-                        fn ($index) => (array) $stocks[$index],
-                        array_keys(
-                            array_column($stocks, 'storeId'),
-                            $storeId
-                        )
-                    ),
-                    $relation['source']
-                )
-            );
-        }
-
-        foreach ($byWarehouses as $warehouse => $stocks) {
-            $ids = array_column($byWarehouses[$warehouse], 'assortmentId');
-            $byWarehouses[$warehouse] = [];
-            foreach ($stocks as $stock) {
-                $byWarehouses[$warehouse][] = array_reduce(
-                    array_map(
-                        fn ($index) => $stocks[$index],
-                        array_keys($ids, $stock['assortmentId'])
-                    ),
-                    function ($carry, $item) {
-                        if ($carry) {
-                            $carry['quantity'] += $item['quantity'] ?? 0;
-                            return $carry;
-                        }
-
-                        return $item;
-                    }
-                );
-            }
-
-            foreach ($byWarehouses[$warehouse] as $item) {
-                $found = array_keys($ids, $item['assortmentId']);
-                foreach ($found as $index => $unset) {
-                    if ($index) {
-                        unset($byWarehouses[$warehouse][$unset]);
-                    }
-                }
-            }
-        }
-
-        return $byWarehouses;
-    }
-
-    /**
-     * Собрать корректный остатки
-     *
-     * @param array $byWarehouses Данные из метода buildByWarehouses
-     * @param array $relations    Данные из метода getArticlesByIds
-     *
-     * @return array
-     */
-    protected function buildStocks(array $byWarehouses, array $relations): array
-    {
-        $stocks = array_merge(
-            ...array_map(
-                fn ($warehouse, $stocks) => array_map(
-                    fn ($stock) => [
-                        'offer_id' => $relations[$stock['assortmentId']] ?? 'unknown',
-                        'stock' => max(0, (int) $stock['quantity']),
-                        'warehouse_id' => $warehouse
-                    ],
-                    $stocks
-                ),
-                array_keys($byWarehouses),
-                array_values($byWarehouses)
-            )
-        );
-
-        return $stocks;
-    }
-
-    /**
-     * Распознать и определить каким образом
-     * получить остатки
-     *
-     * @param array $relations Отношения складов источников и цели
-     *
-     * @return PromiseInterface
-     */
-    protected function getStocks(array $relations): PromiseInterface
-    {
-        if ($relations) {
-            return $this->source->getShortByStore(
-                array_unique(
-                    array_merge(
-                        ...array_map(
-                            fn ($relation) => $relation['source'],
-                            $relations
-                        )
-                    )
-                )
-            );
-        }
-
-        return $this->source->getShortAll();
-    }
-
-    /**
-     * Вызвать событие, если во время обработки
-     * Promise на Resolve произошла ошибка
+     * Перехватить ошибку и вызвать событие Error
      *
      * @param PromiseInterface $promise Promise
      *
@@ -245,171 +66,202 @@ class StocksSynchronizer extends AbstractSynchronizer
      */
     protected function eventCatch(PromiseInterface $promise): void
     {
-        $promise->catch(function ($exception) {
-            $this->event(new Error($exception));
-        });
+        $promise->catch(fn ($exception) => $this->event(new Event($exception)));
     }
 
     /**
-     * Установить обработчики Promise. в которых будут
-     * вызываться события по получению артикулов по
-     * идентификаторам
+     * Получить корректный ключ для получения
+     * количества остатков МойСклад
      *
-     * @param array            $ids     Идентификаторы
-     * @param PromiseInterface $promise Promise
+     * @param array $stock Остаток МойСклад
+     *
+     * @return string
+     */
+    protected function getStock(array $stock): string
+    {
+        return $stock[$this->source->settings['stockType']];
+    }
+
+    /**
+     * Получить соотношения артикулов
+     * товаров с их идентификаторами
+     *
+     * @param array $ids Идентификаторы ассортимента
      *
      * @return PromiseInterface
      */
-    protected function eventArticles(array $ids, PromiseInterface $promise): void
+    protected function getIdArticleRelations(array $ids): PromiseInterface
     {
-        $this->eventCatch($promise);
-        $promise->then(
-            function ($relations) {
-                $this->event(new ReceivedArticlesByIds($relations));
-            },
-            function ($exception) use ($ids) {
-                $this->event(new ErrorReceivingArticlesByIds($ids, $exception));
-            }
-        );
-    }
+        $builder = $this->source->builder()->point('entity/assortment');
 
-    /**
-     * Установить обработички Promise, в которых
-     * будут вызываться события, для обновления
-     * остатков
-     *
-     * @param PromiseInterface $promise Promise
-     *
-     * @return PromiseInterface
-     */
-    protected function eventUpdating(PromiseInterface $promise): void
-    {
-        $this->eventCatch($promise);
-        $promise->then(
-            function ($response) {
-                $this->event(new StocksUpdated($response));
-            },
-            function ($exception) {
-                $this->event(new ErrorUpdatingStocks($exception));
-            }
-        );
-    }
+        foreach (array_splice($ids, 0, min(100, count($ids))) as $id) {
+            $builder->filter('id', $id);
+        }
 
-    /**
-     * Синхронизировать, если отношение и склад 1 к 1
-     *
-     * @param PromiseInterface $promise Promise на получение артикулов
-     * @param array            $stocks  Полученные остатки
-     * @param string           $target  Идентификатор целевого склада
-     *
-     * @return void
-     */
-    protected function syncOneToOne(
-        PromiseInterface $promise,
-        array $stocks,
-        string $target
-    ): void {
-        $this->eventCatch($promise);
+        $deferred = $this->source->deferred();
+
+        $this->eventCatch($promise = $this->source->send($builder->build('GET')));
         $promise->then(
-            function ($relations) use ($stocks, $target) {
-                $stocks = array_map(
-                    fn ($stock) => [
-                        'warehouse_id' => (int) $target,
-                        'offer_id' => $relations[$stock->assortmentId] ?? 'undefined',
-                        'stock' => max(0, (int) $stock->quantity)
-                    ], $stocks
+            function ($response) use ($ids, $deferred) {
+                $assortment = $response->getBody()->toArray()['rows'];
+                $relations = array_combine(
+                    array_column($assortment, 'id'),
+                    array_map(
+                        fn ($item) => $item['meta']['type'] === 'product'
+                            ? $item['article'] ?? 'undefined'
+                            : $item['code'] ?? 'undefined',
+                        $assortment
+                    )
                 );
 
-                $this->event(new StocksUpdating($stocks));
-                $this->eventUpdating($this->target->updateWarehouse($stocks));
-            }
+                // Вызываем рекурсивно getIdArticleRelations метод, если
+                // переданных идентификаторов больше 100
+                return $ids
+                    ? $this->getIdArticleRelations($ids)->then(
+                        function ($response) use ($relations, $deferred) {
+                            $deferred->resolve(
+                                $response->withBody(
+                                    $this->source->body(
+                                        array_merge(
+                                            $relations,
+                                            $response->getBody()->toArray()
+                                        )
+                                    )
+                                )
+                            );
+                        },
+                        [$deferred, 'reject']
+                    )
+                    : $deferred->resolve(
+                        $response->withBody(
+                            $this->source->body($relations)
+                        )
+                    );
+            },
+            [$deferred, 'reject']
         );
+
+        return $deferred->promise();
     }
 
     /**
-     * Синхронизировать по складам, по-стандарту
+     * Собрать данные для обновления остатков
      *
-     * @param PromiseInterface $promise   Promise на получение артикулов
-     * @param array            $stocks    Полученные остатки
-     * @param array            $relations Отношения складов
+     * @param array $storeRelations     Отношения складов
+     * @param array $idArticleRelations Отношения идентификаторов и артикулов товаров
+     * @param array $stocks             Остатки МойСклад
      *
-     * @return void
+     * @return array
      */
-    protected function syncWithStores(
-        PromiseInterface $promise,
-        array $stocks,
-        array $relations
-    ): void {
-        $byWarehouses = $this->buildByWarehouses($relations, $stocks);
+    protected function getUpdateData(
+        array $storeRelations,
+        array $idArticleRelations,
+        array $stocks
+    ): array {
+        $transformedData = [];
 
-        $this->eventCatch($promise);
-        $promise->then(
-            function ($relations) use ($byWarehouses) {
-                $this->event(
-                    new StocksUpdating(
-                        $stocks = $this->buildStocks(
-                            $byWarehouses,
-                            $relations
+        foreach ($stocks as $stock) {
+            $storeRelation = null;
+
+            foreach ($storeRelations as $relation) {
+                if (in_array($stock['storeId'], $relation['source'])) {
+                    $storeRelation = $relation;
+                    break;
+                }
+            }
+
+            if ($storeRelation) {
+                $articleRelation = $idArticleRelations[$stock['assortmentId']] ?? null;
+
+                if ($articleRelation) {
+                    $key = $articleRelation. '-'. $storeRelation['target'];
+
+                    if (isset($transformedData[$key])) {
+                        $transformedData[$key]['stock'] += $this->getStock($stock);
+                        continue;
+                    }
+
+                    $transformedData[$key] = [
+                        'offer_id' => $articleRelation,
+                        'warehouse_id' => $storeRelation['target'],
+                        'stock' => $this->getStock($stock)
+                    ];
+                }
+            }
+        }
+
+        return array_values($transformedData);
+    }
+
+    /**
+     * Синхронизировать по складам
+     *
+     * @param array $relations Отношения складов МойСклад и Ozon
+     *
+     * @return bool
+     */
+    protected function synchronizeByStores(array $relations): bool
+    {
+        $this->eventCatch($promise = $this->source->getShort('bystore'));
+        $promise->then(function ($response) use ($relations) {
+            $stocks = $response->getBody()->toArray();
+            $promise = $this->getIdArticleRelations(
+                array_unique(
+                    array_column($stocks, 'assortmentId')
+                )
+            );
+
+            $promise->then(function ($response) use ($stocks, $relations) {
+                $this->eventCatch(
+                    $promise = $this->target->updateWarehouse(
+                        $this->getUpdateData(
+                            $relations,
+                            $response->getBody()->toArray(),
+                            $stocks
                         )
                     )
                 );
 
-                // var_dump($stocks);
-                // exit(1);
-                $this->eventUpdating($this->target->updateWarehouse($stocks));
-            }
-        );
+                $promise->then(fn ($response) => $this->event(
+                    new Success($response->getBody()->toArray())
+                ));
+            });
+        });
+
+        return true;
     }
 
     /**
-     * Синхронизировать без складов
+     * Синхронизировать все остатки
      *
-     * @param PromiseInterface $promise Promise на получение артикулов
-     * @param array            $stocks  Полученные остатки
-     *
-     * @return void
+     * @return bool
      */
-    protected function syncWithoutStores(
-        PromiseInterface $promise,
-        array $stocks
-    ): void {
-        $this->eventCatch($promise);
-        $promise->then(
-            function ($relations) use ($stocks) {
-                $this->event(new StocksUpdating(
-                    $stocks = array_map(
-                        fn ($stock) => [
-                            'offer_id' => $relations[$stock->assortmentId] ?? 'unknown',
-                            'stock' => max(0, (int) $stock->quantity)
-                        ], $stocks
-                    ))
-                );
-
-                $this->eventUpdating($this->target->update($stocks));
-            }
-        );
-    }
-
-    /**
-     * Валидация настроек
-     *
-     * @param array $settings Настройки
-     *
-     * @return void
-     */
-    protected function validate(array $settings): void
+    protected function synchronizeAll(): bool
     {
-        v::key(
-            'relations', v::anyOf(
-                v::each(v::keySet(
-                    v::key('source', v::each(
-                        v::stringType()->length(36, 36)
-                    )),
-                    v::key('target', v::intType())
-                )),
-                v::equals([])
-            )
-        )->assert($settings);
+        $this->eventCatch($promise = $this->source->getShort('all'));
+        $promise->then(function ($response) {
+            $stocks = $response->getBody()->toArray();
+            $this->getIdArticleRelations(array_column($stocks, 'assortmentId'))->then(
+                function ($response) use ($stocks) {
+                    $relations = $response->getBody()->toArray();
+                    $this->eventCatch(
+                        $promise = $this->target->update(array_map(
+                            fn ($stock) => [
+                                'offer_id' => $relations[$stock['assortmentId']]
+                                    ?? 'undefined',
+                                'stock' => $this->getStock($stock)
+                            ], $stocks
+                        ))
+                    );
+
+                    $promise->then(fn ($response) => $this->event(
+                        new Success($response->getBody()->toArray())
+                    ));
+                }
+            );
+        });
+
+        return true;
     }
 
     /**
@@ -421,49 +273,29 @@ class StocksSynchronizer extends AbstractSynchronizer
      */
     public function synchronize(array $settings = []): bool
     {
-        $this->validate(
-            $settings = [
-                'relations' => $relations = $settings['relations'] ?? []
-            ]
-        );
+        $settings = [
+            'relations' => $relations = $settings['relations'] ?? []
+        ];
 
-        $this->event(new ShortStocksReceiving);
-        $this->eventCatch($promise = $this->getStocks($relations));
-        $promise->then(
-            function ($stocks) use ($relations) {
-                $this->event(new ShortStocksReceived($stocks));
-                $this->event(
-                    new ReceivingArticlesByIds(
-                        $ids = array_unique(
-                            array_map(fn ($item) => $item->assortmentId, $stocks)
-                        )
+        v::keySet(
+            v::key('relations', v::optional(
+                v::each(
+                    v::keySet(
+                        v::key(
+                            'source', v::arrayType()
+                                ->each(v::stringType()->length(36))
+                        ),
+                        v::key('target', v::intType())
                     )
-                );
+                )
+            ))
+        )->assert($settings);
 
-                $this->eventArticles($ids, $promise = $this->getArticlesByIds($ids));
+        if ($relations) {
+            return $this->synchronizeByStores($relations);
+        }
 
-                if ($relations) {
-                    if (count($relations) === 1) {
-                        if (count($relations[0]['source']) === 1) {
-                            $this->syncOneToOne(
-                                $promise,
-                                $stocks,
-                                $relations[0]['target']
-                            );
-                            return $stocks;
-                        }
-                    }
-
-                    return $this->syncWithStores($promise, $stocks, $relations);
-                }
-
-                $this->syncWithoutStores($promise, $stocks);
-            },
-            function ($exception) {
-                $this->event(new ErrorReceivingShortStocks($exception));
-            }
-        );
-
-        return true;
+        return $this->synchronizeAll();
     }
 }
+{}
