@@ -5,7 +5,7 @@
     "type": "library",
     "require": {
         "php": "^8.0",
-        "cashcarryshop/synchronizer": "^1.0.0",
+        "cashcarryshop/synchronizer": "^1.1.0",
         "respect/validation": "^2.3.0",
         "react/http": "^1.10.0"
     },
