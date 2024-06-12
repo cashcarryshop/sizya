@@ -13,17 +13,12 @@
 
 namespace CashCarryShop\Sizya\Moysklad;
 
+use React\Promise\PromiseInterface;
 use Respect\Validation\Validator as v;
-use CashCarryShop\Synchronizer\SynchronizerSourceInterface;
-use CashCarryShop\Synchronizer\SynchronizerTargetInterface;
-use CashCarryShop\Sizya\Promise\InteractsWithDeferred;
-use CashCarryShop\Promise\PromiseInterface;
 
 /**
  * Класс с настройками и логикой получения
  * остатков Moysklad
- *
- * PHP version 8
  *
  * @category Moysklad
  * @package  Sizya
@@ -31,11 +26,8 @@ use CashCarryShop\Promise\PromiseInterface;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-class Stocks implements SynchronizerSourceInterface, SynchronizerTargetInterface
+class Stocks extends AbstractEntity
 {
-    use InteractsWithDeferred;
-    use InteractsWithMoysklad;
-
     /**
      * Настройки
      *
@@ -44,186 +36,120 @@ class Stocks implements SynchronizerSourceInterface, SynchronizerTargetInterface
     public readonly array $settings;
 
     /**
-     * Создание экземпляра источника
+     * Создание объекта для работы с остатками
      *
      * @param array $settings Настройки
      */
     public function __construct(array $settings)
     {
-        $chSince = $settings['changedSince'] ?? null;
+        parent::__construct($settings);
 
-        if (is_a($chSince, \DateTimeInterface::class)) {
-            $chSince = $chSince->format('Y-m-d H:i:s');
-        }
-
-        $this->settings = [
-            'quantityMode' => $settings['quantityMode'] ?? 'all',
-            'archive' => $settings['archive'] ?? false,
-            'groupBy' => $settings['groupBy'] ?? 'variant',
-            'login' => $settings['login'] ?? '',
-            'password' => $settings['password'] ?? '',
-            'token' => $settings['token'] ?? '',
-            'changedSince' =>  $chSince,
-            'zeroLines' => $settings['zeroLines'] ?? false
+        $settings = [
+            'stores' => $settings['stores'] ?? [],
+            'credentials' => $settings['credentials'] ?? [],
+            'assortment' => $settings['assortment'] ?? [],
+            'stockType' => $settings['stockType'] ?? 'quantity',
+            'changedSince' => $settings['changedSince'] ?? null
         ];
 
         v::keySet(
-            v::key('quantityMode', v::stringType()->in([
-                'all',
-                'positiveOnly',
-                'negativeOnly',
-                'empty',
-                'nonEmpty',
-                'underMinimum'
-            ])),
-            v::key('changedSince', v::anyOf(
-                v::dateTime('Y-m-d H:i:s'),
-                v::equals(null)
+            v::key('credentials', v::alwaysValid()),
+            v::key('stores', v::allOf(
+                v::arrayType(),
+                v::when(
+                    v::notEmpty(),
+                    v::each(
+                        v::stringType(),
+                        v::length(36)
+                    ),
+                    v::alwaysValid()
+                )
             )),
-            v::key('archive', v::anyOf(v::stringType()->equals('all'), v::boolType())),
-            v::key('groupBy', v::stringType()->in('product variant consignment')),
-            v::key('token', v::stringType()),
-            v::key('login', v::stringType()),
-            v::key('password', v::stringType()),
-            v::key('zeroLines', v::boolType())
-        )->assert($this->settings);
+            v::key('assortment', v::allOf(
+                v::arrayType(),
+                v::when(
+                    v::notEmpty(),
+                    v::each(
+                        v::stringType(),
+                        v::length(36)
+                    ),
+                    v::alwaysValid()
+                )
+            )),
+            v::key('stockType', v::in([
+                'stock',
+                'freeStock',
+                'quantity',
+                'reserve',
+                'inTransit'
+            ])),
+            v::key('changedSince', v::optional(v::dateTime('Y-m-d H:i:s')))
+        )->assert($settings);
 
-        if (v::key('token', v::notEmpty())->validate($this->settings)) {
-            return $this->moysklad([$this->settings['token']]);
+        $this->settings = $settings;
+    }
+
+    /**
+     * Получить краткий отчет об остатках
+     *
+     * @param string $method Метод (all, bystore)
+     * @param array  $stores Хранилища по которым фильтровать
+     *
+     * @return PromiseInterface
+     */
+    protected function _getShort(string $method, array $stores): PromiseInterface
+    {
+        $builder = $this->builder()
+            ->point("report/stock/$method/current")
+            ->param('stockType', $this->settings['stockType']);
+
+        if ($this->settings['changedSince']) {
+            $builder->param('changedSince', $this->settings['changedSince']);
         }
 
-        v::key('login', v::notEmpty())
-            ->key('password', v::notEmpty())
-            ->assert($settings);
+        foreach (array_splice($stores, 0, min(100, count($stores))) as $store) {
+            $builder->filter('storeId', $store);
+        }
 
-        $this->moysklad([$this->settings['login'], $this->settings['password']]);
+        $deferred = $this->deferred();
+
+        $this->send($builder->build('GET'))->then(
+            function ($response) use ($method, $stores, $deferred) {
+                if ($stores) {
+                    $stocks = $response->getBody()->toArray();
+                    return $this->getShortStocksReport($method, $stores)->then(
+                        fn ($response) => $deferred->resolve(
+                            $response->withBody(
+                                $this->body(
+                                    array_merge(
+                                        $stocks,
+                                        $response->getBody()->toArray()
+                                    )
+                                )
+                            )
+                        ),
+                        [$deferred, 'reject']
+                    );
+                }
+
+                $deferred->resolve($response);
+            },
+            [$deferred, 'reject']
+        );
+
+        return $deferred->promise();
     }
 
     /**
-     * Получить остатки товаров
+     * Получить короткий отчет об остатках
      *
-     * Получение производиться до тех
-     * пор, пока не будут перебраны
-     * все остатки товаров в МойСклад
-     *
-     * @param array $stores Идентификаторы храналищ
-     * @param int   $offset Отступ элементов
+     * @param string $method Метод (all, bystore)
      *
      * @return PromiseInterface
      */
-    public function get(array $stores = [], int $offset = 0): PromiseInterface
+    public function getShort(string $method = 'all'): PromiseInterface
     {
-        return $this->resolveThrow(function ($deferred) use ($offset) {
-            $query = $this->query()
-                ->report()
-                ->method('stock')
-                ->method('all')
-                ->limit(1000)
-                ->offset($offset)
-                ->filter('quantityMode', $this->settings['quantityMode'])
-                ->param('groupBy', $this->settings['groupBy']);
-
-            foreach ($stores as $store) {
-                $query = $query->filter(
-                    'store', $this->moysklad()->meta()->store($store)->href
-                );
-            }
-
-            match ($this->settings['archive']) {
-                false => $query = $query->filter('archived', false),
-                true => $query = $query->filter('archived', true),
-                default => [
-                    $query = $query->filter('archived', true)
-                        ->filter('archived', false)
-                ]
-            };
-
-            $response = [$query->get()];
-
-            // Если, предположительно, в МойСклад есть ещё остатки, которые
-            // можно получить, то вызывает рекурсивно этот же метод.
-            // Похоже на получение данных по чанкам
-            if (count($response[0]->rows) === 1000) {
-                return $this->get($stores, $offset + 1000)->then(
-                    fn ($nextResponse) => $deferred->resolve(array_merge(
-                        $response, $nextResponse
-                    )),
-                    fn ($exception) => $deferred->reject($exception)
-                );
-            }
-
-            $deferred->resolve($response);
-        });
-    }
-
-    /**
-     * Получить краткий отчет об остатках
-     *
-     * @param string $method Метод для получения остатков (all, bystore)
-     * @param array  $stores Хранилища
-     *
-     * @return PromiseInterface
-     */
-    protected function getShort(
-        string $method = 'all',
-        array $stores = []
-    ): PromiseInterface {
-        return $this->resolveThrow(function ($deferred) use ($method, $stores) {
-            $query = $this->query()
-                ->report()
-                ->method('stock')
-                ->method($method)
-                ->method('current')
-                ->param('stockType', 'quantity');
-
-            if ($this->settings['changedSince']) {
-                $query = $query->param(
-                    'changedSince', $this->settings['changedSince']
-                );
-            }
-
-            if ($this->settings['zeroLines'] && !$this->settings['changedSince']) {
-                $query = $query->param('include', 'zeroLines');
-            }
-
-            foreach (array_splice($stores, 0, min(100, count($stores))) as $store) {
-                $query = $query->filter('storeId', $store);
-            }
-
-            $response = $query->get();
-
-            if ($stores) {
-                return $this->getShort($method, $stores)->then(
-                    fn ($nextResponse) => $deferred->resolve(array_merge(
-                        $response, $nextResponse
-                    )),
-                    fn ($exception) => $deferred->reject($exception)
-                );
-            }
-
-            $deferred->resolve($response);
-        });
-    }
-
-    /**
-     * Получить краткий отчет об остатках по складм
-     *
-     * @param array $stores Хранилища
-     *
-     * @return PromiseInterface
-     */
-    public function getShortByStore(array $stores = []): PromiseInterface
-    {
-        return $this->getShort('bystore', $stores);
-    }
-
-    /**
-     * Получить краткий отчет об остатках
-     *
-     * @return PromiseInterface
-     */
-    public function getShortAll(): PromiseInterface
-    {
-        return $this->getShort('all');
+        v::in(['all', 'bystore'])->assert($method);
+        return $this->_getShort($method, $this->settings['stores']);
     }
 }
