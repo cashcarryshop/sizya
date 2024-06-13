@@ -19,6 +19,7 @@ use CashCarryShop\Synchronizer\SynchronizerTargetInterface;
 use CashCarryShop\Sizya\Moysklad\Stocks as MoyskladStocks;
 use CashCarryShop\Sizya\Ozon\Stocks as OzonStocks;
 use CashCarryShop\Sizya\Events\Error;
+use CashCarryShop\Sizya\Events\Success;
 use React\Promise\PromiseInterface;
 use Respect\Validation\Validator as v;
 
