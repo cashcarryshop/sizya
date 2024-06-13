@@ -29,9 +29,9 @@ class DeferredFactory implements DeferredFactoryInterface
      *
      * @param callable $canceller Обработчик закрытия Promise
      *
-     * @return DeferredInterface
+     * @return Deferred
      */
-    public function createDeferred(?callable $canceller = null): DeferredInterface
+    public function createDeferred(?callable $canceller = null): Deferred
     {
         return new Deferred($canceller);
     }

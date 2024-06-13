@@ -38,7 +38,7 @@ class Error
     /**
      * Создание события
      *
-     * @param Throwale $exception Исключение
+     * @param Throwable $exception Исключение
      */
     public function __construct(Throwable $exception)
     {

@@ -1,6 +1,6 @@
 <?php
 /**
- * Интерфейс фабрики Deferred
+ * Фабрика Promise
  *
  * PHP version 8
  *
@@ -18,7 +18,7 @@ use React\Promise\Promise;
 use Throwable;
 
 /**
- * Интерфейс фабрики Deferred
+ * Фабрика Promise
  *
  * @category Http
  * @package  Sizya
