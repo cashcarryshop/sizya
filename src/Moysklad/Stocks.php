@@ -33,7 +33,7 @@ class Stocks extends AbstractEntity
      *
      * @var array
      */
-    public readonly array $settings;
+    public array $settings;
 
     /**
      * Создание объекта для работы с остатками

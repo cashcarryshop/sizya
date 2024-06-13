@@ -35,7 +35,7 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
      *
      * @var array
      */
-    public readonly array $credentials;
+    public array $credentials;
 
     /**
      * Создать экземпляр сущности
