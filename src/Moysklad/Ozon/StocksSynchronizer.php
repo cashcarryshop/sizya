@@ -20,7 +20,7 @@ use CashCarryShop\Sizya\Moysklad\Stocks as MoyskladStocks;
 use CashCarryShop\Sizya\Ozon\Stocks as OzonStocks;
 use CashCarryShop\Sizya\Events\Error;
 use CashCarryShop\Sizya\Events\Success;
-use React\Promise\PromiseInterface;
+use GuzzleHttp\Promise\PromiseInterface;
 use Respect\Validation\Validator as v;
 
 /**
@@ -65,9 +65,9 @@ class StocksSynchronizer extends AbstractSynchronizer
      *
      * @return void
      */
-    protected function eventCatch(PromiseInterface $promise): void
+    protected function eventOtherwise(PromiseInterface $promise): void
     {
-        $promise->catch(fn ($exception) => $this->event(new Event($exception)));
+        $promise->otherwise(fn ($exception) => $this->event(new Error($exception)));
     }
 
     /**
@@ -76,9 +76,9 @@ class StocksSynchronizer extends AbstractSynchronizer
      *
      * @param array $stock Остаток МойСклад
      *
-     * @return string
+     * @return int
      */
-    protected function getStock(array $stock): string
+    protected function getStock(array $stock): int
     {
         return $stock[$this->source->settings['stockType']];
     }
@@ -99,11 +99,14 @@ class StocksSynchronizer extends AbstractSynchronizer
             $builder->filter('id', $id);
         }
 
-        $deferred = $this->source->deferred();
+        $promise = $this->source->promise();
 
-        $this->eventCatch($promise = $this->source->send($builder->build('GET')));
-        $promise->then(
-            function ($response) use ($ids, $deferred) {
+        $this->eventOtherwise(
+            $sendPromise = $this->source->send($builder->build('GET'))
+        );
+
+        $new = $sendPromise->then(
+            function ($response) use ($ids, $promise) {
                 $assortment = $response->getBody()->toArray()['rows'];
                 $relations = array_combine(
                     array_column($assortment, 'id'),
@@ -119,8 +122,8 @@ class StocksSynchronizer extends AbstractSynchronizer
                 // переданных идентификаторов больше 100
                 return $ids
                     ? $this->getIdArticleRelations($ids)->then(
-                        function ($response) use ($relations, $deferred) {
-                            $deferred->resolve(
+                        function ($response) use ($relations, $promise) {
+                            $promise->resolve(
                                 $response->withBody(
                                     $this->source->body(
                                         array_merge(
@@ -130,19 +133,18 @@ class StocksSynchronizer extends AbstractSynchronizer
                                     )
                                 )
                             );
-                        },
-                        [$deferred, 'reject']
+                        }, [$promise, 'reject']
                     )
-                    : $deferred->resolve(
+                    : $promise->resolve(
                         $response->withBody(
                             $this->source->body($relations)
                         )
                     );
-            },
-            [$deferred, 'reject']
+            }, [$promise, 'reject']
         );
+        $this->eventOtherwise($new);
 
-        return $deferred->promise();
+        return $promise;
     }
 
     /**
@@ -203,31 +205,37 @@ class StocksSynchronizer extends AbstractSynchronizer
      */
     protected function synchronizeByStores(array $relations): bool
     {
-        $this->eventCatch($promise = $this->source->getShort('bystore'));
-        $promise->then(function ($response) use ($relations) {
-            $stocks = $response->getBody()->toArray();
-            $promise = $this->getIdArticleRelations(
-                array_unique(
-                    array_column($stocks, 'assortmentId')
-                )
-            );
-
-            $promise->then(function ($response) use ($stocks, $relations) {
-                $this->eventCatch(
-                    $promise = $this->target->updateWarehouse(
-                        $this->getUpdateData(
-                            $relations,
-                            $response->getBody()->toArray(),
-                            $stocks
-                        )
+        $this->eventOtherwise($promise = $this->source->getShort('bystore'));
+        $this->eventOtherwise(
+            $promise->then(function ($response) use ($relations) {
+                $stocks = $response->getBody()->toArray();
+                $promise = $this->getIdArticleRelations(
+                    array_unique(
+                        array_column($stocks, 'assortmentId')
                     )
                 );
 
-                $promise->then(fn ($response) => $this->event(
-                    new Success($response->getBody()->toArray())
-                ));
-            });
-        });
+                $this->eventOtherwise(
+                    $promise->then(function ($response) use ($stocks, $relations) {
+                        $this->eventOtherwise(
+                            $promise = $this->target->updateWarehouse(
+                                $this->getUpdateData(
+                                    $relations,
+                                    $response->getBody()->toArray(),
+                                    $stocks
+                                )
+                            )
+                        );
+
+                        $this->eventOtherwise(
+                            $promise->then(fn ($response) => $this->event(
+                                new Success($response->getBody()->toArray())
+                            ))
+                        );
+                    })
+                );
+            })
+        );
 
         return true;
     }
@@ -239,28 +247,32 @@ class StocksSynchronizer extends AbstractSynchronizer
      */
     protected function synchronizeAll(): bool
     {
-        $this->eventCatch($promise = $this->source->getShort('all'));
-        $promise->then(function ($response) {
-            $stocks = $response->getBody()->toArray();
-            $this->getIdArticleRelations(array_column($stocks, 'assortmentId'))->then(
-                function ($response) use ($stocks) {
-                    $relations = $response->getBody()->toArray();
-                    $this->eventCatch(
-                        $promise = $this->target->update(array_map(
-                            fn ($stock) => [
-                                'offer_id' => $relations[$stock['assortmentId']]
-                                    ?? 'undefined',
-                                'stock' => $this->getStock($stock)
-                            ], $stocks
-                        ))
-                    );
+        $this->eventOtherwise($promise = $this->source->getShort('all'));
+        $this->eventOtherwise(
+            $promise->then(function ($response) {
+                $stocks = $response->getBody()->toArray();
+                $this->getIdArticleRelations(array_column($stocks, 'assortmentId'))->then(
+                    function ($response) use ($stocks) {
+                        $relations = $response->getBody()->toArray();
+                        $this->eventOtherwise(
+                            $promise = $this->target->update(array_map(
+                                fn ($stock) => [
+                                    'offer_id' => $relations[$stock['assortmentId']]
+                                        ?? 'undefined',
+                                    'stock' => $this->getStock($stock)
+                                ], $stocks
+                            ))
+                        );
 
-                    $promise->then(fn ($response) => $this->event(
-                        new Success($response->getBody()->toArray())
-                    ));
-                }
-            );
-        });
+                        $this->eventOtherwise(
+                            $promise->then(fn ($response) => $this->event(
+                                new Success($response->getBody()->toArray())
+                            ))
+                        );
+                    }
+                );
+            })
+        );
 
         return true;
     }

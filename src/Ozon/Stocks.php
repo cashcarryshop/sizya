@@ -13,7 +13,7 @@
 
 namespace CashCarryShop\Sizya\Ozon;
 
-use React\Promise\PromiseInterface;
+use GuzzleHttp\Promise\PromiseInterface;
 use Respect\Validation\Validator as v;
 
 /**
@@ -81,7 +81,7 @@ class Stocks extends AbstractEntity
 
         return $this->send(
             $this->builder()
-                ->point('v1/product/import/stocks/warehouse')
+                ->point('v2/products/stocks')
                 ->body(['stocks' => $stocks])
                 ->build('POST')
         );

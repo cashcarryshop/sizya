@@ -15,7 +15,7 @@ namespace CashCarryShop\Sizya\Moysklad;
 use CashCarryShop\Sizya\Synchronizer\HttpSynchronizerDualRole;
 use CashCarryShop\Sizya\Http\Utils;
 use Psr\Http\Message\RequestInterface;
-use React\Promise\PromiseInterface;
+use GuzzleHttp\Promise\PromiseInterface;
 use Respect\Validation\Validator as v;
 
 /**
@@ -80,17 +80,20 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
     /**
      * Получить BufferedBody
      *
-     * @param array|string|object $content Контент
+     * @param array|string|object|resource $content Контент
      *
      * @return Io\JsonBody
      */
     public function body(array|string|object $content): Io\JsonBody
     {
-        return new Io\JsonBody(
-            is_string($content)
+        return new Io\JsonBody(fopen(
+            is_resource($content)
                 ? $content
-                : json_encode($content)
-        );
+                : sprintf(
+                    'data://text/plain,%s',
+                    is_string($content) ? $content : json_encode($content)
+                ), 'r'
+        ));
     }
 
     /**
@@ -102,22 +105,20 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
      */
     public function send(RequestInterface $request): PromiseInterface
     {
-        $deferred = $this->deferred();
+        $promise = $this->getPromiseFactory()->createPromise();
 
         $this->getSender()->sendRequest($request)->then(
-            function ($response) use ($deferred) {
-                Utils::waitFill($this->deferred(), $response->getBody())->then(
-                    fn ($buffer) =>  $deferred->resolve(
-                        $response->withBody(
-                            $this->body($buffer)
-                        )
-                    ),
-                    fn ($reason) => $deferred->reject($reason)
-                );
-            },
-            fn ($reason) => $deferred->reject($reason)
-        );
+            fn ($response) => $promise->resolve(
+                $response->withBody(
+                    $this->body(
+                        $response->getBody()
+                            ->getContents()
+                    )
+                )
+            ),
+            [$promise, 'reject']
+        )->otherwise([$promise, 'reject']);
 
-        return $deferred->promise();
+        return $promise;
     }
 }

@@ -14,8 +14,7 @@
 namespace CashCarryShop\Sizya\Http;
 
 use Psr\Http\Message\StreamInterface;
-use React\Http\Io\ReadableBodyStream;
-use React\Promise\PromiseInterface;
+use GuzzleHttp\Promise\PromiseInterface;
 
 /**
  * Вспомогательный класс для работы с Http
@@ -29,52 +28,22 @@ use React\Promise\PromiseInterface;
 class Utils
 {
     /**
-     * Дождаться когда тело ответа
-     * полностью заполниться
-     *
-     * @param DeferredInterface $deferred Фабрика Promise
-     * @param StreamInterface   $body     Тело запроса
-     *
-     * @return PromiseInterface
-     */
-    public static function waitFill(
-        DeferredInterface $deferred,
-        StreamInterface  $body
-    ): PromiseInterface {
-        if ($body instanceof ReadableBodyStream) {
-            $buffer = '';
-
-            $body->on('data', function ($chunk) use (&$buffer) {
-                $buffer .= $chunk;
-            });
-
-            $body->on('error', fn ($reason) => $deferred->reject($reason));
-            $body->on('close', function () use (&$buffer, $deferred) {
-                $deferred->resolve($buffer);
-            });
-
-            return $deferred->promise();
-        }
-
-        $deferred->resolve($body->getContents());
-
-        return $deferred->promise();
-    }
-
-    /**
      * Получить JsonBody
      *
-     * @param array|string|object $content Контент
+     * @param array|string|object|resource $content Контент
      *
      * @return Io\JsonBody
      */
     public static function getJsonBody(array|string|object $content): Io\JsonBody
     {
-        return new Io\JsonBody(
-            is_string($content)
+        return new Io\JsonBody(fopen(
+            is_resource($content)
                 ? $content
-                : json_encode($content)
-        );
+                : sprintf(
+                    'data://text/plain,%s',
+                    is_string($content) ? $content : json_encode($content)
+                ), 'r'
+        ));
     }
 
     /**

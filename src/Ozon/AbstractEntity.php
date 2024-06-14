@@ -15,7 +15,7 @@ namespace CashCarryShop\Sizya\Ozon;
 use CashCarryShop\Sizya\Synchronizer\HttpSynchronizerDualRole;
 use CashCarryShop\Sizya\Http\Utils;
 use Psr\Http\Message\RequestInterface;
-use React\Promise\PromiseInterface;
+use GuzzleHttp\Promise\PromiseInterface;
 use Respect\Validation\Validator as v;
 
 /**
@@ -79,20 +79,20 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
      */
     public function send(RequestInterface $request): PromiseInterface
     {
-        $deferred = $this->deferred();
+        $promise = $this->promise();
 
         $this->getSender()->sendRequest($request)->then(
-            function ($response) use ($deferred) {
-                Utils::waitFill($this->deferred(), $response->getBody())->then(
-                    fn ($buffer) =>  $deferred->resolve(
-                        $response->withBody(Utils::getJsonBody($buffer))
-                    ),
-                    fn ($reason) => $deferred->reject($reason)
-                );
-            },
-            fn ($reason) => $deferred->reject($reason)
+            fn ($response) => $promise->resolve(
+                $response->withBody(
+                    Utils::getJsonBody(
+                        $response->getBody()
+                            ->getContents()
+                    )
+                )
+            ),
+            [$promise, 'reject']
         );
 
-        return $deferred->promise();
+        return $promise;
     }
 }

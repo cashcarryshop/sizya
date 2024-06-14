@@ -14,7 +14,7 @@
 namespace CashCarryShop\Sizya\Http;
 
 use Psr\Http\Message\RequestInterface;
-use React\Promise\PromiseInterface;
+use GuzzleHttp\Promise\PromiseInterface;
 
 /**
  * Интерфейс отправителя запросов

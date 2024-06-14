@@ -33,7 +33,7 @@ class JsonBody extends DefaultJsonBody
      *
      * @return string
      */
-    public function getContents()
+    public function getContents(): string
     {
         $content = parent::getContents();
         if ($decoded = @gzdecode($content)) {

@@ -15,7 +15,7 @@ namespace CashCarryShop\Sizya\Ozon;
 
 use CashCarryShop\Sizya\Http\Enums\Method;
 use Psr\Http\Message\StreamInterface;
-use React\Http\Message\Request;
+use GuzzleHttp\Psr7\Request;
 use InvalidArgumentException;
 
 /**

@@ -14,7 +14,7 @@
 namespace CashCarryShop\Sizya\Synchronizer;
 
 use CashCarryShop\Synchronizer\SynchronizerDualRoleInterface;
-use CashCarryShop\Sizya\Http\InteractsWithDeferred;
+use CashCarryShop\Sizya\Http\InteractsWithPromise;
 use CashCarryShop\Sizya\Http\SenderInterface;
 use CashCarryShop\Sizya\Http\Sender;
 
@@ -29,7 +29,7 @@ use CashCarryShop\Sizya\Http\Sender;
  */
 abstract class HttpSynchronizerDualRole implements SynchronizerDualRoleInterface
 {
-    use InteractsWithDeferred;
+    use InteractsWithPromise;
 
     /**
      * Отправитель запросов
@@ -58,6 +58,6 @@ abstract class HttpSynchronizerDualRole implements SynchronizerDualRoleInterface
      */
     final public function getSender(): SenderInterface
     {
-        return $this->sender ??= Sender::create();
+        return $this->sender ??= new Sender;
     }
 }

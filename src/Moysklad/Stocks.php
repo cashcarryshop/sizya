@@ -13,7 +13,7 @@
 
 namespace CashCarryShop\Sizya\Moysklad;
 
-use React\Promise\PromiseInterface;
+use GuzzleHttp\Promise\PromiseInterface;
 use Respect\Validation\Validator as v;
 
 /**
@@ -111,14 +111,14 @@ class Stocks extends AbstractEntity
             $builder->filter('storeId', $store);
         }
 
-        $deferred = $this->deferred();
+        $promise = $this->promise();
 
         $this->send($builder->build('GET'))->then(
-            function ($response) use ($method, $stores, $deferred) {
+            function ($response) use ($method, $stores, $promise) {
                 if ($stores) {
                     $stocks = $response->getBody()->toArray();
                     return $this->getShortStocksReport($method, $stores)->then(
-                        fn ($response) => $deferred->resolve(
+                        fn ($response) => $promise->resolve(
                             $response->withBody(
                                 $this->body(
                                     array_merge(
@@ -128,16 +128,16 @@ class Stocks extends AbstractEntity
                                 )
                             )
                         ),
-                        [$deferred, 'reject']
+                        [$promise, 'reject']
                     );
                 }
 
-                $deferred->resolve($response);
+                $promise->resolve($response);
             },
-            [$deferred, 'reject']
-        );
+            [$promise, 'reject']
+        )->otherwise([$promise, 'reject']);
 
-        return $deferred->promise();
+        return $promise;
     }
 
     /**

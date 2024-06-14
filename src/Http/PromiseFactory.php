@@ -1,6 +1,6 @@
 <?php
 /**
- * Интерфейс фабрики Deferred
+ * Интерфейс отправителя запросов
  *
  * PHP version 8
  *
@@ -13,8 +13,10 @@
 
 namespace CashCarryShop\Sizya\Http;
 
+use GuzzleHttp\Promise\Promise;
+
 /**
- * Интерфейс фабрики Deferred
+ * Интерфейс отправителя запросов
  *
  * @category Http
  * @package  Sizya
@@ -22,14 +24,15 @@ namespace CashCarryShop\Sizya\Http;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-interface DeferredFactoryInterface
+class PromiseFactory implements PromiseFactoryInterface
 {
     /**
-     * Создать объект Deferred
+     * Создать Promise
      *
-     * @param callable $canceller Обработчик закрытия Promise
-     *
-     * @return DeferredInterface
+     * @return PromiseInterface
      */
-    public function createDeferred(?callable $canceller = null): DeferredInterface;
+    public function createPromise(): Promise
+    {
+        return new Promise(...func_get_args());
+    }
 }

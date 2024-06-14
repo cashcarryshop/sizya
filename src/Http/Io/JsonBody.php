@@ -14,7 +14,7 @@
 
 namespace CashCarryShop\Sizya\Http\Io;
 
-use React\Http\Io\BufferedBody;
+use GuzzleHttp\Psr7\Stream;
 
 /**
  * Абстрактный класс потока, внутри которого
@@ -26,7 +26,7 @@ use React\Http\Io\BufferedBody;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-class JsonBody extends BufferedBody
+class JsonBody extends Stream
 {
     /**
      * Конвертировать в array
@@ -37,7 +37,6 @@ class JsonBody extends BufferedBody
     {
         return json_decode($this->getContents(), true, 512, JSON_THROW_ON_ERROR);
     }
-
     /**
      * Конвертировать в объект
      *
@@ -45,6 +44,6 @@ class JsonBody extends BufferedBody
      */
     public function toObject(): array|object
     {
-        return json_decode($this->getContents(), false, 512, JSON_THROW_ON_ERROR);
+        json_decode($this->getContents(), false, 512, JSON_THROW_ON_ERROR);
     }
 }

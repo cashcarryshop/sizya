@@ -7,7 +7,7 @@
         "php": "^8.0",
         "cashcarryshop/synchronizer": "^1.1.0",
         "respect/validation": "^2.3.0",
-        "react/http": "^1.10.0"
+        "guzzlehttp/guzzle": "^7.8"
     },
     "require-dev": {
         "saggre/phpdocumentor-markdown": "^0.1.3",

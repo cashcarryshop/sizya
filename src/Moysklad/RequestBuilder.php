@@ -21,7 +21,7 @@ use CashCarryShop\Sizya\Moysklad\Traits\OrderTrait;
 use CashCarryShop\Sizya\Moysklad\Traits\LimitTrait;
 
 use Psr\Http\Message\StreamInterface;
-use React\Http\Message\Request;
+use GuzzleHttp\Psr7\Request;
 use InvalidArgumentException;
 
 /**
