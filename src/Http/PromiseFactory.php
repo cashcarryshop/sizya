@@ -32,7 +32,7 @@ class PromiseFactory implements PromiseFactoryInterface
      * @param ?callable $waitFn   Функция, вызывающаяся при вызове метода wait
      * @param ?callable $cancelFn Функция, вызывающаяся при cancel promise
      *
-     * @return PromiseInterface
+     * @return Promise
      */
     public function createPromise(
         ?callable $waitFn = null,
