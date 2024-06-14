@@ -105,44 +105,45 @@ class StocksSynchronizer extends AbstractSynchronizer
             $sendPromise = $this->source->send($builder->build('GET'))
         );
 
-        $new = $sendPromise->then(
-            function ($response) use ($ids, $promise) {
-                $assortment = $response->getBody()->toArray()['rows'];
-                $relations = array_combine(
-                    array_column($assortment, 'id'),
-                    array_map(
-                        fn ($item) => $item['meta']['type'] === 'product'
-                            ? $item['article'] ?? 'undefined'
-                            : $item['code'] ?? 'undefined',
-                        $assortment
-                    )
-                );
-
-                // Вызываем рекурсивно getIdArticleRelations метод, если
-                // переданных идентификаторов больше 100
-                return $ids
-                    ? $this->getIdArticleRelations($ids)->then(
-                        function ($response) use ($relations, $promise) {
-                            $promise->resolve(
-                                $response->withBody(
-                                    $this->source->body(
-                                        array_merge(
-                                            $relations,
-                                            $response->getBody()->toArray()
-                                        )
-                                    )
-                                )
-                            );
-                        }, [$promise, 'reject']
-                    )
-                    : $promise->resolve(
-                        $response->withBody(
-                            $this->source->body($relations)
+        $this->eventOtherwise(
+            $sendPromise->then(
+                function ($response) use ($ids, $promise) {
+                    $assortment = $response->getBody()->toArray()['rows'];
+                    $relations = array_combine(
+                        array_column($assortment, 'id'),
+                        array_map(
+                            fn ($item) => $item['meta']['type'] === 'product'
+                                ? $item['article'] ?? 'undefined'
+                                : $item['code'] ?? 'undefined',
+                            $assortment
                         )
                     );
-            }, [$promise, 'reject']
+
+                    // Вызываем рекурсивно getIdArticleRelations метод, если
+                    // переданных идентификаторов больше 100
+                    return $ids
+                        ? $this->getIdArticleRelations($ids)->then(
+                            function ($response) use ($relations, $promise) {
+                                $promise->resolve(
+                                    $response->withBody(
+                                        $this->source->body(
+                                            array_merge(
+                                                $relations,
+                                                $response->getBody()->toArray()
+                                            )
+                                        )
+                                    )
+                                );
+                            }, [$promise, 'reject']
+                        )
+                        : $promise->resolve(
+                            $response->withBody(
+                                $this->source->body($relations)
+                            )
+                        );
+                }, [$promise, 'reject']
+            )
         );
-        $this->eventOtherwise($new);
 
         return $promise;
     }
