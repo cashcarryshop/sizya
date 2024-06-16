@@ -20,6 +20,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Handler\CurlMultiHandler;
+use GuzzleHttp\HandlerStack;
 
 /**
  * Основной трейт с реализацией SenderInterface
@@ -31,7 +32,7 @@ use GuzzleHttp\Handler\CurlMultiHandler;
  * @link     https://github.com/cashcarryshop/sizya
  */
 trait SenderTrait
-{
+ {
     /**
      * Используемый клиент
      *
@@ -56,7 +57,8 @@ trait SenderTrait
     public function __construct(?ClientInterface $client = null)
     {
         $this->curl ??= new CurlMultiHandler;
-        $this->client = $client ?? new Client(['handler' => $this->curl]);
+        $handler = HandlerStack::create($this->curl);
+        $this->client = $client ?? new Client(['handler' => $handler]);
     }
 
     /**
