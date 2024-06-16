@@ -115,8 +115,7 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
                             ->getContents()
                     )
                 )
-            ),
-            [$promise, 'reject']
+            ), [$promise, 'reject']
         )->otherwise([$promise, 'reject']);
 
         return $promise;
