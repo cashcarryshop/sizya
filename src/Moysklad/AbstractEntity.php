@@ -105,7 +105,7 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
      */
     public function send(RequestInterface $request): PromiseInterface
     {
-        $promise = $this->getPromiseFactory()->createPromise();
+        $promise = $this->promise();
 
         $this->getSender()->sendRequest($request)->then(
             fn ($response) => $promise->resolve(
