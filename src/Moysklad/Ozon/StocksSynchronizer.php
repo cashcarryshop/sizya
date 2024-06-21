@@ -185,11 +185,14 @@ class StocksSynchronizer extends AbstractSynchronizer
                         continue;
                     }
 
-                    $transformedData[$key] = [
-                        'offer_id' => $articleRelation,
-                        'warehouse_id' => $storeRelation['target'],
-                        'stock' => $this->getStock($stock)
-                    ];
+                    $stock = $this->getStock($stock);
+                    if ($stock >= 0) {
+                        $transformedData[$key] = [
+                            'offer_id' => $articleRelation,
+                            'warehouse_id' => $storeRelation['target'],
+                            'stock' => $stock
+                        ];
+                    }
                 }
             }
         }
@@ -227,6 +230,8 @@ class StocksSynchronizer extends AbstractSynchronizer
                                 )
                             )
                         );
+
+                        $promise->then(fn ($response) => var_dump($response));
 
                         $this->eventOtherwise(
                             $promise->then(fn ($response) => $this->event(
