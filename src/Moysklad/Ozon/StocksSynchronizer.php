@@ -185,11 +185,14 @@ class StocksSynchronizer extends AbstractSynchronizer
                         continue;
                     }
 
-                    $transformedData[$key] = [
-                        'offer_id' => $articleRelation,
-                        'warehouse_id' => $storeRelation['target'],
-                        'stock' => $this->getStock($stock)
-                    ];
+                    $stock = $this->getStock($stock);
+                    if ($stock >= 0) {
+                        $transformedData[$key] = [
+                            'offer_id' => $articleRelation,
+                            'warehouse_id' => $storeRelation['target'],
+                            'stock' => $stock
+                        ];
+                    }
                 }
             }
         }

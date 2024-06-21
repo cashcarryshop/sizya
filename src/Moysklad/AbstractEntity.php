@@ -13,7 +13,6 @@
 namespace CashCarryShop\Sizya\Moysklad;
 
 use CashCarryShop\Sizya\Synchronizer\HttpSynchronizerDualRole;
-use CashCarryShop\Sizya\Http\Utils;
 use Psr\Http\Message\RequestInterface;
 use GuzzleHttp\Promise\PromiseInterface;
 use Respect\Validation\Validator as v;

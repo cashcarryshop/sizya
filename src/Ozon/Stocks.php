@@ -15,6 +15,8 @@ namespace CashCarryShop\Sizya\Ozon;
 
 use GuzzleHttp\Promise\PromiseInterface;
 use Respect\Validation\Validator as v;
+use CashCarryShop\Sizya\Http\Utils;
+
 
 /**
  * Класс с настройками и логикой получения
@@ -59,12 +61,40 @@ class Stocks extends AbstractEntity
     public function update(array $stocks): PromiseInterface
     {
         $this->_validateStocks($stocks);
-        return $this->send(
-            $this->builder()
-                ->point('v1/product/import/stocks')
-                ->body(['stocks' => $stocks])
-                ->build('POST')
+
+        $builder = $this->builder()
+            ->point('v1/product/import/stocks')
+            ->body(['stocks' => $stocks]);
+
+        $promise = $this->promise();
+
+        $this->send($builder->build('POST'))->then(
+            function ($response) use ($stocks, $promise) {
+                if ($stocks) {
+                    $result = $response->getBody()->toArray()['result'];
+                    return $this->update($stocks)->then(
+                        static function ($response) use ($result, $promise) {
+                            return $promise->resolve(
+                                $response->withBody(
+                                    Utils::getJsonBody([
+                                        'result' => array_merge(
+                                            $result,
+                                            $response->getBody()->toArray()['result']
+                                        )
+                                    ])
+                                )
+                            );
+                        },
+                        [$promise, 'reject']
+                    );
+                }
+
+                $promise->resolve($response);
+            },
+            [$promise, 'reject']
         );
+
+        return $promise;
     }
 
     /**
@@ -79,11 +109,38 @@ class Stocks extends AbstractEntity
         $this->_validateStocks($stocks);
         v::each(v::key('warehouse_id', v::intType()))->assert($stocks);
 
-        return $this->send(
-            $this->builder()
-                ->point('v2/products/stocks')
-                ->body(['stocks' => $stocks])
-                ->build('POST')
+        $promise = $this->promise();
+
+        $builder = $this->builder()
+            ->point('v2/products/stocks')
+            ->body(['stocks' => array_splice($stocks, 0, min(100, count($stocks)))]);
+
+        $this->send($builder->build('POST'))->then(
+            function ($response) use ($stocks, $promise) {
+                if ($stocks) {
+                    $result = $response->getBody()->toArray()['result'];
+                    return $this->updateWarehouse($stocks)->then(
+                        static function ($response) use ($result, $promise) {
+                            return $promise->resolve(
+                                $response->withBody(
+                                    Utils::getJsonBody([
+                                        'result' => array_merge(
+                                            $result,
+                                            $response->getBody()->toArray()['result']
+                                        )
+                                    ])
+                                )
+                            );
+                        },
+                        [$promise, 'reject']
+                    );
+                }
+
+                $promise->resolve($response);
+            },
+            [$promise, 'reject']
         );
+
+        return $promise;
     }
 }

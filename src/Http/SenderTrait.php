@@ -32,7 +32,9 @@ use GuzzleHttp\HandlerStack;
  * @link     https://github.com/cashcarryshop/sizya
  */
 trait SenderTrait
- {
+{
+    use InteractsWithPromise;
+
     /**
      * Используемый клиент
      *

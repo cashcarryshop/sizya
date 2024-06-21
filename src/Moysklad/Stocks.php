@@ -97,7 +97,7 @@ class Stocks extends AbstractEntity
      *
      * @return PromiseInterface
      */
-    protected function _getShort(string $method, array $stores): PromiseInterface
+    private function _getShort(string $method, array $stores): PromiseInterface
     {
         $builder = $this->builder()
             ->point("report/stock/$method/current")
