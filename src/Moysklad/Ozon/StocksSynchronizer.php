@@ -231,8 +231,6 @@ class StocksSynchronizer extends AbstractSynchronizer
                             )
                         );
 
-                        $promise->then(fn ($response) => var_dump($response));
-
                         $this->eventOtherwise(
                             $promise->then(fn ($response) => $this->event(
                                 new Success($response->getBody()->toArray())
