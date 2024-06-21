@@ -1,7 +1,6 @@
 <?php
-declare(ticks=1);
 /**
- * Интерфейс отправителя запросов
+ * Отправитель по-умаолчанию
  *
  * PHP version 8
  *
@@ -14,12 +13,17 @@ declare(ticks=1);
 
 namespace CashCarryShop\Sizya\Http;
 
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\StreamInterface;
+use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\PromiseInterface;
-use GuzzleHttp\Promise\Promise;
+use GuzzleHttp\Handler\CurlMultiHandler;
+use GuzzleHttp\HandlerStack;
 
 /**
- * Интерфейс отправителя запросов
+ * Отправитель по-умаолчанию
  *
  * @category Http
  * @package  Sizya
@@ -29,6 +33,8 @@ use GuzzleHttp\Promise\Promise;
  */
 class SerializableSender implements SenderInterface
 {
+    use InteractsWithPromise;
+
     /**
      * Запросы
      *
@@ -37,11 +43,37 @@ class SerializableSender implements SenderInterface
     public array $requests = [];
 
     /**
-     * Создание Sender
+     * Обработчик
+     *
+     * @var CurlMultiHandler
+     */
+    public readonly CurlMultiHandler $curl;
+
+    /**
+     * Клиент
+     *
+     * @var ClientInterface
+     */
+    public readonly ClientInterface $client;
+
+    /**
+     * Создать экземпляр Sender
      */
     public function __construct()
     {
-        register_shutdown_function([$this, 'shutdown']);
+        $this->curl ??= new CurlMultiHandler;
+        $handler = HandlerStack::create($this->curl);
+        $this->client = new Client(['handler' => $handler]);
+    }
+
+    /**
+     * Какие свойства сериализовывать
+     *
+     * @return array
+     */
+    public function __sleep()
+    {
+        return ['requests'];
     }
 
     /**
@@ -53,31 +85,11 @@ class SerializableSender implements SenderInterface
      */
     public function sendRequest(RequestInterface $request): PromiseInterface
     {
-        $this->requests[] = $some = new SomeDecorator($request);
-        return $some->promise;
-    }
+        $this->requests[] = [
+            $request,
+            $promise = new SerializablePromise($this->promise())
+        ];
 
-    /**
-     * Какие параметры сериализовывать
-     *
-     * @return array
-     */
-    public function __sleep()
-    {
-        return [];
-    }
-
-    /**
-     * Делаем что-то по тикам
-     *
-     * @return void
-     */
-    public function shutdown(): void
-    {
-        $requests = $this->requests;
-        $this->requests = [];
-        foreach ($requests as $request) {
-            var_dump(serialize($request));
-        }
+        return $promise;
     }
 }

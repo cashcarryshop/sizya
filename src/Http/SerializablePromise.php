@@ -14,6 +14,9 @@
 namespace CashCarryShop\Sizya\Http;
 
 use GuzzleHttp\Promise\PromiseInterface;
+use CashCarryShop\Sizya\Utils;
+use Laravel\SerializableClosure\SerializableClosure;
+use ReflectionClass;
 use Closure;
 
 /**
@@ -41,7 +44,113 @@ class SerializablePromise implements PromiseInterface
      */
     public function __construct(PromiseInterface $promise)
     {
+        $this->_prepareObjectforSerialization($promise, $promise);
         $this->promise = $promise;
+    }
+
+    /**
+     * Проверить что значение уже сериализуемое
+     *
+     * @param mixed $value Значение
+     *
+     * @return bool
+     */
+    private function _alreadySerializable(mixed $value): bool
+    {
+        return is_a($value, SerializableClosure::class)
+            || is_a($value, static::class);
+    }
+
+    /**
+     * Обработать объект для сериализации
+     *
+     * @param object $object Объект
+     *
+     * @return void
+     */
+    private function _prepareObjectForSerialization(object $object): void
+    {
+        static $already;
+        $already ??= [];
+
+        static $level;
+        $level ??= 0;
+        ++$level;
+
+        $reflector = new ReflectionClass($object);
+
+        foreach ($reflector->getProperties() as $property) {
+            $value = $property->getValue($object);
+            if ($this->_alreadySerializable($value)) {
+                continue;
+            }
+
+            if (is_callable($value)) {
+                if (is_array($value)) {
+                    $this->_prepareArrayForSerialization($value);
+                    $property->setValue($object, $value);
+                    continue;
+                }
+
+                $property->setValue($object, Utils::getSerializableCallable($value));
+                continue;
+            }
+
+            foreach ($already as $item) {
+                if ($item === $value) {
+                    continue 2;
+                }
+            }
+
+            $already[] = $value;
+
+            if (is_array($value)) {
+                $this->_prepareArrayForSerialization($value);
+                $property->setValue($object, $value);
+                continue;
+            }
+
+            if (is_object($value)) {
+                var_dump(get_class($value));
+                $this->_prepareObjectForSerialization($value);
+            }
+        }
+
+        if ($level === 1) {
+            $already = $level = null;
+        }
+    }
+
+    /**
+     * Рекурсивно обработать значения в массиве
+     *
+     * @param array $array Ссылка на значение
+     *
+     * @return void
+     */
+    private function _prepareArrayForSerialization(array &$array): void
+    {
+        foreach ($array as $key => $value) {
+            if ($this->_alreadySerializable($value)) {
+                continue;
+            }
+
+            if (is_callable($value)) {
+                $array[$key] = Utils::getSerializableCallable($value);
+                continue;
+            }
+
+
+            if (is_array($value)) {
+                $this->_prepareArrayForSerialization($value);
+                continue;
+            }
+
+            if (is_object($value)) {
+                $this->_prepareObjectForSerialization($value);
+                $array[$key] = $value;
+            }
+        }
     }
 
     /**

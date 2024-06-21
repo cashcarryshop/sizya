@@ -15,8 +15,6 @@ namespace CashCarryShop\Sizya\Http;
 
 use Psr\Http\Message\StreamInterface;
 use GuzzleHttp\Promise\PromiseInterface;
-use Laravel\SerializableClosure\SerializableClosure;
-use Closure;
 
 /**
  * Вспомогательный класс для работы с Http
@@ -46,20 +44,6 @@ class Utils
                     is_string($content) ? $content : json_encode($content)
                 ), 'r'
         ));
-    }
-
-    /**
-     * Обработать callable
-     *
-     * @param ?callable $callback Функция обратного вызова
-     *
-     * @return ?callable
-     */
-    public static function getSerializableCallable(?callable $callback)
-    {
-        return is_a($callback, Closure::class)
-            ? new SerializableClosure($callback)
-            : $callback;
     }
 
     /**

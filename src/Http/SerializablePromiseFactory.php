@@ -13,6 +13,7 @@
 
 namespace CashCarryShop\Sizya\Http;
 
+use CashCarryShop\Sizya\Utils;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\Promise;
 

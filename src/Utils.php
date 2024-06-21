@@ -13,6 +13,9 @@
 
 namespace CashCarryShop\Sizya;
 
+use Laravel\SerializableClosure\SerializableClosure;
+use Closure;
+
 /**
  * Класс с вспомогательными методами
  *
@@ -59,4 +62,18 @@ class Utils
         return $result;
     }
 
+
+    /**
+     * Обработать callable
+     *
+     * @param ?callable $callback Функция обратного вызова
+     *
+     * @return ?callable
+     */
+    public static function getSerializableCallable(?callable $callback)
+    {
+        return is_a($callback, Closure::class)
+            ? new SerializableClosure($callback)
+            : $callback;
+    }
 }
