@@ -97,7 +97,7 @@ class Stocks extends AbstractEntity
      *
      * @return PromiseInterface
      */
-    protected function _getShort(string $method, array $stores): PromiseInterface
+    private function _getShort(string $method, array $stores): PromiseInterface
     {
         $builder = $this->builder()
             ->point("report/stock/$method/current")
@@ -117,7 +117,7 @@ class Stocks extends AbstractEntity
             function ($response) use ($method, $stores, $promise) {
                 if ($stores) {
                     $stocks = $response->getBody()->toArray();
-                    return $this->getShortStocksReport($method, $stores)->then(
+                    return $this->_getShort($method, $stores)->then(
                         fn ($response) => $promise->resolve(
                             $response->withBody(
                                 $this->body(
