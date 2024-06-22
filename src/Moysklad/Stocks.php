@@ -42,15 +42,17 @@ class Stocks extends AbstractEntity
      */
     public function __construct(array $settings)
     {
-        parent::__construct($settings);
-
-        $settings = [
-            'stores' => $settings['stores'] ?? [],
-            'credentials' => $settings['credentials'] ?? [],
-            'assortment' => $settings['assortment'] ?? [],
-            'stockType' => $settings['stockType'] ?? 'quantity',
-            'changedSince' => $settings['changedSince'] ?? null
-        ];
+        parent::__construct(
+            array_merge(
+                $settings, [
+                    'stores' => $settings['stores'] ?? [],
+                    'credentials' => $settings['credentials'] ?? [],
+                    'assortment' => $settings['assortment'] ?? [],
+                    'stockType' => $settings['stockType'] ?? 'quantity',
+                    'changedSince' => $settings['changedSince'] ?? null
+                ]
+            )
+        );
 
         v::keySet(
             v::key('credentials', v::alwaysValid()),
@@ -84,9 +86,7 @@ class Stocks extends AbstractEntity
                 'inTransit'
             ])),
             v::key('changedSince', v::optional(v::dateTime('Y-m-d H:i:s')))
-        )->assert($settings);
-
-        $this->settings = $settings;
+        )->assert($this->settings);
     }
 
     /**

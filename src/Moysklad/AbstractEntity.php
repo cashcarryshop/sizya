@@ -34,7 +34,14 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
      *
      * @var array
      */
-    public array $credentials;
+    protected array $credentials;
+
+    /**
+     * Все настройки
+     *
+     * @var array
+     */
+    protected array $settings;
 
     /**
      * Создать экземпляр сущности
@@ -48,7 +55,42 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
             v::anyOf(v::length(1), v::length(2))
         ))->assert($settings);
 
-        $this->credentials = $settings['credentials'];
+        $this->credentials = ($this->settings = $settings)['credentials'];
+    }
+
+    /**
+     * Получить данные авторизации
+     *
+     * С обычными данными:
+     * ```php
+     * [
+     *     'login'
+     *     'password'
+     * ]
+     * ```
+     *
+     * С токеном
+     * ```php
+     * [
+     *     'token'
+     * ]
+     * ```
+     *
+     * @return array
+     */
+    public function getCredentials(): array
+    {
+        return $this->credentials;
+    }
+
+    /**
+     * Получить настройки
+     *
+     * @return array
+     */
+    public function getSettings(): array
+    {
+        return $this->settings;
     }
 
     /**

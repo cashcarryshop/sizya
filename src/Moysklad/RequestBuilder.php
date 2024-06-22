@@ -231,9 +231,11 @@ class RequestBuilder
     private function _buildBody(): string
     {
         if ($this->body) {
-            return is_array($this->body)
-                ? json_encode($this->body)
-                : $this->body;
+            return gzencode(
+                is_array($this->body)
+                    ? json_encode($this->body)
+                    : $this->body
+            );
         }
 
         return '';

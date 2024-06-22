@@ -35,14 +35,21 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
      *
      * @var int
      */
-    public readonly int $clientid;
+    protected int $clientId;
 
     /**
      * Токен
      *
      * @var string
      */
-    public readonly string $token;
+    protected string $token;
+
+    /**
+     * Все настройки
+     *
+     * @var array
+     */
+    protected array $settings;
 
     /**
      * Создать экземпляр сущности
@@ -58,6 +65,37 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
 
         $this->token = $settings['token'];
         $this->clientId = $settings['clientId'];
+        $this->settings = $settings;
+    }
+
+    /**
+     * Получить данные авторизации
+     *
+     * ```php
+     * [
+     *     'clientId' => $this->clientId,
+     *     'token'    => $this->token
+     * ]
+     * ```
+     *
+     * @return array
+     */
+    public function getCredentials(): array
+    {
+        return [
+            'clientId' => $this->clientId,
+            'token' => $this->token
+        ];
+    }
+
+    /**
+     * Получить настройки
+     *
+     * @return array
+     */
+    public function getSettings(): array
+    {
+        return $this->settings;
     }
 
     /**
