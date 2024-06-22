@@ -46,7 +46,7 @@ class Stocks extends AbstractEntity
                     v::key('offer_id', v::stringType()),
                     v::key('product_id', v::intType())
                 ),
-                v::key('stock', v::intType())
+                v::key('stock', v::intType()->min(0))
             )
         )->assert($stocks);
     }
