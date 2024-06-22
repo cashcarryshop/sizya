@@ -35,14 +35,14 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
      *
      * @var int
      */
-    public readonly int $clientid;
+    protected int $clientId;
 
     /**
      * Токен
      *
      * @var string
      */
-    public readonly string $token;
+    protected string $token;
 
     /**
      * Создать экземпляр сущности
@@ -51,6 +51,8 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
      */
     public function __construct(array $settings)
     {
+        parent::__construct($settings);
+
         v::keySet(
             v::key('token', v::stringType()),
             v::key('clientId', v::intType())
@@ -58,6 +60,26 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
 
         $this->token = $settings['token'];
         $this->clientId = $settings['clientId'];
+    }
+
+    /**
+     * Получить идентификатор клиента
+     *
+     * @return int
+     */
+    final public function getClientId(): int
+    {
+        return $this->clientId;
+    }
+
+    /**
+     * Получить токен
+     *
+     * @return string
+     */
+    final public function getToken(): string
+    {
+        return $this->token;
     }
 
     /**

@@ -80,7 +80,7 @@ class StocksSynchronizer extends AbstractSynchronizer
      */
     protected function getStock(array $stock): int
     {
-        return $stock[$this->source->settings['stockType']];
+        return $stock[$this->source->getSettings('stockType')];
     }
 
     /**

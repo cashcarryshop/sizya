@@ -13,7 +13,6 @@
 
 namespace CashCarryShop\Sizya\Synchronizer;
 
-use CashCarryShop\Synchronizer\SynchronizerDualRoleInterface;
 use CashCarryShop\Sizya\Http\InteractsWithPromise;
 use CashCarryShop\Sizya\Http\SenderInterface;
 use CashCarryShop\Sizya\Http\Sender;
@@ -27,7 +26,7 @@ use CashCarryShop\Sizya\Http\Sender;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-abstract class HttpSynchronizerDualRole implements SynchronizerDualRoleInterface
+abstract class HttpSynchronizerDualRole extends AbstractSynchronizerDualRole
 {
     use InteractsWithPromise;
 

@@ -34,7 +34,7 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
      *
      * @var array
      */
-    public array $credentials;
+    protected array $credentials;
 
     /**
      * Создать экземпляр сущности
@@ -43,12 +43,24 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
      */
     public function __construct(array $settings)
     {
+        parent::__construct($settings);
+
         v::key('credentials', v::allOf(
             v::arrayType(),
             v::anyOf(v::length(1), v::length(2))
-        ))->assert($settings);
+        ))->assert($this->settings);
 
         $this->credentials = $settings['credentials'];
+    }
+
+    /**
+     * Получить данные авторизации
+     *
+     * @return array
+     */
+    final public function getCredentials(): array
+    {
+        return $this->credentials;
     }
 
     /**

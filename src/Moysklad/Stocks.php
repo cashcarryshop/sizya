@@ -29,28 +29,23 @@ use Respect\Validation\Validator as v;
 class Stocks extends AbstractEntity
 {
     /**
-     * Настройки
-     *
-     * @var array
-     */
-    public array $settings;
-
-    /**
      * Создание объекта для работы с остатками
      *
      * @param array $settings Настройки
      */
     public function __construct(array $settings)
     {
-        parent::__construct($settings);
-
-        $settings = [
-            'stores' => $settings['stores'] ?? [],
-            'credentials' => $settings['credentials'] ?? [],
-            'assortment' => $settings['assortment'] ?? [],
-            'stockType' => $settings['stockType'] ?? 'quantity',
-            'changedSince' => $settings['changedSince'] ?? null
-        ];
+        parent::__construct(
+            array_merge(
+                $settings, [
+                    'stores' => $settings['stores'] ?? [],
+                    'credentials' => $settings['credentials'] ?? [],
+                    'assortment' => $settings['assortment'] ?? [],
+                    'stockType' => $settings['stockType'] ?? 'quantity',
+                    'changedSince' => $settings['changedSince'] ?? null
+                ]
+            )
+        );
 
         v::keySet(
             v::key('credentials', v::alwaysValid()),
@@ -84,9 +79,7 @@ class Stocks extends AbstractEntity
                 'inTransit'
             ])),
             v::key('changedSince', v::optional(v::dateTime('Y-m-d H:i:s')))
-        )->assert($settings);
-
-        $this->settings = $settings;
+        )->assert($this->settings);
     }
 
     /**
@@ -101,10 +94,10 @@ class Stocks extends AbstractEntity
     {
         $builder = $this->builder()
             ->point("report/stock/$method/current")
-            ->param('stockType', $this->settings['stockType']);
+            ->param('stockType', $this->getSettings('stockType'));
 
-        if ($this->settings['changedSince']) {
-            $builder->param('changedSince', $this->settings['changedSince']);
+        if ($this->getSettings('changedSince')) {
+            $builder->param('changedSince', $this->getSettings('changedSince'));
         }
 
         foreach (array_splice($stores, 0, min(100, count($stores))) as $store) {
@@ -150,6 +143,6 @@ class Stocks extends AbstractEntity
     public function getShort(string $method = 'all'): PromiseInterface
     {
         v::in(['all', 'bystore'])->assert($method);
-        return $this->_getShort($method, $this->settings['stores']);
+        return $this->_getShort($method, $this->getSettings('stores'));
     }
 }
