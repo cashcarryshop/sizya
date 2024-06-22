@@ -44,7 +44,7 @@ class SerializablePromise implements PromiseInterface
      */
     public function __construct(PromiseInterface $promise)
     {
-        $this->_prepareObjectforSerialization($promise, $promise);
+        $this->_prepareObjectForSerialization($promise, $promise);
         $this->promise = $promise;
     }
 
@@ -139,7 +139,6 @@ class SerializablePromise implements PromiseInterface
                 $array[$key] = Utils::getSerializableCallable($value);
                 continue;
             }
-
 
             if (is_array($value)) {
                 $this->_prepareArrayForSerialization($value);
