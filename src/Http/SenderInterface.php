@@ -39,7 +39,7 @@ interface SenderInterface
     /**
      * Отправить запросы одновременно внутри Pool,
      * с ограничением на количество одновременно
-     * выполняемых запросоы
+     * выполняемых запросов
      *
      * @param iterable<RequestInterface> $requests Запросы
      * @param int                        $limit    Ограничение Pool-а
