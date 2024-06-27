@@ -13,14 +13,10 @@
 
 namespace CashCarryShop\Sizya\Http;
 
-use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\StreamInterface;
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\PromiseInterface;
-use GuzzleHttp\Handler\CurlMultiHandler;
-use GuzzleHttp\HandlerStack;
 
 /**
  * Основной трейт с реализацией SenderInterface
@@ -33,8 +29,6 @@ use GuzzleHttp\HandlerStack;
  */
 trait SenderTrait
 {
-    use InteractsWithPromise;
-
     /**
      * Используемый клиент
      *
@@ -43,24 +37,13 @@ trait SenderTrait
     public readonly ClientInterface $client;
 
     /**
-     * Обработчик
-     *
-     * @var CurlMultiHandler
-     */
-    public readonly CurlMultiHandler $curl;
-
-    /**
      * Создать экземпляр Sender
      *
      * @param ?ClientInterface $client Клиент
-     *
-     * @internal
      */
     public function __construct(?ClientInterface $client = null)
     {
-        $this->curl ??= new CurlMultiHandler;
-        $handler = HandlerStack::create($this->curl);
-        $this->client = $client ?? new Client(['handler' => $handler]);
+        $this->client = $client ?? new Client;
     }
 
     /**
@@ -72,12 +55,21 @@ trait SenderTrait
      */
     public function sendRequest(RequestInterface $request): PromiseInterface
     {
-        try {
-            return $promise = $this->client->sendAsync($request);
-        } finally {
-            while ($promise->getState() === $promise::PENDING) {
-                $this->curl->tick();
-            }
-        }
+        return $this->client->sendAsync($request);
+    }
+
+    /**
+     * Отправить запросы одновременно внутри Pool,
+     * с ограничением на количество одновременно
+     * выполняемых запросоы
+     *
+     * @param iterable<RequestInterface> $requests Запросы
+     * @param int                        $limit    Ограничение Pool-а
+     *
+     * @return PoolInterface
+     */
+    public function pool(iterable $requests, int $limit = 25): PoolInterface
+    {
+        return new Pool($this, $requests, $limit);
     }
 }

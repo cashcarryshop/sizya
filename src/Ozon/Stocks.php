@@ -28,18 +28,19 @@ use CashCarryShop\Sizya\Http\Utils;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-class Stocks extends AbstractEntity
+final class Stocks extends AbstractEntity
 {
     /**
-     * Стандартная валидация остатков
+     * Обновление остатков
      *
-     * @param array $stocks Остатки
+     * @param object $builder Строитель запросов
+     * @param array  $stocks  Остатки
      *
-     * @return void
+     * @return PromiseInterface
      */
-    protected function _validateStocks(array $stocks): void
+    private function _update(object $builder, array $stocks): PromiseInterface
     {
-        v::each(
+        v::length(1)->each(
             v::allOf(
                 v::when(
                     v::key('offer_id'),
@@ -49,6 +50,19 @@ class Stocks extends AbstractEntity
                 v::key('stock', v::intType()->min(0))
             )
         )->assert($stocks);
+
+        $requests = [];
+        if ($chunks = array_chunk($stocks, 100)) {
+            foreach ($chunks as $chunk) {
+                $requests[] = (clone $builder)
+                    ->body(['stocks' => $chunk])
+                    ->build('POST');
+            }
+        }
+
+        return $this->getPromiseResolver()->settle(
+            $this->pool($requests, 5)->getPromises()
+        );
     }
 
     /**
@@ -60,41 +74,9 @@ class Stocks extends AbstractEntity
      */
     public function update(array $stocks): PromiseInterface
     {
-        $this->_validateStocks($stocks);
-
-        $builder = $this->builder()
-            ->point('v1/product/import/stocks')
-            ->body(['stocks' => $stocks]);
-
-        $promise = $this->promise();
-
-        $this->send($builder->build('POST'))->then(
-            function ($response) use ($stocks, $promise) {
-                if ($stocks) {
-                    $result = $response->getBody()->toArray()['result'];
-                    return $this->update($stocks)->then(
-                        static function ($response) use ($result, $promise) {
-                            return $promise->resolve(
-                                $response->withBody(
-                                    Utils::getJsonBody([
-                                        'result' => array_merge(
-                                            $result,
-                                            $response->getBody()->toArray()['result']
-                                        )
-                                    ])
-                                )
-                            );
-                        },
-                        [$promise, 'reject']
-                    );
-                }
-
-                $promise->resolve($response);
-            },
-            [$promise, 'reject']
+        return $this->_update(
+            $this->builder()->point('v1/product/import/stocks'), $stocks
         );
-
-        return $promise;
     }
 
     /**
@@ -106,41 +88,9 @@ class Stocks extends AbstractEntity
      */
     public function updateWarehouse(array $stocks): PromiseInterface
     {
-        $this->_validateStocks($stocks);
         v::each(v::key('warehouse_id', v::intType()))->assert($stocks);
-
-        $promise = $this->promise();
-
-        $builder = $this->builder()
-            ->point('v2/products/stocks')
-            ->body(['stocks' => array_splice($stocks, 0, min(100, count($stocks)))]);
-
-        $this->send($builder->build('POST'))->then(
-            function ($response) use ($stocks, $promise) {
-                if ($stocks) {
-                    $result = $response->getBody()->toArray()['result'];
-                    return $this->updateWarehouse($stocks)->then(
-                        static function ($response) use ($result, $promise) {
-                            return $promise->resolve(
-                                $response->withBody(
-                                    Utils::getJsonBody([
-                                        'result' => array_merge(
-                                            $result,
-                                            $response->getBody()->toArray()['result']
-                                        )
-                                    ])
-                                )
-                            );
-                        },
-                        [$promise, 'reject']
-                    );
-                }
-
-                $promise->resolve($response);
-            },
-            [$promise, 'reject']
+        return $this->_update(
+            $this->builder()->point('v2/products/stocks'), $stocks
         );
-
-        return $promise;
     }
 }

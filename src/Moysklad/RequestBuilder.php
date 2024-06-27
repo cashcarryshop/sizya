@@ -224,24 +224,6 @@ class RequestBuilder
     }
 
     /**
-     * Собрать тело запроса
-     *
-     * @return string
-     */
-    private function _buildBody(): string
-    {
-        if ($this->body) {
-            return gzencode(
-                is_array($this->body)
-                ? json_encode($this->body)
-                : $this->body
-            );
-        }
-
-        return '';
-    }
-
-    /**
      * Собрать
      *
      * @param string|Method $method Метод
@@ -254,7 +236,7 @@ class RequestBuilder
             $this->_buildMethod($method),
             $this->_buildUrl(),
             $this->_buildHeaders(),
-            $this->_buildBody()
+            Utils::getStream($this->body, 'json_encode')
         );
     }
 }

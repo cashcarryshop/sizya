@@ -35,4 +35,16 @@ interface SenderInterface
      * @return PromiseInterface
      */
     public function sendRequest(RequestInterface $request): PromiseInterface;
+
+    /**
+     * Отправить запросы одновременно внутри Pool,
+     * с ограничением на количество одновременно
+     * выполняемых запросоы
+     *
+     * @param iterable<RequestInterface> $requests Запросы
+     * @param int                        $limit    Ограничение Pool-а
+     *
+     * @return PoolInterface
+     */
+    public function pool(iterable $requests, int $limit = 25): PoolInterface;
 }

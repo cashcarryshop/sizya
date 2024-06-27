@@ -15,6 +15,7 @@ namespace CashCarryShop\Sizya\Http;
 
 use Psr\Http\Message\StreamInterface;
 use GuzzleHttp\Promise\PromiseInterface;
+use GuzzleHttp\Psr7\Stream;
 
 /**
  * Вспомогательный класс для работы с Http
@@ -28,37 +29,80 @@ use GuzzleHttp\Promise\PromiseInterface;
 class Utils
 {
     /**
-     * Получить JsonBody
+     * Получить поток
      *
-     * @param array|string|object|resource $content Контент
+     * @param mixed     $content Контент
+     * @param ?callable $filter  Через какие фильтры провести контент
      *
-     * @return Io\JsonBody
+     * @return StreamInterface
      */
-    public static function getJsonBody(array|string|object $content): Io\JsonBody
-    {
-        return new Io\JsonBody(fopen(
-            is_resource($content)
-                ? $content
-                : sprintf(
-                    'data://text/plain,%s',
-                    is_string($content) ? $content : json_encode($content)
-                ), 'r'
-        ));
+    public static function getStream(
+        mixed $content,
+        ?callable $filter = null
+    ): StreamInterface {
+        if (is_a($content, StreamInterface::class)) {
+            return $content;
+        }
+
+        if (is_string($content) && is_file($content)) {
+            $content = file_get_contents($content);
+        }
+
+        if (is_resource($content)) {
+            $content = stream_get_contents($content);
+        }
+
+        if ($filter) {
+            $filtered = call_user_func($filter, $content);
+            $content = $filtered ?? $content;
+            unset($filtered);
+        }
+
+        if (!is_string($content)) {
+            $content = serialize($content);
+        }
+
+        $stream = new Stream(fopen('php://temp', 'r+'));
+        $stream->write($content);
+        $stream->rewind();
+        return $stream;
     }
 
     /**
-     * Обработать значение для query
+     * Получить поток для Json
      *
-     * @param string|bool|null $value Значение
+     * @param array|string|object|resource $content Контент
      *
-     * @return string
+     * @return Io\JsonStream
      */
-    public static function prepareQueryValue(string|bool|null $value): string
+    public static function getJsonStream(array|string|object $content): Io\JsonStream
     {
-        if (is_bool($value)) {
-            return $value ? 'true' : 'false';
-        }
+        return new Io\JsonStream(static::getStream($content, 'json_encode'));
+    }
 
-        return $value ?? '';
+    /**
+     * Получить декодированных из gzip поток
+     *
+     * @param array|string|object|resource $content Контент
+     *
+     * @return Io\InflateStream
+     */
+    public static function getInflateStream(
+        array|string|object $content
+    ): Io\InflateStream {
+        return new Io\InflateStream(static::getStream($content));
+    }
+
+    /**
+     * Получить кодированный поток в gzip
+     *
+     * @param array|string|object|resource $content Контент
+     *
+     * @return Io\DeflateStream
+     */
+    public static function getDeflateStream(
+        array|string|object $content
+    ): Io\DeflateStream {
+        return new Io\DeflateStream(static::getStream($content, 'gzencode'));
     }
 }

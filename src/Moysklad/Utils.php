@@ -14,6 +14,10 @@
 
 namespace CashCarryShop\Sizya\Moysklad;
 
+use CashCarryShop\Sizya\Http\Utils as HttpUtils;
+use GuzzleHttp\Promise\PromiseInterface;
+use Psr\Http\Message\ResponseInterface;
+
 /**
  * Перечисление доступных знаков сравнения
  * для фильтров МойСклад
@@ -24,7 +28,7 @@ namespace CashCarryShop\Sizya\Moysklad;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-class Utils
+class Utils extends HttpUtils
 {
     /**
      * Обработать значение для query

@@ -1,7 +1,7 @@
 <?php
 /**
  * Абстрактный класс сущностей для
- * синхронизаций Ozon
+ * синхронизаций Ozon.
  *
  * @category Ozon
  * @package  Sizya
@@ -20,7 +20,17 @@ use Respect\Validation\Validator as v;
 
 /**
  * Абстрактный класс сущностей для
- * синхронизаций Ozon
+ * синхронизаций Ozon.
+ *
+ * Обязательно, чтобы, если вы передаете
+ * свой Sender в классы, наследующий этот,
+ * в теле ответа (Response) возвращался JsonStream, или
+ * любой другой поток, который имел метод toArray
+ * и мог конвертироваться в массив.
+ *
+ * По умолчанию устанавливается нативный Sender,
+ * использующий Http\PrepareBodyMiddleware для
+ * обработки ответов от сервера.
  *
  * @category Ozon
  * @package  Sizya
@@ -60,6 +70,7 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
 
         $this->token = $settings['token'];
         $this->clientId = $settings['clientId'];
+        $this->sender = new Http\OzonSender;
     }
 
     /**
@@ -87,34 +98,8 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
      *
      * @return RequestBuilder
      */
-    public function builder(): RequestBuilder
+    final public function builder(): RequestBuilder
     {
         return new RequestBuilder($this->token, $this->clientId);
-    }
-
-    /**
-     * Отправить запрос
-     *
-     * @param RequestInterface $request Запрос
-     *
-     * @return PromiseInterface
-     */
-    public function send(RequestInterface $request): PromiseInterface
-    {
-        $promise = $this->promise();
-
-        $this->getSender()->sendRequest($request)->then(
-            fn ($response) => $promise->resolve(
-                $response->withBody(
-                    Utils::getJsonBody(
-                        $response->getBody()
-                            ->getContents()
-                    )
-                )
-            ),
-            [$promise, 'reject']
-        );
-
-        return $promise;
     }
 }

@@ -83,4 +83,28 @@ class MetaBuilder
     {
         return $this->create("entity/store/$guid", 'store');
     }
+
+    /**
+     * Создать meta для организации
+     *
+     * @param string $guid GUID организации
+     *
+     * @return array
+     */
+    public function organization(string $guid): array
+    {
+        return $this->create("entity/organization/$guid", 'organization');
+    }
+
+    /**
+     * Создать meta для контрагента
+     *
+     * @param string $guid GUIВ контрагента
+     *
+     * @return array
+     */
+    public function counterparty(string $guid): array
+    {
+        return $this->create("entity/counterparty/$guid", 'counterparty');
+    }
 }

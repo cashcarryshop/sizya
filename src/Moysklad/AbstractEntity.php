@@ -1,7 +1,9 @@
 <?php
 /**
  * Абстрактный класс сущностей для
- * синхронизаций МойСклад
+ * синхронизаций МойСклад.
+ *
+ * PHP version 8
  *
  * @category Moysklad
  * @package  Sizya
@@ -13,13 +15,23 @@
 namespace CashCarryShop\Sizya\Moysklad;
 
 use CashCarryShop\Sizya\Synchronizer\HttpSynchronizerDualRole;
-use Psr\Http\Message\RequestInterface;
 use GuzzleHttp\Promise\PromiseInterface;
+use Psr\Http\Message\RequestInterface;
 use Respect\Validation\Validator as v;
 
 /**
  * Абстрактный класс сущностей для
- * синхронизаций МойСклад
+ * синхронизаций МойСклад.
+ *
+ * Обязательно, чтобы, если вы передаете
+ * свой Sender в классы, наследующий этот,
+ * в теле ответа (Response) возвращался JsonStream, или
+ * любой другой поток, который имел метод toArray
+ * и мог конвертироваться в массив.
+ *
+ * По умолчанию устанавливается нативный Sender,
+ * использующий Http\PrepareBodyMiddleware для
+ * обработки ответов от сервера.
  *
  * @category Moysklad
  * @package  Sizya
@@ -51,6 +63,7 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
         ))->assert($this->settings);
 
         $this->credentials = $settings['credentials'];
+        $this->sender = new Http\MoyskladSender;
     }
 
     /**
@@ -68,7 +81,7 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
      *
      * @return RequestBuilder
      */
-    public function builder(): RequestBuilder
+    final public function builder(): RequestBuilder
     {
         return new RequestBuilder($this->credentials);
     }
@@ -78,7 +91,7 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
      *
      * @return MetaBuilder
      */
-    public function meta(): MetaBuilder
+    final public function meta(): MetaBuilder
     {
         return new MetaBuilder(sprintf(
             '%s://%s/%s',
@@ -86,50 +99,5 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
             RequestBuilder::DOMAIN,
             RequestBuilder::PATH
         ));
-    }
-
-    /**
-     * Получить BufferedBody
-     *
-     * @param array|string|object|resource $content Контент
-     *
-     * @return Io\JsonBody
-     */
-    public function body(array|string|object $content): Io\JsonBody
-    {
-        return new Io\JsonBody(fopen(
-            is_resource($content)
-                ? $content
-                : sprintf(
-                    'data://text/plain,%s',
-                    is_string($content) ? $content : json_encode($content)
-                ), 'r'
-        ));
-    }
-
-    /**
-     * Отправить запрос
-     *
-     * @param RequestInterface $request Запрос
-     *
-     * @return PromiseInterface
-     */
-    public function send(RequestInterface $request): PromiseInterface
-    {
-        $promise = $this->getPromiseFactory()->createPromise();
-
-        $this->getSender()->sendRequest($request)->then(
-            fn ($response) => $promise->resolve(
-                $response->withBody(
-                    $this->body(
-                        $response->getBody()
-                            ->getContents()
-                    )
-                )
-            ),
-            [$promise, 'reject']
-        )->otherwise([$promise, 'reject']);
-
-        return $promise;
     }
 }

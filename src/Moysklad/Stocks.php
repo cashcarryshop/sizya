@@ -13,6 +13,7 @@
 
 namespace CashCarryShop\Sizya\Moysklad;
 
+use CashCarryShop\Sizya\Http\Utils;
 use GuzzleHttp\Promise\PromiseInterface;
 use Respect\Validation\Validator as v;
 
@@ -26,7 +27,7 @@ use Respect\Validation\Validator as v;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-class Stocks extends AbstractEntity
+final class Stocks extends AbstractEntity
 {
     /**
      * Создание объекта для работы с остатками
@@ -83,57 +84,6 @@ class Stocks extends AbstractEntity
     }
 
     /**
-     * Получить краткий отчет об остатках
-     *
-     * @param string $method Метод (all, bystore)
-     * @param array  $stores Хранилища по которым фильтровать
-     *
-     * @return PromiseInterface
-     */
-    private function _getShort(string $method, array $stores): PromiseInterface
-    {
-        $builder = $this->builder()
-            ->point("report/stock/$method/current")
-            ->param('stockType', $this->getSettings('stockType'));
-
-        if ($this->getSettings('changedSince')) {
-            $builder->param('changedSince', $this->getSettings('changedSince'));
-        }
-
-        foreach (array_splice($stores, 0, min(100, count($stores))) as $store) {
-            $builder->filter('storeId', $store);
-        }
-
-        $promise = $this->promise();
-
-        $this->send($builder->build('GET'))->then(
-            function ($response) use ($method, $stores, $promise) {
-                if ($stores) {
-                    $stocks = $response->getBody()->toArray();
-                    return $this->_getShort($method, $stores)->then(
-                        fn ($response) => $promise->resolve(
-                            $response->withBody(
-                                $this->body(
-                                    array_merge(
-                                        $stocks,
-                                        $response->getBody()->toArray()
-                                    )
-                                )
-                            )
-                        ),
-                        [$promise, 'reject']
-                    );
-                }
-
-                $promise->resolve($response);
-            },
-            [$promise, 'reject']
-        )->otherwise([$promise, 'reject']);
-
-        return $promise;
-    }
-
-    /**
      * Получить короткий отчет об остатках
      *
      * @param string $method Метод (all, bystore)
@@ -143,6 +93,31 @@ class Stocks extends AbstractEntity
     public function getShort(string $method = 'all'): PromiseInterface
     {
         v::in(['all', 'bystore'])->assert($method);
-        return $this->_getShort($method, $this->getSettings('stores'));
+
+        $builder = $this->builder()
+            ->point("report/stock/$method/current")
+            ->param('stockType', $this->getSettings('stockType'));
+
+        if ($this->getSettings('changedSince')) {
+            $builder->param('changedSince', $this->getSettings('changedSince'));
+        }
+
+        if ($stores = $this->getSettings('stores')) {
+            $requests = [];
+            foreach (array_chunk($stores, 100) as $chunk) {
+                $clone = clone $builder;
+
+                foreach ($chunk as $store) {
+                    $clone->filter('storeId', $store);
+                }
+
+                $requests[] = $clone->build('GET');
+            }
+        }
+
+        return $this->getPromiseResolver()->settle(
+            $this->pool($requests ?? [$builder->build('GET')], 5)
+                ->getPromises()
+        );
     }
 }

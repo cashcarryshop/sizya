@@ -24,7 +24,7 @@ use CashCarryShop\Synchronizer\SynchronizerDualRoleInterface;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-abstract class HttpSynchronizerDualRole implements SynchronizerDualRoleInterface
+abstract class AbstractSynchronizerDualRole implements SynchronizerDualRoleInterface
 {
     /**
      * Настройки
@@ -56,9 +56,9 @@ abstract class HttpSynchronizerDualRole implements SynchronizerDualRoleInterface
      * @param string|int|null $key     Ключ по которому получить настройку(и)
      * @param mixed           $default Значение по-умолчанию
      *
-     * @return array
+     * @return mixed
      */
-    final public function getSettings(mixed $key = null, mixed $default = null): array
+    final public function getSettings(mixed $key = null, mixed $default = null): mixed
     {
         if ($key === null) {
             return $this->settings;

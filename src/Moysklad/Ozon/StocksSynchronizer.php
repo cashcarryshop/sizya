@@ -13,14 +13,15 @@
 
 namespace CashCarryShop\Sizya\Moysklad\Ozon;
 
-use CashCarryShop\Synchronizer\AbstractSynchronizer;
 use CashCarryShop\Synchronizer\SynchronizerSourceInterface;
 use CashCarryShop\Synchronizer\SynchronizerTargetInterface;
+use CashCarryShop\Sizya\Synchronizer\AbstractSynchronizer;
 use CashCarryShop\Sizya\Moysklad\Stocks as MoyskladStocks;
 use CashCarryShop\Sizya\Ozon\Stocks as OzonStocks;
 use CashCarryShop\Sizya\Events\Error;
 use CashCarryShop\Sizya\Events\Success;
 use GuzzleHttp\Promise\PromiseInterface;
+use Psr\Http\Message\ResponseInterface;
 use Respect\Validation\Validator as v;
 
 /**
@@ -63,11 +64,31 @@ class StocksSynchronizer extends AbstractSynchronizer
      *
      * @param PromiseInterface $promise Promise
      *
+     * @return PromiseInterface
+     */
+    protected function eventOtherwise(PromiseInterface $promise): PromiseInterface
+    {
+        $promise->otherwise(function ($reason) {
+            $this->event(new Error($reason));
+            $this->running = false;
+        });
+
+        return $promise;
+    }
+
+    /**
+     * Вызвать событие Success на выполнение Promise
+     *
+     * @param PromiseInterface $promise Promise
+     *
      * @return void
      */
-    protected function eventOtherwise(PromiseInterface $promise): void
+    protected function eventSuccess(PromiseInterface $promise): void
     {
-        $promise->otherwise(fn ($exception) => $this->event(new Error($exception)));
+        $promise->then(function ($result) {
+            $this->running = false;
+            $this->event(new Success($result));
+        });
     }
 
     /**
@@ -95,57 +116,46 @@ class StocksSynchronizer extends AbstractSynchronizer
     {
         $builder = $this->source->builder()->point('entity/assortment');
 
-        foreach (array_splice($ids, 0, min(100, count($ids))) as $id) {
-            $builder->filter('id', $id);
+        $requests = [];
+        foreach (array_chunk($ids, 100) as $chunk) {
+            $clone = clone $builder;
+
+            foreach ($chunk as $id) {
+                $clone->filter('id', $id);
+            }
+
+            $requests[] = $clone->build('get');
         }
 
-        $promise = $this->source->promise();
+        $pool = $this->source->pool($requests, 5);
+        return $this->eventOtherwise(
+            $this->source->getPromiseResolver()->settle($pool->getPromises())->then(
+                static function ($results) use ($ids) {
+                    $assortment = array_merge(
+                        ...array_map(
+                            static function ($result) {
+                                if ($result['state'] === PromiseInterface::REJECTED) {
+                                    return [];
+                                }
 
-        $this->eventOtherwise(
-            $sendPromise = $this->source->send($builder->build('GET'))
-        );
+                                return $result['value']->getBody()->toArray()['rows'];
+                            },
+                            $results
+                        )
+                    );
 
-        $this->eventOtherwise(
-            $sendPromise->then(
-                function ($response) use ($ids, $promise) {
-                    $assortment = $response->getBody()->toArray()['rows'];
-                    $relations = array_combine(
+                    return array_combine(
                         array_column($assortment, 'id'),
                         array_map(
-                            fn ($item) => $item['meta']['type'] === 'product'
+                            static fn ($item) => $item['meta']['type'] === 'product'
                                 ? $item['article'] ?? 'undefined'
                                 : $item['code'] ?? 'undefined',
                             $assortment
                         )
                     );
-
-                    // Вызываем рекурсивно getIdArticleRelations метод, если
-                    // переданных идентификаторов больше 100
-                    return $ids
-                        ? $this->getIdArticleRelations($ids)->then(
-                            function ($response) use ($relations, $promise) {
-                                $promise->resolve(
-                                    $response->withBody(
-                                        $this->source->body(
-                                            array_merge(
-                                                $relations,
-                                                $response->getBody()->toArray()
-                                            )
-                                        )
-                                    )
-                                );
-                            }, [$promise, 'reject']
-                        )
-                        : $promise->resolve(
-                            $response->withBody(
-                                $this->source->body($relations)
-                            )
-                        );
-                }, [$promise, 'reject']
+                }
             )
         );
-
-        return $promise;
     }
 
     /**
@@ -205,80 +215,75 @@ class StocksSynchronizer extends AbstractSynchronizer
      *
      * @param array $relations Отношения складов МойСклад и Ozon
      *
-     * @return bool
+     * @return PromiseInterface
      */
-    protected function synchronizeByStores(array $relations): bool
+    protected function synchronizeByStores(array $relations): PromiseInterface
     {
-        $this->eventOtherwise($promise = $this->source->getShort('bystore'));
-        $this->eventOtherwise(
-            $promise->then(function ($response) use ($relations) {
-                $stocks = $response->getBody()->toArray();
-                $promise = $this->getIdArticleRelations(
-                    array_unique(
-                        array_column($stocks, 'assortmentId')
-                    )
-                );
+        return $this->eventOtherwise(
+            $this->source->getShort('bystore')->then(
+                function ($results) use ($relations) {
+                    $stocks = array_merge(
+                        ...array_map(
+                            static function ($result) {
+                                if ($result['state'] === PromiseInterface::REJECTED) {
+                                    return [];
+                                }
 
-                $this->eventOtherwise(
-                    $promise->then(function ($response) use ($stocks, $relations) {
-                        $this->eventOtherwise(
+                                return $result['value']->getBody()->toArray();
+                            },
+                            $results
+                        )
+                    );
+
+                    $promise = $this->getIdArticleRelations(
+                        array_unique(
+                            array_column($stocks, 'assortmentId')
+                        )
+                    );
+
+                    $this->eventOtherwise(
+                        $promise->then(function ($result) use ($stocks, $relations) {
                             $promise = $this->target->updateWarehouse(
-                                $this->getUpdateData(
-                                    $relations,
-                                    $response->getBody()->toArray(),
-                                    $stocks
-                                )
-                            )
-                        );
+                                $this->getUpdateData($relations, $result, $stocks)
+                            );
 
-                        $this->eventOtherwise(
-                            $promise->then(fn ($response) => $this->event(
-                                new Success($response->getBody()->toArray())
-                            ))
-                        );
-                    })
-                );
-            })
+                            $this->eventSuccess($promise);
+                            $this->eventOtherwise($promise);
+                        })
+                    );
+                }
+            )
         );
-
-        return true;
     }
 
     /**
      * Синхронизировать все остатки
      *
-     * @return bool
+     * @return PromiseInterface
      */
-    protected function synchronizeAll(): bool
+    protected function synchronizeAll(): PromiseInterface
     {
-        $this->eventOtherwise($promise = $this->source->getShort('all'));
         $this->eventOtherwise(
-            $promise->then(function ($response) {
+            $this->source->getShort('all')->then(function ($response) {
                 $stocks = $response->getBody()->toArray();
-                $this->getIdArticleRelations(array_column($stocks, 'assortmentId'))->then(
-                    function ($response) use ($stocks) {
-                        $relations = $response->getBody()->toArray();
-                        $this->eventOtherwise(
-                            $promise = $this->target->update(array_map(
-                                fn ($stock) => [
-                                    'offer_id' => $relations[$stock['assortmentId']]
-                                        ?? 'undefined',
-                                    'stock' => $this->getStock($stock)
-                                ], $stocks
-                            ))
-                        );
+                $ids = array_column($stocks, 'assortmentId');
 
-                        $this->eventOtherwise(
-                            $promise->then(fn ($response) => $this->event(
-                                new Success($response->getBody()->toArray())
-                            ))
-                        );
+                $this->getIdArticleRelations($ids)->then(
+                    function ($relations) use ($stocks) {
+                        $promise = $this->target->update(array_map(
+                            fn ($stock) => [
+                                'offer_id' => $relations[$stock['assortmentId']]
+                                    ?? 'undefined',
+                                'stock' => $this->getStock($stock)
+                            ], $stocks
+                        ));
+
+                        $this->eventOtherwise($promise);
+                        $this->eventSuccess($promise);
                     }
                 );
             })
         );
-
-        return true;
     }
 
     /**
@@ -288,13 +293,10 @@ class StocksSynchronizer extends AbstractSynchronizer
      *
      * @return bool
      */
-    public function synchronize(array $settings = []): bool
+    protected function process(array $settings = []): bool
     {
-        $settings = [
-            'relations' => $relations = $settings['relations'] ?? []
-        ];
-
         v::keySet(
+            v::key('wait', v::boolType()),
             v::key('relations', v::optional(
                 v::each(
                     v::keySet(
@@ -306,13 +308,19 @@ class StocksSynchronizer extends AbstractSynchronizer
                     )
                 )
             ))
-        )->assert($settings);
+        )->assert(
+            $settings = [
+                'wait' => $settings['wait'] ?? false,
+                'relations' => $relations = $settings['relations'] ?? [],
+            ]
+        );
 
-        if ($relations) {
-            return $this->synchronizeByStores($relations);
-        }
+        $promise = $relations
+            ? $this->synchronizeByStores($relations)
+            : $this->synchronizeAll();
 
-        return $this->synchronizeAll();
+        $settings['wait'] && $promise->wait();
+
+        return true;
     }
 }
-{}
