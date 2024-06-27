@@ -31,17 +31,17 @@ class Error
     /**
      * Исключение
      *
-     * @var Throwable
+     * @var mixed
      */
-    public readonly Throwable $exception;
+    public readonly mixed $reason;
 
     /**
      * Создание события
      *
-     * @param Throwable $exception Исключение
+     * @param mixed $reason Причина ошибки
      */
-    public function __construct(Throwable $exception)
+    public function __construct(mixed $reason)
     {
-        $this->exception = $exception;
+        $this->reason = $reason;
     }
 }
