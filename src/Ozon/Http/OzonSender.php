@@ -44,5 +44,4 @@ class OzonSender extends Sender
 
         parent::__construct($client);
     }
-
 }

@@ -15,7 +15,6 @@ namespace CashCarryShop\Sizya\Http;
 
 use Psr\Http\Message\RequestInterface;
 use GuzzleHttp\Promise\PromiseInterface;
-use GuzzleHttp\Promise\PromisorInterface;
 use GuzzleHttp\Promise\EachPromise;
 
 /**
@@ -56,7 +55,7 @@ class Pool implements PoolInterface
         int $limit
     ) {
         foreach ($requests as $request) {
-            $this->_promises[] = $sender->sendRequest($request);
+            $this->_promises[] = $sender->send($request);
         }
 
         $this->_each = new EachPromise($this->_promises, ['concurrency' => $limit]);

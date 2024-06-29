@@ -129,7 +129,7 @@ class StocksSynchronizer extends AbstractSynchronizer
 
         $pool = $this->source->pool($requests, 5);
         return $this->eventOtherwise(
-            $this->source->getPromiseResolver()->settle($pool->getPromises())->then(
+            $this->source->getPromiseAggregator()->settle($pool->getPromises())->then(
                 static function ($results) use ($ids) {
                     $assortment = array_merge(
                         ...array_map(

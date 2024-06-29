@@ -15,8 +15,8 @@ namespace CashCarryShop\Sizya\Synchronizer;
 
 use CashCarryShop\Sizya\Http\SenderInterface;
 use CashCarryShop\Sizya\Http\Sender;
-use CashCarryShop\Sizya\Http\PromiseResolverInterface;
-use CashCarryShop\Sizya\Http\PromiseResolver;
+use CashCarryShop\Sizya\Http\PromiseAggregatorInterface;
+use CashCarryShop\Sizya\Http\PromiseAggregator;
 use CashCarryShop\Sizya\Http\PoolInterface;
 use Psr\Http\Message\RequestInterface;
 use GuzzleHttp\Promise\PromiseInterface;
@@ -42,11 +42,11 @@ abstract class HttpSynchronizerDualRole extends AbstractSynchronizerDualRole
     protected SenderInterface $sender;
 
     /**
-     * Promise resolver
+     * Promise Aggregator
      *
-     * @var PromiseResolverInterface
+     * @var PromiseAggregatorInterface
      */
-    protected PromiseResolverInterface $promiseResolver;
+    protected PromiseAggregatorInterface $promiseAggregator;
 
     /**
      * Установить отправителя запросов
@@ -72,27 +72,27 @@ abstract class HttpSynchronizerDualRole extends AbstractSynchronizerDualRole
     }
 
     /**
-     * Установить Promise resolver
+     * Установить Promise Aggregator
      *
-     * @param PromiseResolverInterface $resolver Promise resolver
+     * @param PromiseAggregatorInterface $aggregator Promise Aggregator
      *
      * @return static
      */
-    final public function withPromiseResolver(
-        PromiseResolverInterface $resolver
+    final public function withPromiseAggregator(
+        PromiseAggregatorInterface $aggregator
     ): static {
-        $this->promiseResolver = $resolver;
+        $this->promiseAggregator = $aggregator;
         return $this;
     }
 
     /**
-     * Получить Promise resolver
+     * Получить Promise Aggregator
      *
-     * @return PromiseResolverInterface
+     * @return PromiseAggregatorInterface
      */
-    final public function getPromiseResolver(): PromiseResolverInterface
+    final public function getPromiseAggregator(): PromiseAggregatorInterface
     {
-        return $this->promiseResolver ??= new PromiseResolver;
+        return $this->promiseAggregator ??= new PromiseAggregator;
     }
 
     /**
@@ -104,7 +104,7 @@ abstract class HttpSynchronizerDualRole extends AbstractSynchronizerDualRole
      */
     final public function sendRequest(RequestInterface $request): PromiseInterface
     {
-        return $this->getSender()->sendRequest($request);
+        return $this->getSender()->send($request);
     }
 
     /**

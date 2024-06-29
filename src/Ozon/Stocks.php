@@ -60,7 +60,7 @@ final class Stocks extends AbstractEntity
             }
         }
 
-        return $this->getPromiseResolver()->settle(
+        return $this->getPromiseAggregator()->settle(
             $this->pool($requests, 5)->getPromises()
         );
     }

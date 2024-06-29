@@ -1,6 +1,6 @@
 <?php
 /**
- * Простая реализация PromiseResolverInterface
+ * Простая реализация PromiseAggregatorInterface
  *
  * PHP version 8
  *
@@ -13,13 +13,13 @@
 
 namespace CashCarryShop\Sizya\Http;
 
+use GuzzleHttp\Promise\AggregateException;
 use GuzzleHttp\Promise\PromiseInterface;
-use GuzzleHttp\Promise\RejectedPromise;
 use GuzzleHttp\Promise\Utils;
 use GuzzleHttp\Promise\Each;
 
 /**
- * Простая реализация PromiseResolverInterface
+ * Простая реализация PromiseAggregatorInterface
  *
  * @category Http
  * @package  Sizya
@@ -27,16 +27,16 @@ use GuzzleHttp\Promise\Each;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-class PromiseResolver implements PromiseResolverInterface
+class PromiseAggregator implements PromiseAggregatorInterface
 {
     /**
-     * Ожидает выполнения всех Promise и возвращает массив с
-     * результатами их выполнения
+     * Ожидает выполнения всех Promise и возвращает
+     * массив с результатами их выполнения
      *
-     * @param iterable<PromiseInterface> $promises Promises with worked method wait
+     * @param iterable<PromiseInterface> $promises Promise-ы с рабочим методом wait
      *
      * @return array
-     * @throws Throwable on error
+     * @throws Throwable
      */
     public function unwrap(iterable $promises): array
     {
@@ -44,13 +44,13 @@ class PromiseResolver implements PromiseResolverInterface
     }
 
     /**
-     * Выполнить все переданные Promise и установить в возвращаемый
-     * Promise результат их выполнения
+     * По завершению выполнения Promise-ов вернет
+     * результат их выполнения
      *
-     * Если хоть 1 Promise был выполнен с ошибкой, то возвращаемый
-     * тоже будет установлен в rejected, и вернет причину ошибки
+     * Если хоть 1 Promise был выполнен с ошибкой, то
+     * отправится ошибка AggregateException
      *
-     * @param iterable<PromiseInterface> $promises Promises
+     * @param iterable<PromiseInterface> $promises Promise-ы
      *
      * @return PromiseInterface
      */
@@ -59,17 +59,16 @@ class PromiseResolver implements PromiseResolverInterface
         return Utils::all($promises);
     }
 
-
     /**
-     * Выполнить переданных Promise, и установить в возвращаемый
-     * Promise результат выполнения, когда переданное количество
-     * Promise было выполнено
+     * По завершению выполнения Promise-ов вернет
+     * результат их выполнения
      *
-     * Promise установится в rejected и вернет ожибку AggregateException,
-     * если количество выполненных Promise будет меньше $count
+     * Если количество выполненных Promise-ов меньше
+     * переданного количества $count, то вернется
+     * ошибка AggregateException
      *
      * @param int                        $count    Количество promise
-     * @param iterable<PromiseInterface> $promises Promises
+     * @param iterable<PromiseInterface> $promises Promise-ы
      *
      * @return PromiseInterface
      */
@@ -79,10 +78,10 @@ class PromiseResolver implements PromiseResolverInterface
     }
 
     /**
-     * Тоже самое что и some, только в ответе будет не массив
+     * Тоже самое что и `some`, только в ответе будет не массив
      * значений, а само значение
      *
-     * @param iterable<PromiseInterface> $promises Promises
+     * @param iterable<PromiseInterface> $promises Promise-ы
      *
      * @return PromiseInterface
      */
@@ -92,19 +91,18 @@ class PromiseResolver implements PromiseResolverInterface
     }
 
     /**
-     * Возвращает Promise, который установится в fulfilled, когда
-     * все переданные Promise выйдут из статуса pending.
+     * По завершению выполнения Promise-ов вернет результат
+     * их выполнения вне зависимости от статуса
      *
-     * Если все переданные Promise были выполнены с ошибкой,
-     * то возвращаемый Promise будет отклонен и передаст
-     * все возникшие ошибки.
+     * В ответе будет массив результатов:
+     * - state: (string) Статус выполнения (PromiseInterface::(FULFILLED|REJECTED))
+     * - value|reason: (mixed) Либо результат выполнения, либо причина отклонения
      *
-     * Если хоть один переданный Promise был успешно завершен,
-     * то возвращаемый Promise установится в fulfilled и
-     * будет передан массив со всеми результатами выполнения
-     * переданных Promise
+     * Если все переданные Promise были отклонены, то вернет
+     * ошибку AggregateException, иначе, соответственно,
+     * просто вернет результат выполнения всех Promise-ов
      *
-     * @param iterable<PromiseInterface> $promises Promises
+     * @param iterable<PromiseInterface> $promises Promise-ы
      *
      * @return PromiseInterface
      */
@@ -129,14 +127,16 @@ class PromiseResolver implements PromiseResolverInterface
         )->then(
             static function () use (&$results) {
                 $states = array_unique(
-                    array_column($results,'state'),
+                    array_column($results, 'state'),
                     SORT_STRING
                 );
+
+                ksort($results);
 
                 if (count($states) === 1
                     && $states[0] === PromiseInterface::REJECTED
                 ) {
-                    return new RejectedPromise($results);
+                    throw new AggregateException('All requests rejected', $results);
                 }
 
                 return $results;
@@ -147,6 +147,7 @@ class PromiseResolver implements PromiseResolverInterface
                     'reason' => $reason
                 ];
 
+                ksort($results);
                 return $results;
             }
         );

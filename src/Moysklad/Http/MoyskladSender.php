@@ -44,5 +44,4 @@ class MoyskladSender extends Sender
 
         parent::__construct($client);
     }
-
 }

@@ -53,7 +53,7 @@ trait SenderTrait
      *
      * @return PromiseInterface
      */
-    public function sendRequest(RequestInterface $request): PromiseInterface
+    public function send(RequestInterface $request): PromiseInterface
     {
         return $this->client->sendAsync($request);
     }
