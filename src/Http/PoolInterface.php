@@ -15,7 +15,6 @@ namespace CashCarryShop\Sizya\Http;
 
 use Psr\Http\Message\RequestInterface;
 use GuzzleHttp\Promise\PromiseInterface;
-use GuzzleHttp\Promise\PromisorInterface;
 
 /**
  * Интерфейс Pool (бассейна) для запросов
@@ -26,7 +25,7 @@ use GuzzleHttp\Promise\PromisorInterface;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-interface PoolInterface extends PromisorInterface
+interface PoolInterface
 {
     /**
      * Создать экземпляр Pool

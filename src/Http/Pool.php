@@ -29,13 +29,6 @@ use GuzzleHttp\Promise\EachPromise;
 class Pool implements PoolInterface
 {
     /**
-     * Общий Promise для всех запросов
-     *
-     * @var EachPromise
-     */
-    private EachPromise $_each;
-
-    /**
      * Промисы запросов
      *
      * @var iterable<PromiseInterface>
@@ -58,21 +51,11 @@ class Pool implements PoolInterface
             $this->_promises[] = $sender->send($request);
         }
 
-        $this->_each = new EachPromise($this->_promises, ['concurrency' => $limit]);
+        (new EachPromise($this->_promises, ['concurrency' => $limit]))->promise();
     }
 
     /**
-     * Получить основной Promise
-     *
-     * @return PromiseInterface
-     */
-    public function promise(): PromiseInterface
-    {
-        return $this->_each->promise();
-    }
-
-    /**
-     * Получить все полученные Promise из Poool
+     * Получить все созданные Promise
      *
      * @return iterable<PromiseInterface>
      */
