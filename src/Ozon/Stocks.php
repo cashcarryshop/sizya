@@ -17,7 +17,6 @@ use GuzzleHttp\Promise\PromiseInterface;
 use Respect\Validation\Validator as v;
 use CashCarryShop\Sizya\Http\Utils;
 
-
 /**
  * Класс с настройками и логикой получения
  * остатков Ozon
@@ -51,18 +50,18 @@ final class Stocks extends AbstractEntity
             )
         )->assert($stocks);
 
-        $requests = [];
+        $promises = [];
         if ($chunks = array_chunk($stocks, 100)) {
             foreach ($chunks as $chunk) {
-                $requests[] = (clone $builder)
-                    ->body(['stocks' => $chunk])
-                    ->build('POST');
+                $promises[] = $this->getPool('stocks')->add(
+                    (clone $builder)
+                        ->body(['stocks' => $chunk])
+                        ->build('POST')
+                );
             }
         }
 
-        return $this->getPromiseAggregator()->settle(
-            $this->pool($requests, 5)->getPromises()
-        );
+        return $this->getPromiseAggregator()->settle($promises);
     }
 
     /**

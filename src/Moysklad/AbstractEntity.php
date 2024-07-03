@@ -15,23 +15,16 @@
 namespace CashCarryShop\Sizya\Moysklad;
 
 use CashCarryShop\Sizya\Synchronizer\HttpSynchronizerDualRole;
+use CashCarryShop\Sizya\Http\RateLimit;
+use CashCarryShop\Sizya\Http\PoolInterface;
 use GuzzleHttp\Promise\PromiseInterface;
 use Psr\Http\Message\RequestInterface;
 use Respect\Validation\Validator as v;
+use Closure;
 
 /**
  * Абстрактный класс сущностей для
  * синхронизаций МойСклад.
- *
- * Обязательно, чтобы, если вы передаете
- * свой Sender в классы, наследующий этот,
- * в теле ответа (Response) возвращался JsonStream, или
- * любой другой поток, который имел метод toArray
- * и мог конвертироваться в массив.
- *
- * По умолчанию устанавливается нативный Sender,
- * использующий Http\PrepareBodyMiddleware для
- * обработки ответов от сервера.
  *
  * @category Moysklad
  * @package  Sizya
@@ -42,6 +35,13 @@ use Respect\Validation\Validator as v;
 abstract class AbstractEntity extends HttpSynchronizerDualRole
 {
     /**
+     * Pool для МойСклад
+     *
+     * @var Closure|PoolInterface
+     */
+    private Closure|PoolInterface $_pool;
+
+    /**
      * Данные авторизации
      *
      * @var array
@@ -49,21 +49,38 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
     protected array $credentials;
 
     /**
-     * Создать экземпляр сущности
+     * Иницилизировать объект
      *
      * @param array $settings Настройки
+     *
+     * @return void
      */
-    public function __construct(array $settings)
+    final protected function initialize(array $settings): void
     {
-        parent::__construct($settings);
-
         v::key('credentials', v::allOf(
             v::arrayType(),
             v::anyOf(v::length(1), v::length(2))
-        ))->assert($this->settings);
+        ))->assert($settings);
 
         $this->credentials = $settings['credentials'];
-        $this->sender = new Http\MoyskladSender;
+
+        $this->_pool = fn () => $this->createPool([
+            'concurrency' => 5,
+            'rate' => new RateLimit(45, 3)
+        ]);
+        $this->init($settings);
+    }
+
+    /**
+     * Иницилизировать сущность
+     *
+     * @param array $settings Настройки
+     *
+     * @return void
+     */
+    protected function init(array $settings): void
+    {
+        // ...
     }
 
     /**
@@ -99,5 +116,19 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
             RequestBuilder::DOMAIN,
             RequestBuilder::PATH
         ));
+    }
+
+    /**
+     * Получаем необходимый Pool
+     *
+     * @return PoolInterface
+     */
+    public function pool(): PoolInterface
+    {
+        if ($this->_pool instanceof Closure) {
+            return $this->_pool = ($this->_pool)();
+        }
+
+        return $this->_pool;
     }
 }

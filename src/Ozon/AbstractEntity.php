@@ -14,23 +14,16 @@ namespace CashCarryShop\Sizya\Ozon;
 
 use CashCarryShop\Sizya\Synchronizer\HttpSynchronizerDualRole;
 use CashCarryShop\Sizya\Http\Utils;
+use CashCarryShop\Sizya\Http\PoolInterface;
+use CashCarryShop\Sizya\Http\RateLimit;
 use Psr\Http\Message\RequestInterface;
 use GuzzleHttp\Promise\PromiseInterface;
 use Respect\Validation\Validator as v;
+use Closure;
 
 /**
  * Абстрактный класс сущностей для
  * синхронизаций Ozon.
- *
- * Обязательно, чтобы, если вы передаете
- * свой Sender в классы, наследующий этот,
- * в теле ответа (Response) возвращался JsonStream, или
- * любой другой поток, который имел метод toArray
- * и мог конвертироваться в массив.
- *
- * По умолчанию устанавливается нативный Sender,
- * использующий Http\PrepareBodyMiddleware для
- * обработки ответов от сервера.
  *
  * @category Ozon
  * @package  Sizya
@@ -48,6 +41,13 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
     protected int $clientId;
 
     /**
+     * Pool-ы для Ozon
+     *
+     * @var array<Closure|PoolInterface>
+     */
+    private array $_pools = [];
+
+    /**
      * Токен
      *
      * @var string
@@ -58,11 +58,11 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
      * Создать экземпляр сущности
      *
      * @param array $settings Настройки
+     *
+     * @return void
      */
-    public function __construct(array $settings)
+    final protected function initialize(array $settings): void
     {
-        parent::__construct($settings);
-
         v::keySet(
             v::key('token', v::stringType()),
             v::key('clientId', v::intType())
@@ -70,7 +70,41 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
 
         $this->token = $settings['token'];
         $this->clientId = $settings['clientId'];
-        $this->sender = new Http\OzonSender;
+
+        $this->_pools['stocks'] = fn () => $this->createPool([
+            'concurrency' => 5,
+            'rate' => RateLimit::perMinute(80)
+        ]);
+    }
+
+    /**
+     * Иницилизировать сущность
+     *
+     * @param array $settings Настройки
+     *
+     * @return void
+     */
+    protected function init(array $settings): void
+    {
+        // ...
+    }
+
+    /**
+     * Получить необходимый Pool
+     *
+     * @param string $name Название Pool
+     *
+     * @return PoolInterface
+     */
+    public function getPool(string $name): PoolInterface
+    {
+        $pool = $this->_pools[$name];
+
+        if ($pool instanceof Closure) {
+            return $this->_pools[$name] = $pool();
+        }
+
+        return $pool;
     }
 
     /**

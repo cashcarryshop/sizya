@@ -116,7 +116,7 @@ class StocksSynchronizer extends AbstractSynchronizer
     {
         $builder = $this->source->builder()->point('entity/assortment');
 
-        $requests = [];
+        $promises = [];
         foreach (array_chunk($ids, 100) as $chunk) {
             $clone = clone $builder;
 
@@ -124,12 +124,11 @@ class StocksSynchronizer extends AbstractSynchronizer
                 $clone->filter('id', $id);
             }
 
-            $requests[] = $clone->build('get');
+            $promises[] = $this->source->pool()->add($clone->build('get'));
         }
 
-        $pool = $this->source->pool($requests, 5);
         return $this->eventOtherwise(
-            $this->source->getPromiseAggregator()->settle($pool->getPromises())->then(
+            $this->source->getPromiseAggregator()->settle($promises)->then(
                 static function ($results) use ($ids) {
                     $assortment = array_merge(
                         ...array_map(

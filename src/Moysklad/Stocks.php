@@ -30,22 +30,22 @@ use Respect\Validation\Validator as v;
 final class Stocks extends AbstractEntity
 {
     /**
-     * Создание объекта для работы с остатками
+     * Иницилизировать объект
      *
      * @param array $settings Настройки
+     *
+     * @return void
      */
-    public function __construct(array $settings)
+    protected function init(array $settings): void
     {
-        parent::__construct(
-            array_merge(
-                $settings, [
-                    'stores' => $settings['stores'] ?? [],
-                    'credentials' => $settings['credentials'] ?? [],
-                    'assortment' => $settings['assortment'] ?? [],
-                    'stockType' => $settings['stockType'] ?? 'quantity',
-                    'changedSince' => $settings['changedSince'] ?? null
-                ]
-            )
+        $this->settings = array_merge(
+            $settings, [
+                'stores' => $settings['stores'] ?? [],
+                'credentials' => $settings['credentials'] ?? [],
+                'assortment' => $settings['assortment'] ?? [],
+                'stockType' => $settings['stockType'] ?? 'quantity',
+                'changedSince' => $settings['changedSince'] ?? null
+            ]
         );
 
         v::keySet(
@@ -102,8 +102,8 @@ final class Stocks extends AbstractEntity
             $builder->param('changedSince', $this->getSettings('changedSince'));
         }
 
+        $promises = [];
         if ($stores = $this->getSettings('stores')) {
-            $requests = [];
             foreach (array_chunk($stores, 100) as $chunk) {
                 $clone = clone $builder;
 
@@ -111,13 +111,14 @@ final class Stocks extends AbstractEntity
                     $clone->filter('storeId', $store);
                 }
 
-                $requests[] = $clone->build('GET');
+                $promises[] = $this->pool()->add($clone->build('GET'));
             }
         }
 
-        return $this->getPromiseAggregator()->settle(
-            $this->pool($requests ?? [$builder->build('GET')], 5)
-                ->getPromises()
-        );
+        if (!$promises) {
+            $promises[] = $this->pool()->add($builder->build('GET'));
+        }
+
+        return $this->getPromiseAggregator()->settle($promises);
     }
 }

@@ -13,10 +13,10 @@
 
 namespace CashCarryShop\Sizya\Synchronizer;
 
-use CashCarryShop\Sizya\Http\SenderInterface;
-use CashCarryShop\Sizya\Http\Sender;
 use CashCarryShop\Sizya\Http\PromiseAggregatorInterface;
 use CashCarryShop\Sizya\Http\PromiseAggregator;
+use CashCarryShop\Sizya\Http\PoolFactoryInterface;
+use CashCarryShop\Sizya\Http\PoolFactory;
 use CashCarryShop\Sizya\Http\PoolInterface;
 use Psr\Http\Message\RequestInterface;
 use GuzzleHttp\Promise\PromiseInterface;
@@ -35,11 +35,11 @@ use GuzzleHttp\Client;
 abstract class HttpSynchronizerDualRole extends AbstractSynchronizerDualRole
 {
     /**
-     * Отправитель запросов
+     * Фабрика Pool-ов
      *
-     * @var SenderInterface
+     * @var PoolFactoryInterface
      */
-    protected SenderInterface $sender;
+    protected PoolFactoryInterface $poolFactory;
 
     /**
      * Promise Aggregator
@@ -51,24 +51,24 @@ abstract class HttpSynchronizerDualRole extends AbstractSynchronizerDualRole
     /**
      * Установить отправителя запросов
      *
-     * @param SenderInterface $sender Отправитель
+     * @param PoolFactoryInterface $factory Отправитель
      *
      * @return static
      */
-    final public function withSender(SenderInterface $sender): static
+    final public function withPoolFactory(PoolFactoryInterface $factory): static
     {
-        $this->sender = $sender;
+        $this->poolFactory = $factory;
         return $this;
     }
 
     /**
      * Получить отправитель запросов
      *
-     * @return SenderInterface
+     * @return PoolFactoryInterface
      */
-    final public function getSender(): SenderInterface
+    final public function getPoolFactory(): PoolFactoryInterface
     {
-        return $this->sender ??= new Sender;
+        return $this->poolFactory ??= new PoolFactory;
     }
 
     /**
@@ -96,27 +96,16 @@ abstract class HttpSynchronizerDualRole extends AbstractSynchronizerDualRole
     }
 
     /**
-     * Отправить запрос
+     * Создать PoolInterface
      *
-     * @param RequestInterface $request Запрос
+     * См. PoolFactoryInterface::createPool
      *
-     * @return PromiseInterface
-     */
-    final public function sendRequest(RequestInterface $request): PromiseInterface
-    {
-        return $this->getSender()->send($request);
-    }
-
-    /**
-     * Использовать метод Pool отправителя
-     *
-     * @param iterable<RequestInterface> $requests Запросы
-     * @param int                        $limit    Ограничение
+     * @param array $config Конфиг для PoolFactoryInterface::createPool
      *
      * @return PoolInterface
      */
-    final public function pool(iterable $requests, int $limit = 25): PoolInterface
+    public function createPool(array $config = []): PoolInterface
     {
-        return $this->getSender()->pool($requests, $limit);
+        return $this->getPoolFactory()->createPool($config);
     }
 }
