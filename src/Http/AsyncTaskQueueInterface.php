@@ -9,7 +9,7 @@ use Generator;
 /**
  * Интерфейс очереди с возможностью выполнять задачи асинхронно
  */
-interface AsyncTaskQueue extends TaskQueueInterface
+interface AsyncTaskQueueInterface extends TaskQueueInterface
 {
     public function add(callable|Generator $task): void;
 }
