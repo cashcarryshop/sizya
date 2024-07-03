@@ -18,7 +18,7 @@ use Generator;
  * объекта, задачи вызываются также как и в стандартном TaskQueue
  * из Guzzle.
  */
-class TaskQueue implements AsyncTaskQueueInterface
+class AsyncTaskQueue implements AsyncTaskQueueInterface
 {
     private $enableShutdown = true;
     private $queue = [];
