@@ -17,7 +17,7 @@ use Psr\Http\Message\RequestInterface;
 use GuzzleHttp\Promise\PromiseInterface;
 
 /**
- * Интерфейс Pool (бассейна) для запросов
+ * Интерфейс Pool для запросов
  *
  * @category Http
  * @package  Sizya
@@ -30,20 +30,25 @@ interface PoolInterface
     /**
      * Создать экземпляр Pool
      *
-     * @param SenderInterface            $sender   Отправитель запросов
-     * @param iterable<RequestInterface> $requests Запросы
-     * @param int                        $limit    Ограничение
+     * В конфиг Pool должен обязательно принимать:
+     *
+     * - concurrency: (int) - Максимальное количество одновременно
+     *   выполняемых запросов. Если значение установлено в 0 или
+     *   не передано, ограничение не действует
+     * - rate: (RateLimiter) - Ограничитель частоты выполнения запросов.
+     *   Если значение счетчика или таймера установлено в 0 или не передано,
+     *   ограничение не действует
+     *
+     * @param array $config Конфигурация
      */
-    public function __construct(
-        SenderInterface $sender,
-        iterable $requests,
-        int $limit
-    );
+    public function __construct(array $config = []);
 
     /**
-     * Получить все полученные Promise из Poool
+     * Добавить запрос
      *
-     * @return iterable<PromiseInterface>
+     * @param RequestInterface $request Запрос
+     *
+     * @return PromiseInterface
      */
-    public function getPromises(): iterable;
+    public function add(RequestInterface $request): PromiseInterface;
 }
