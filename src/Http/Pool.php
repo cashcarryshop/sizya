@@ -194,7 +194,7 @@ class Pool implements PoolInterface
                     }
                 )($pending);
 
-                if ($this->_queue instanceof TaskQueue) {
+                if ($this->_queue instanceof AsyncTaskQueueInterface) {
                     return $this->_queue->add($generator);
                 }
 

@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace CashCarryShop\Sizya\Http;
 
-use GuzzleHttp\Promise\TaskQueueInterface;
 use Generator;
 
 /**
@@ -19,7 +18,7 @@ use Generator;
  * объекта, задачи вызываются также как и в стандартном TaskQueue
  * из Guzzle.
  */
-class TaskQueue implements TaskQueueInterface
+class TaskQueue implements AsyncTaskQueueInterface
 {
     private $enableShutdown = true;
     private $queue = [];
