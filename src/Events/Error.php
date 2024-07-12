@@ -13,8 +13,6 @@
 
 namespace CashCarryShop\Sizya\Events;
 
-use Throwable;
-
 /**
  * Общее событие на ошибки
  *
