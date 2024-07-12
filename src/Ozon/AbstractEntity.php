@@ -58,15 +58,13 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
      * Создать экземпляр сущности
      *
      * @param array $settings Настройки
-     *
-     * @return void
      */
-    final protected function initialize(array $settings): void
+    public function __construct(array $settings)
     {
-        v::keySet(
-            v::key('token', v::stringType()),
-            v::key('clientId', v::intType())
-        )->assert($settings);
+        parent::__construct($settings);
+        v::key('token', v::stringType())
+            ->key('clientId', v::intType())
+            ->assert($settings);
 
         $this->token = $settings['token'];
         $this->clientId = $settings['clientId'];
@@ -75,18 +73,11 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
             'concurrency' => 5,
             'rate' => RateLimit::perMinute(80)
         ]);
-    }
 
-    /**
-     * Иницилизировать сущность
-     *
-     * @param array $settings Настройки
-     *
-     * @return void
-     */
-    protected function init(array $settings): void
-    {
-        // ...
+        $this->_pools['orders'] = fn () => $this->createPool([
+            'concurrency' => 5,
+            'rate' => RateLimit::perMinute(80)
+        ]);
     }
 
     /**
