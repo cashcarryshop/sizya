@@ -16,6 +16,7 @@ namespace CashCarryShop\Sizya\Http;
 use Psr\Http\Message\StreamInterface;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\Stream;
+use Throwable;
 
 /**
  * Вспомогательный класс для работы с Http
@@ -104,5 +105,49 @@ class Utils
         array|string|object $content
     ): Io\DeflateStream {
         return new Io\DeflateStream(static::getStream($content, 'gzencode'));
+    }
+
+    /**
+     * Развернуть одиночный результат
+     * выполнения из `PromiseAggregator::settle`
+     *
+     * @param PromiseInterface $promise Promise
+     *
+     * @return PromiseInterface
+     */
+    public function unwrapSingleSettle(PromiseInterface $promise): PromiseInterface
+    {
+        return $promise->then(
+            static fn ($results) => $results[0]['value'],
+            static function ($aggregation) {
+                $reason = $aggregation->getReason()[0]['reason'];
+                if (is_a($reason, Throwable::class)) {
+                    throw $reason;
+                }
+
+                return $reason;
+            }
+        );
+    }
+
+    /**
+     * Распаковать результат выполнения из `PromiseAggregator::settle`,
+     * исключая результаты `PromiseInterface::REJECTED` и возвращая
+     * значения (value) из результатов `PromiseInterface::FULFILLED`
+     *
+     * @param PromiseInterface $promise Promise
+     *
+     * @return PromiseInterface
+     */
+    public function unwrapSettle(PromiseInterface $promise): PromiseInterface
+    {
+        return $promise->then(
+            static fn ($results) => array_column(
+                array_filter($results, static function ($result) {
+                    return $result['state'] === PromiseInterface::FULFILLED;
+                }),
+                'value'
+            )
+        );
     }
 }
