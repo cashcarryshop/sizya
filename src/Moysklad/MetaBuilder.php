@@ -107,4 +107,76 @@ class MetaBuilder
     {
         return $this->create("entity/counterparty/$guid", 'counterparty');
     }
+
+    /**
+     * Создать meta для контрагента
+     *
+     * @param string $guid GUIВ контрагента
+     *
+     * @return array
+     */
+    public function agent(string $guid): array
+    {
+        return $this->counterparty($guid);
+    }
+
+    /**
+     * Создать meta для контракта
+     *
+     * @param string $guid GUID контракта
+     *
+     * @return array
+     */
+    public function contract(string $guid): array
+    {
+        return $this->create("entity/contract/$guid", 'contract');
+    }
+
+    /**
+     * Создать meta для канала продаж
+     *
+     * @param string $guid GUID контракта
+     *
+     * @return array
+     */
+    public function salesChannel(string $guid): array
+    {
+        return $this->create("entity/saleschannel/$guid", 'saleschannel');
+    }
+
+    /**
+     * Создать meta для заказа покупателя
+     *
+     * @param string $guid GUID Заказа покупателя
+     *
+     * @return array
+     */
+    public function customerorder(string $guid): array
+    {
+        return $this->create("entity/customerorder/$guid", 'customerorder');
+    }
+
+    /**
+     * Создать meta для товарв
+     *
+     * @param string $guid GUID Товара
+     *
+     * @return array
+     */
+    public function product(string $guid): array
+    {
+        return $this->create("entity/product/$guid", 'product');
+    }
+
+    /**
+     * Создать meta для модификации товарв
+     *
+     * @param string $guid GUID Модификации
+     *
+     * @return array
+     */
+    public function variant(string $guid): array
+    {
+        return $this->create("entity/variant/$guid", 'variant');
+    }
 }
