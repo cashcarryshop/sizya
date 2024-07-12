@@ -52,11 +52,11 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
      * Иницилизировать объект
      *
      * @param array $settings Настройки
-     *
-     * @return void
      */
-    final protected function initialize(array $settings): void
+    public function __construct(array $settings)
     {
+        parent::__construct($settings);
+
         v::key('credentials', v::allOf(
             v::arrayType(),
             v::anyOf(v::length(1), v::length(2))
@@ -68,19 +68,6 @@ abstract class AbstractEntity extends HttpSynchronizerDualRole
             'concurrency' => 5,
             'rate' => new RateLimit(45, 3)
         ]);
-        $this->init($settings);
-    }
-
-    /**
-     * Иницилизировать сущность
-     *
-     * @param array $settings Настройки
-     *
-     * @return void
-     */
-    protected function init(array $settings): void
-    {
-        // ...
     }
 
     /**
