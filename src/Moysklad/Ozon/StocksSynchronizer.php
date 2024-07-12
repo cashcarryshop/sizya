@@ -240,7 +240,7 @@ class StocksSynchronizer extends AbstractSynchronizer
                         )
                     );
 
-                    $this->eventOtherwise(
+                    return $this->eventOtherwise(
                         $promise->then(function ($result) use ($stocks, $relations) {
                             $promise = $this->target->updateWarehouse(
                                 $this->getUpdateData($relations, $result, $stocks)
@@ -267,7 +267,7 @@ class StocksSynchronizer extends AbstractSynchronizer
                 $stocks = $response->getBody()->toArray();
                 $ids = array_column($stocks, 'assortmentId');
 
-                $this->getIdArticleRelations($ids)->then(
+                return $this->getIdArticleRelations($ids)->then(
                     function ($relations) use ($stocks) {
                         $promise = $this->target->update(array_map(
                             fn ($stock) => [
@@ -278,7 +278,7 @@ class StocksSynchronizer extends AbstractSynchronizer
                         ));
 
                         $this->eventOtherwise($promise);
-                        $this->eventSuccess($promise);
+                        return $this->eventSuccess($promise);
                     }
                 );
             })
@@ -292,33 +292,27 @@ class StocksSynchronizer extends AbstractSynchronizer
      *
      * @return bool
      */
-    protected function process(array $settings = []): bool
+    protected function process(array $settings): bool
     {
-        v::keySet(
-            v::key('wait', v::boolType()),
-            v::key('relations', v::optional(
-                v::each(
+        v::key('wait', v::boolType(), false)
+            ->key(
+                'relations',
+                v::length(1)->each(
                     v::keySet(
-                        v::key(
-                            'source', v::arrayType()
-                                ->each(v::stringType()->length(36))
-                        ),
-                        v::key('target', v::intType())
+                        v::key('source', v::arrayType()->each(
+                            v::stringType()->length(36, 36)
+                        )),
+                        v::key('target', v::intType()
                     )
-                )
-            ))
-        )->assert(
-            $settings = [
-                'wait' => $settings['wait'] ?? false,
-                'relations' => $relations = $settings['relations'] ?? [],
-            ]
-        );
+                )),
+                false
+            )->assert($settings);
 
-        $promise = $relations
-            ? $this->synchronizeByStores($relations)
+        $promise = isset($settings['relations'])
+            ? $this->synchronizeByStores($settings['relations'])
             : $this->synchronizeAll();
 
-        $settings['wait'] && $promise->wait();
+        $settings['wait'] ?? false && $promise->wait();
 
         return true;
     }
