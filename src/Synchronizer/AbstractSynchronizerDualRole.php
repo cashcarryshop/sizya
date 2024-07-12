@@ -38,20 +38,10 @@ abstract class AbstractSynchronizerDualRole implements SynchronizerDualRoleInter
      *
      * @param array $settings Настройки
      */
-    final public function __construct(array $settings)
+    public function __construct(array $settings)
     {
         $this->settings = $settings;
-        $this->initialize($settings);
     }
-
-    /**
-     * Иницилизировать синхронизатор
-     *
-     * @param array $settings Настройки
-     *
-     * @return void
-     */
-    abstract protected function initialize(array $settings): void;
 
     /**
      * Получить настройку(и)
