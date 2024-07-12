@@ -33,54 +33,22 @@ final class Stocks extends AbstractEntity
      * Иницилизировать объект
      *
      * @param array $settings Настройки
-     *
-     * @return void
      */
-    protected function init(array $settings): void
+    public function __construct(array $settings)
     {
-        $this->settings = array_merge(
-            $settings, [
-                'stores' => $settings['stores'] ?? [],
-                'credentials' => $settings['credentials'] ?? [],
-                'assortment' => $settings['assortment'] ?? [],
-                'stockType' => $settings['stockType'] ?? 'quantity',
-                'changedSince' => $settings['changedSince'] ?? null
-            ]
-        );
+        parent::__construct(array_replace(['stockType' => 'quantity'], $settings));
 
-        v::keySet(
-            v::key('credentials', v::alwaysValid()),
-            v::key('stores', v::allOf(
-                v::arrayType(),
-                v::when(
-                    v::notEmpty(),
-                    v::each(
-                        v::stringType(),
-                        v::length(36)
-                    ),
-                    v::alwaysValid()
-                )
-            )),
-            v::key('assortment', v::allOf(
-                v::arrayType(),
-                v::when(
-                    v::notEmpty(),
-                    v::each(
-                        v::stringType(),
-                        v::length(36)
-                    ),
-                    v::alwaysValid()
-                )
-            )),
-            v::key('stockType', v::in([
+        v::key('stores', v::each(v::stringType()->length(36, 36)), false)
+            ->key('assortment', v::each(v::stringType()->length(36, 36)), false)
+            ->key('changedSince', v::dateTime('Y-m-d H:i:s'), false)
+            ->key('stockType', v::in([
                 'stock',
                 'freeStock',
                 'quantity',
                 'reserve',
                 'inTransit'
-            ])),
-            v::key('changedSince', v::optional(v::dateTime('Y-m-d H:i:s')))
-        )->assert($this->settings);
+            ]))
+            ->assert($this->settings);
     }
 
     /**
