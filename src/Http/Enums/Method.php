@@ -1,6 +1,6 @@
 <?php
 /**
- * Перечисление доступных методов сортировки
+ * Перечисление доступных методов HTTP
  *
  * PHP version 8
  *
@@ -14,7 +14,7 @@
 namespace CashCarryShop\Sizya\Http\Enums;
 
 /**
- * Перечисление доступных методов сортировки
+ * Перечисление доступных методов HTTP
  *
  * @category Http
  * @package  Sizya

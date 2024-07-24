@@ -1,7 +1,6 @@
 <?php
 /**
- * Перечисление доступных знаков сравнения
- * для фильтров МойСклад
+ * Трейт с реализацией для сборки параметров МойСклад
  *
  * PHP version 8
  *
@@ -17,8 +16,7 @@ namespace CashCarryShop\Sizya\Moysklad\Traits;
 use CashCarryShop\Sizya\Moysklad\Utils;
 
 /**
- * Перечисление доступных знаков сравнения
- * для фильтров МойСклад
+ * Трейт с реализацией для сборки параметров МойСклад
  *
  * @category Moysklad
  * @package  Sizya
