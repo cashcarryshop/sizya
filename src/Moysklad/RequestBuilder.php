@@ -13,12 +13,14 @@
 
 namespace CashCarryShop\Sizya\Moysklad;
 
+use CashCarryShop\Sizya\Http\Utils;
 use CashCarryShop\Sizya\Http\Enums\Method;
 use CashCarryShop\Sizya\Moysklad\Traits\FilterTrait;
 use CashCarryShop\Sizya\Moysklad\Traits\OffsetTrait;
 use CashCarryShop\Sizya\Moysklad\Traits\ParamTrait;
 use CashCarryShop\Sizya\Moysklad\Traits\OrderTrait;
 use CashCarryShop\Sizya\Moysklad\Traits\LimitTrait;
+use CashCarryShop\Sizya\Moysklad\Traits\ExpandTrait;
 
 use Psr\Http\Message\StreamInterface;
 use GuzzleHttp\Psr7\Request;
@@ -40,6 +42,7 @@ class RequestBuilder
     use ParamTrait;
     use OrderTrait;
     use LimitTrait;
+    use ExpandTrait;
 
     public const SCHEMA = 'https';
     public const DOMAIN = 'api.moysklad.ru';
@@ -175,6 +178,7 @@ class RequestBuilder
             $this->filters
         ));
 
+        $expand = implode(';', $this->expand);
         $order = implode(';', array_map(
             fn ($name, $order) => sprintf('%s,%s', $name, $order->value),
             array_keys($this->order), $this->order
@@ -182,6 +186,7 @@ class RequestBuilder
 
         $filters && $query['filter'] = $filters;
         $order && $query['order'] = $order;
+        $expand && $query['expand'] = $expand;
         $this->limit && $query['limit'] = $this->limit;
         $this->offset && $query['offset'] = $this->offset;
 
