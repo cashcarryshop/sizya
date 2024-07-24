@@ -107,9 +107,7 @@ class CustomerOrders extends AbstractEntity implements
                 $output['article'] = $code ?? $article;
                 return $output;
             }
-        }
-
-        if ($article || $code) {
+        } else if ($article || $code) {
             $output['article'] = $article ?? $code;
         }
 
