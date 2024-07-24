@@ -15,6 +15,7 @@ namespace CashCarryShop\Sizya\Moysklad;
 
 use CashCarryShop\Sizya\ProductsGetterInterface;
 use GuzzleHttp\Promise\Utils as PromiseUtils;
+use GuzzleHttp\Promise\PromiseInterface;
 use Respect\Validation\Validator as v;
 use BadMethodCallException;
 
@@ -59,7 +60,7 @@ class Products extends AbstractSource implements ProductsGetterInterface
     }
 
     /**
-     * Конвертировать продукт
+     * Конвертировать Товар
      *
      * @param array $product Товар
      *
@@ -82,7 +83,7 @@ class Products extends AbstractSource implements ProductsGetterInterface
             'article' => $product['meta']['type'] === 'variant'
                 ? $product['code'] : $product['article'],
             'created' => Utils::dateToUtc($product['updated']),
-            'price' => $price ?? $product['salePrices'][0]['value'],
+            'price' => $price ?? $product['salePrices'][0]['value'] / 100,
             'original' => $product
         ];
     }
@@ -130,14 +131,19 @@ class Products extends AbstractSource implements ProductsGetterInterface
     /**
      * Получить элементы с помощью фильтров
      *
+     * Возвращает PromiseInterface
+     *
      * @param string $filter Название фильтра
      * @param array  $values Значение
      * @param int    $size   Размер чанка
      *
      * @return array
      */
-    private function _getByFilter(string $filter, array $values, int $size = 80): array
-    {
+    private function _getByFilterWithPromise(
+        string $filter,
+        array $values,
+        int $size = 80
+    ): PromiseInterface {
         $builder = $this->builder()->point('entity/assortment');
 
         $promises = [];
@@ -151,18 +157,36 @@ class Products extends AbstractSource implements ProductsGetterInterface
             $promises[] = $this->decode($this->send($clone->build('GET')));
         }
 
-        $products = [];
-        foreach (PromiseUtils::all($promises)->wait() as $result) {
-            $products = array_merge(
-                $products, array_map(
-                    fn ($product) => $this->_convertProduct($product),
-                    $result['rows']
-                )
-            );
-        }
+        return PromiseUtils::all($promises)->then(
+            function ($results) {
+                $products = [];
 
-        return $products;
+                foreach ($results as $result) {
+                    $products = array_merge(
+                        $products, array_map(
+                            fn ($product) => $this->_convertProduct($product),
+                            $result['rows']
+                        )
+                    );
+                }
 
+                return $products;
+            }
+        );
+    }
+
+    /**
+     * Получить элементы с помощью фильтров
+     *
+     * @param string $filter Название фильтра
+     * @param array  $values Значение
+     * @param int    $size   Размер чанка
+     *
+     * @return array
+     */
+    private function _getByFilter(string $filter, array $values, int $size = 80): array
+    {
+        return $this->_getByFilterWithPromise($filter, $values, $size)->wait();
     }
 
     /**
@@ -204,7 +228,13 @@ class Products extends AbstractSource implements ProductsGetterInterface
      */
     public function getProductsByArticles(array $articles): array
     {
-        return $this->_getByFilter('article', $articles);
+        $byArticle = $this->_getByFilterWithPromise('article', $articles);
+        $byCodes = $this->_getByFilterWithPromise('code', $articles);
+
+        return array_merge(
+            $byArticle->wait(),
+            $byCodes->wait()
+        );
     }
 
     /**
@@ -216,8 +246,8 @@ class Products extends AbstractSource implements ProductsGetterInterface
      *
      * @return array
      */
-    public function getProductByArticle(array $article): array
+    public function getProductByArticle(string $article): array
     {
-        return $this->getByArticles([$article])[0] ?? [];
+        return $this->getProductsByArticles([$article])[0] ?? [];
     }
 }
