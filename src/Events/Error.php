@@ -13,6 +13,8 @@
 
 namespace CashCarryShop\Sizya\Events;
 
+use Throwable;
+
 /**
  * Общее событие на ошибки
  *
@@ -29,16 +31,16 @@ class Error
     /**
      * Исключение
      *
-     * @var mixed
+     * @var Throwable
      */
-    public readonly mixed $reason;
+    public readonly Throwable $reason;
 
     /**
      * Создание события
      *
-     * @param mixed $reason Причина ошибки
+     * @param Throwable $reason Причина ошибки
      */
-    public function __construct(mixed $reason)
+    public function __construct(Throwable $reason)
     {
         $this->reason = $reason;
     }
