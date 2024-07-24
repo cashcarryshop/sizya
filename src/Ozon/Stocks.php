@@ -1,6 +1,6 @@
 <?php
 /**
- * Класс остатков
+ * Элемент для синхронизации остатков Ozon
  *
  * PHP version 8
  *
@@ -13,13 +13,13 @@
 
 namespace CashCarryShop\Sizya\Ozon;
 
+use CashCarryShop\Sizya\StocksUpdaterInterface;
 use GuzzleHttp\Promise\PromiseInterface;
+use GuzzleHttp\Promise\Utils;
 use Respect\Validation\Validator as v;
-use CashCarryShop\Sizya\Http\Utils;
 
 /**
- * Класс с настройками и логикой получения
- * остатков Ozon
+ * Элемент для синхронизации остатков Ozon
  *
  * @category Ozon
  * @package  Sizya
@@ -27,69 +27,114 @@ use CashCarryShop\Sizya\Http\Utils;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-final class Stocks extends AbstractEntity
+class Stocks extends AbstractTarget implements StocksUpdaterInterface
 {
     /**
-     * Обновление остатков
+     * Обновить остатки
      *
-     * @param object $builder Строитель запросов
-     * @param array  $stocks  Остатки
+     * @param array $stocks Остатки
      *
-     * @return PromiseInterface
+     * @return array
      */
-    private function _update(object $builder, array $stocks): PromiseInterface
+    private function _update(array $stocks): array
     {
-        v::length(1)->each(
-            v::allOf(
-                v::when(
-                    v::key('offer_id'),
-                    v::key('offer_id', v::stringType()),
-                    v::key('product_id', v::intType())
-                ),
-                v::key('stock', v::intType()->min(0))
-            )
-        )->assert($stocks);
-
+        $builder = $this->builder()->point('v2/products/stocks');
         $promises = [];
-        if ($chunks = array_chunk($stocks, 100)) {
-            foreach ($chunks as $chunk) {
-                $promises[] = $this->getPool('stocks')->add(
+
+        $chunks = array_chunk(
+            array_map(
+                static function ($stock) {
+                    $output = [
+                        'warehouse_id' => $stock['warehouse_id'],
+                        'stock' => $stock['quantity']
+                    ];
+
+                    if (isset($stock['id'])) {
+                        $output['product_id'] = $stock['id'];
+                        return $output;
+                    }
+
+                    $output['offer_id'] = $stock['article'];
+                    return $output;
+                },
+                $stocks
+            ),
+            100
+        );
+        foreach ($chunks as $chunk) {
+            $promises[] = $this->decode(
+                $this->send(
                     (clone $builder)
                         ->body(['stocks' => $chunk])
                         ->build('POST')
-                );
+                )
+            );
+        }
+
+        $results = Utils::settle($promises)->wait();
+
+        foreach ($results as $idx => $result) {
+            $indexes = array_keys(
+                array_slice(
+                    $stocks,
+                    $offset = $idx * 100,
+                    100,
+                    true
+                )
+            );
+
+            if ($result['state'] === PromiseInterface::REJECTED) {
+                $reason = $result['reason']->getMessage();
+                foreach ($indexes as $index) {
+                    $stocks[$index]['error'] = true;
+                    $stocks[$index]['reason'] = $reason;
+                    $stocks[$index]['original'] = $result['reason'];
+                }
+                continue;
+            }
+
+            foreach ($indexes as $index) {
+                $answer = $result['value']['result'][$index - $offset];
+
+                $stocks[$index]['original'] = $answer;
+                if ($answer['updated']) {
+                    $stocks[$index]['error'] = false;
+                    continue;
+                }
+
+                $stocks[$index]['error'] = true;
+                $stocks[$index]['reason'] = $answer['errors'];
             }
         }
 
-        return $this->getPromiseAggregator()->settle($promises);
+        return $stocks;
     }
 
     /**
-     * Обновить остатки товаров
+     * Обновить остатки по идентификаторам
+     *
+     * Смотреть `StocksUpdaterInterface::updateStocksByIds`
      *
      * @param array $stocks Остатки
      *
-     * @return PromiseInterface
+     * @return array
      */
-    public function update(array $stocks): PromiseInterface
+    public function updateStocksByIds(array $stocks): array
     {
-        return $this->_update(
-            $this->builder()->point('v1/product/import/stocks'), $stocks
-        );
+        return $this->_update($stocks);
     }
 
     /**
-     * Обновить остатки товаров по складам
+     * Обновить остатки товаров по артикулам
+     *
+     * Смотреть `StocksUpdaterInterface::updateStocksByArticles`
      *
      * @param array $stocks Остатки
      *
-     * @return PromiseInterface
+     * @return array
      */
-    public function updateWarehouse(array $stocks): PromiseInterface
+    public function updateStocksByArticles(array $stocks): array
     {
-        v::each(v::key('warehouse_id', v::intType()))->assert($stocks);
-        return $this->_update(
-            $this->builder()->point('v2/products/stocks'), $stocks
-        );
+        return $this->_update($stocks);
     }
 }
