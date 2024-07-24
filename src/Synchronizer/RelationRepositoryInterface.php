@@ -1,6 +1,9 @@
 <?php
 /**
- * Элемент синхронизации, взаимодействующий с протоколом Http
+ * Интерфейс репозитория отношений между элементами.
+ *
+ * Позволяет получить, удалить или создать
+ * отношения между элементами синхронизации
  *
  * PHP version 8
  *
@@ -14,7 +17,10 @@
 namespace CashCarryShop\Sizya\Synchronizer;
 
 /**
- * Элемент синхронизации, взаимодействующий с протоколом Http
+ * Интерфейс репозитория отношений между элементами.
+ *
+ * Позволяет получить, удалить или создать
+ * отношения между элементами синхронизации
  *
  * @category Synchronizer
  * @package  Sizya
@@ -30,83 +36,64 @@ interface RelationRepositoryInterface
      * @param string $sourceId Идентификатор источника
      * @param string $targetId Идентификатор цели
      *
-     * @return bool
+     * @return bool Создана ли связь
      */
     public function create(string $sourceId, string $targetId): bool;
 
     /**
-     * Проверить что отношение существует
-     * по идентификатору источника
+     * Удалить связь
      *
      * @param string $sourceId Идентификатор источника
-     *
-     * @return bool
-     */
-    public function hasTarget(string $sourceId): bool;
-
-    /**
-     * Проверить что отношение существует по
-     * идентификатору цели
-     *
      * @param string $targetId Идентификатор цели
      *
-     * @return bool
+     * @return bool Удалена ли связь
      */
-    public function hasSource(string $targetId): bool;
+    public function destroy(string $sourceId, string $targetId): bool;
 
     /**
-     * Получить идентификатор цели по идентификатору источника
+     * Получить связи по идентификаторам источников
      *
-     * @param string $sourceId Идентификатор источника
+     * Должен возвращать массив:
      *
-     * @return ?string
+     * - sourceId: (string) Идентификатор источника
+     * - targetId: (string) Идентификатор цели
+     *
+     * @param array<string> $sourceIds Идентификаторы источников
+     *
+     * @return array<array>
      */
-    public function getTargetId(string $sourceId): ?string;
+    public function getBySourceIds(array $sourceIds): array;
 
     /**
-     * Получить идентификатор источника по идентификатору цели
+     * Получить связи по идентификаторe источника
      *
-     * @param string $targetId Идентификатор цели
-     *
-     * @return ?string
-     */
-    public function getSourceId(string $targetId): ?string;
-
-    /**
-     * Добавить (или обновить) данные источника
-     *
-     * @param string $sourceId Идентификатор источника
-     * @param array  $options  Опции
-     *
-     * @return bool
-     */
-    public function addSourceOptions(string $sourceId, array $options): bool;
-
-    /**
-     * Добавить (или обновить) данные цели
-     *
-     * @param string $targetId Идентификатор цели
-     * @param array  $options  Опции
-     *
-     * @return bool
-     */
-    public function addTargetOptions(string $targetId, array $options): bool;
-
-    /**
-     * Получить опции источника
+     * Смотреть `RelationRepsotiryInterface::getBySourceIds`
      *
      * @param string $sourceId Идентификатор источника
      *
      * @return array
      */
-    public function getSourceOptions(string $sourceId): array;
+    public function getBySourceId(string $sourceId): array;
 
     /**
-     * Получить опции цели
+     * Получить связи по идентификаторам целей
      *
-     * @param string $targetId Идентификатор цели
+     * Смотреть `RelationRepsotiryInterface::getBySourceIds`
+     *
+     * @param array<string> $targetIds Идентификаторы целей
+     *
+     * @return array<array>
+     */
+    public function getByTargetIds(array $targetIds): array;
+
+    /**
+     * Получить связи по идентификатору цели
+     *
+     * Смотреть `RelationRepsotiryInterface::getByTargetIds`
+     *
+     * @param string $targetId Идентификаторы целей
      *
      * @return array
      */
-    public function getTargetOptions(string $targetId): array;
+    public function getByTargetId(string $targetId): array;
 }
