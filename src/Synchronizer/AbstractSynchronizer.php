@@ -1,6 +1,7 @@
 <?php
 /**
- * Элемент синхронизации
+ * Абстрактный класс с основным функционалом
+ * для создания синхронизации
  *
  * PHP version 8
  *
@@ -14,9 +15,12 @@
 namespace CashCarryShop\Sizya\Synchronizer;
 
 use CashCarryShop\Synchronizer\AbstractSynchronizer as DefaultAbstractSynchronizer;
+use CashCarryShop\Sizya\Events\Error;
+use Throwable;
 
 /**
- * Элемент синхронизации
+ * Абстрактный класс с основным функционалом
+ * для создания синхронизации
  *
  * @category Synchronizer
  * @package  Sizya
@@ -58,8 +62,10 @@ abstract class AbstractSynchronizer extends DefaultAbstractSynchronizer
             return $this->process($settings);
         } catch (Throwable $exception) {
             $this->running = false;
-            return false;
+            $this->event(new Error($exception));
         }
+
+        return true;
     }
 
     /**

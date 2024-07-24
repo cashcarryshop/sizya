@@ -1,6 +1,6 @@
 <?php
 /**
- * Абстрактный класс сущностей для
+ * Абстрактный класс источников для
  * синхронизаций МойСклад.
  *
  * PHP version 8
@@ -14,10 +14,10 @@
 
 namespace CashCarryShop\Sizya\Moysklad;
 
-use CashCarryShop\Synchronizer\SynchronizerDualRoleInterface;
+use CashCarryShop\Synchronizer\SynchronizerSourceInterface;
 
 /**
- * Абстрактный класс сущностей для
+ * Абстрактный класс источников для
  * синхронизаций МойСклад.
  *
  * @category Moysklad
@@ -26,7 +26,7 @@ use CashCarryShop\Synchronizer\SynchronizerDualRoleInterface;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-abstract class AbstractEntity implements SynchronizerDualRoleInterface
+abstract class AbstractSource implements SynchronizerSourceInterface
 {
     use InteractsWithMoysklad;
 }
