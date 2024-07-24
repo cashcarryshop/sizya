@@ -85,5 +85,5 @@ interface ProductsGetterInterface
      *
      * @return array
      */
-    public function getProductByArticle(array $article): array;
+    public function getProductByArticle(string $article): array;
 }
