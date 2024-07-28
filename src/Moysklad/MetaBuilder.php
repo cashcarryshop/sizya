@@ -179,4 +179,16 @@ class MetaBuilder
     {
         return $this->create("entity/variant/$guid", 'variant');
     }
+
+    /**
+     * Создать meta для проекта
+     *
+     * @param string $guid GUID Проекта
+     *
+     * @return array
+     */
+    public function project(string $guid): array
+    {
+        return $this->create("entity/project/$guid", 'project');
+    }
 }
