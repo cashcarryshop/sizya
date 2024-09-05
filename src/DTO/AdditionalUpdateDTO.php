@@ -18,6 +18,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 /**
  * DTO для обновления дополнительных полей
  *
+ * @property string $id       Идентификатор доп. поля
  * @property string $entityId Идентификатор сущности доп. поля
  * @property mixed  $value    Значение доп поля
  *
