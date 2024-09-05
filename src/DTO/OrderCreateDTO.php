@@ -19,14 +19,14 @@ use CashCarryShop\Sizya\Validator\Constraints\Instance;
 /**
  * DTO для создания заказов
  *
- * @property ?string         $created        Дата создания заказа
- * @property ?string         $status         Статус заказа
- * @property ?string         $shipmentDate   Планируемаая дата отгрузки
- * @property ?string         $article        Артикул товара
- * @property ?string         $deliveringDate Дата передачи заказа в доставку
- * @property ?string         $description    Описание
- * @property AdditionalDTO[] $additionals    Доп. поля заказа
- * @property PositionDTO[]   $positions      Позиции заказа
+ * @property ?string               $created        Дата создания заказа
+ * @property ?string               $status         Статус заказа
+ * @property ?string               $shipmentDate   Планируемаая дата отгрузки
+ * @property ?string               $article        Артикул товара
+ * @property ?string               $deliveringDate Дата передачи заказа в доставку
+ * @property ?string               $description    Описание
+ * @property AdditionalCreateDTO[] $additionals    Доп. поля заказа
+ * @property PositionCreateDTO[]   $positions      Позиции заказа
  *
  * @see CreateAdditionalDTO
  * @see CreatePositionDTO
@@ -37,7 +37,7 @@ use CashCarryShop\Sizya\Validator\Constraints\Instance;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-class CreateOrderDTO extends AbstractDTO
+class OrderCreateDTO extends AbstractDTO
 {
     /**
      * Артикул
@@ -104,17 +104,17 @@ class CreateOrderDTO extends AbstractDTO
     /**
      * Дополнительные поля
      *
-     * @var AdditionalDTO[]
+     * @var AdditionalCreateDTO[]
      */
-    #[Assert\All(new Instance(CreateAdditionalDTO::class))]
+    #[Assert\All(new Instance(AdditionalCreateDTO::class))]
     public readonly array $additionals;
 
     /**
      * Позиции
      *
-     * @var PositionDTO[]
+     * @var PositionCreateDTO[]
      */
-    #[Assert\All(new Instance(CreatePositionDTO::class))]
+    #[Assert\All(new Instance(PositionCreateDTO::class))]
     public readonly array $positions;
 
     /**
@@ -128,8 +128,8 @@ class CreateOrderDTO extends AbstractDTO
      * @param ?string               $article        Артикул товара
      * @param ?string               $deliveringDate Дата передачи заказа в доставку
      * @param ?string               $description    Описание
-     * @param CreateAdditionalDTO[] $additionals    Доп. поля заказа
-     * @param CreatePositionDTO[]   $positions      Позиции заказа
+     * @param AdditionalCreateDTO[] $additionals    Доп. поля заказа
+     * @param PositionCreateDTO[]   $positions      Позиции заказа
      *
      * @see CreateAdditionalDTO
      * @see CreatePositionDTO
