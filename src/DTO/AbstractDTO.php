@@ -39,7 +39,7 @@ abstract class AbstractDTO implements DTOInterface
      * @return static
      * @throw  InvalidArgumentException
      */
-    public static function fromArray(array $data): static;
+    public static function fromArray(array $data): static
     {
         count($data) === count(
             array_filter(
@@ -81,7 +81,9 @@ abstract class AbstractDTO implements DTOInterface
      */
     public function validate(): void
     {
-        if (isset($this->validator) && is_a($this->validator, ValidatorInterface::class)) {
+        if (isset($this->validator)
+            && is_a($this->validator, ValidatorInterface::class)
+        ) {
             $validator = $this->validator;
         } else {
             $validator = Validation::createValidator();
