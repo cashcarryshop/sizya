@@ -27,7 +27,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-class CreateAdditionalDTO extends AbstractDTO
+class AdditionalCreateDTO extends AbstractDTO
 {
     /**
      * Идентификатор доп. поля (для создания, тип доп. поля)
