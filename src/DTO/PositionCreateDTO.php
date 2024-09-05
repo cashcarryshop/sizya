@@ -21,6 +21,12 @@ use Symfony\Component\Validator\Constraints as Assert;
  * Свойства article и orderid взаимозаменяемые,
  * но обязательные.
  *
+ * @category DTO
+ * @package  Sizya
+ * @author   TheWhatis <anton-gogo@mail.ru>
+ * @license  Unlicense <https://unlicense.org>
+ * @link     https://github.com/cashcarryshop/sizya
+ *
  * @property ?string $orderId  Идентификатор товара
  * @property ?string $article  Артикул товара
  * @property int     $quantity Количество товаров
@@ -30,12 +36,6 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @property ?string $type     Тип товара
  * @property ?string $currency Валюта
  * @property ?bool   $vat      Учитывать ли НДС
- *
- * @category DTO
- * @package  Sizya
- * @author   TheWhatis <anton-gogo@mail.ru>
- * @license  Unlicense <https://unlicense.org>
- * @link     https://github.com/cashcarryshop/sizya
  */
 class PositionCreateDTO extends AbstractDTO
 {
