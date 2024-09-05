@@ -18,6 +18,12 @@ use Symfony\Component\Validator\Constraints as Assert;
 /**
  * DTO для дополнительных полей
  *
+ * @category DTO
+ * @package  Sizya
+ * @author   TheWhatis <anton-gogo@mail.ru>
+ * @license  Unlicense <https://unlicense.org>
+ * @link     https://github.com/cashcarryshop/sizya
+ *
  * @property string  $id       Идентификатор позиции
  * @property string  $orderId  Идентификатор товара
  * @property string  $article  Артикул товара
@@ -29,14 +35,8 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @property ?string $type     Тип товара
  * @property ?string $currency Валюта
  * @property ?bool   $vat      Учитывать ли НДС
- *
- * @category DTO
- * @package  Sizya
- * @author   TheWhatis <anton-gogo@mail.ru>
- * @license  Unlicense <https://unlicense.org>
- * @link     https://github.com/cashcarryshop/sizya
  */
-class PositionDTO extends AbsstractDTO
+class PositionDTO extends AbstractDTO
 {
     /**
      * Идентификатор позиции
