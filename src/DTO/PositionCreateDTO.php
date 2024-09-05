@@ -37,7 +37,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-class PositionDTO extends AbstractDTO
+class PositionCreateDTO extends AbstractDTO
 {
     /**
      * Идентификатор товара
