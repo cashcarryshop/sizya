@@ -25,15 +25,15 @@ use CashCarryShop\Sizya\Validator\Constraints\Instance;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  *
- * @property string          $id             Идентификатор
- * @property ?string         $created        Дата создания заказа
- * @property ?string         $status         Статус заказа
- * @property ?string         $shipmentDate   Планируемаая дата отгрузки
- * @property ?string         $article        Артикул товара
- * @property ?string         $deliveringDate Дата передачи заказа в доставку
- * @property ?string         $description    Описание
- * @property AdditionalDTO[] $additionals    Доп. поля заказа
- * @property PositionDTO[]   $positions      Позиции заказа
+ * @property string                $id             Идентификатор
+ * @property ?string               $created        Дата создания заказа
+ * @property ?string               $status         Статус заказа
+ * @property ?string               $shipmentDate   Планируемаая дата отгрузки
+ * @property ?string               $article        Артикул товара
+ * @property ?string               $deliveringDate Дата передачи заказа в доставку
+ * @property ?string               $description    Описание
+ * @property AdditionalUpdateDTO[] $additionals    Доп. поля заказа
+ * @property PositionUpdateDTO[]   $positions      Позиции заказа
  *
  * @see AdditionalDTO
  * @see PositionDTO
@@ -113,7 +113,7 @@ class OrderUpdateDTO extends AbstractDTO
     /**
      * Дополнительные поля
      *
-     * @var AdditionalDTO[]
+     * @var AdditionalUpdateDTO[]
      */
     #[Assert\All(new Instance(AdditionalUpdateDTO::class))]
     public readonly array $additionals;
@@ -121,7 +121,7 @@ class OrderUpdateDTO extends AbstractDTO
     /**
      * Позиции
      *
-     * @var PositionDTO[]
+     * @var PositionUpdateDTO[]
      */
     #[Assert\All(new Instance(PositionUpdateDTO::class))]
     public readonly array $positions;
