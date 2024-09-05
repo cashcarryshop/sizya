@@ -28,7 +28,7 @@ use function json_encode;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-abstract class AbsstractDTO implements DTOInterface
+abstract class AbstractDTO implements DTOInterface
 {
     /**
      * Создать DTO
