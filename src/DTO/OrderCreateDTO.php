@@ -19,6 +19,12 @@ use CashCarryShop\Sizya\Validator\Constraints\Instance;
 /**
  * DTO для создания заказов
  *
+ * @category Orders
+ * @package  Sizya
+ * @author   TheWhatis <anton-gogo@mail.ru>
+ * @license  Unlicense <https://unlicense.org>
+ * @link     https://github.com/cashcarryshop/sizya
+ *
  * @property ?string               $created        Дата создания заказа
  * @property ?string               $status         Статус заказа
  * @property ?string               $shipmentDate   Планируемаая дата отгрузки
@@ -30,12 +36,6 @@ use CashCarryShop\Sizya\Validator\Constraints\Instance;
  *
  * @see CreateAdditionalDTO
  * @see CreatePositionDTO
- *
- * @category Orders
- * @package  Sizya
- * @author   TheWhatis <anton-gogo@mail.ru>
- * @license  Unlicense <https://unlicense.org>
- * @link     https://github.com/cashcarryshop/sizya
  */
 class OrderCreateDTO extends AbstractDTO
 {
