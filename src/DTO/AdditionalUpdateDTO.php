@@ -18,15 +18,15 @@ use Symfony\Component\Validator\Constraints as Assert;
 /**
  * DTO для обновления дополнительных полей
  *
- * @property string $id       Идентификатор доп. поля
- * @property string $entityId Идентификатор сущности доп. поля
- * @property mixed  $value    Значение доп поля
- *
  * @category DTO
  * @package  Sizya
  * @author   TheWhatis <anton-gogo@mail.ru>
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
+ *
+ * @property string $id       Идентификатор доп. поля
+ * @property string $entityId Идентификатор сущности доп. поля
+ * @property mixed  $value    Значение доп поля
  */
 class AdditionalUpdateDTO extends AbstractDTO
 {
