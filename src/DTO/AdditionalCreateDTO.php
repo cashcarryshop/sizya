@@ -18,14 +18,14 @@ use Symfony\Component\Validator\Constraints as Assert;
 /**
  * DTO для создания дополнительных полей
  *
- * @property string $entityId Идентификатор сущности доп. поля
- * @property mixed  $value    Значение доп поля
- *
  * @category DTO
  * @package  Sizya
  * @author   TheWhatis <anton-gogo@mail.ru>
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
+ *
+ * @property string $entityId Идентификатор сущности доп. поля
+ * @property mixed  $value    Значение доп поля
  */
 class AdditionalCreateDTO extends AbstractDTO
 {
