@@ -16,8 +16,9 @@ namespace CashCarryShop\Sizya\DTO;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Validator\Validation;
+use InvalidArgumentException;
 
-use function json_encode;
+use function json_encode, is_string;
 
 /**
  * Абстрактный класс DTO с реализацией основных методов
@@ -36,9 +37,19 @@ abstract class AbstractDTO implements DTOInterface
      * @param array $data Данные для создания DTO
      *
      * @return static
+     * @throw  InvalidArgumentException
      */
-    public static function create(array $data): static;
+    public static function fromArray(array $data): static;
     {
+        count($data) === count(
+            array_filter(
+                array_keys($data),
+                'is_string'
+            )
+        ) || throw new InvalidArgumentException(
+            'Invalid [data] array. Expected associative array.'
+        );
+
         return new static(...$data);
     }
 

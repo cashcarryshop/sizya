@@ -27,13 +27,13 @@ use Symfony\Component\Validator\Exception\ValidationFailedException;
 interface DTOInterface
 {
     /**
-     * Создать DTO
+     * Создать DTO из массива
      *
      * @param array $data Данные для создания DTO
      *
      * @return static
      */
-    public static function create(array $data): static;
+    public static function fromArray(array $data): static;
 
     /**
      * Конвертировать в массив
