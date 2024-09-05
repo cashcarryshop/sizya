@@ -1,6 +1,6 @@
 <?php
 /**
- * DTO для дополнительных полей
+ * DTO для позиций
  *
  * PHP version 8
  *
@@ -16,7 +16,7 @@ namespace CashCarryShop\Sizya\DTO;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * DTO для дополнительных полей
+ * DTO для позиций
  *
  * @category DTO
  * @package  Sizya
