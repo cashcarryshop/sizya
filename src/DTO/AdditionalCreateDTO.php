@@ -1,6 +1,6 @@
 <?php
 /**
- * DTO для дополнительных полей
+ * DTO для создания дополнительных полей
  *
  * PHP version 8
  *
@@ -16,7 +16,7 @@ namespace CashCarryShop\Sizya\DTO;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * DTO для дополнительных полей
+ * DTO для создания дополнительных полей
  *
  * @property string $entityId Идентификатор сущности доп. поля
  * @property mixed  $value    Значение доп поля
