@@ -44,7 +44,7 @@ class AdditionalUpdateDTO extends AbstractDTO
      * @var ?string
      */
     #[Assert\When(
-        expression: 'this->entityId !== null',
+        expression: 'this.entityId !== null',
         constraints: [new Assert\NotBlank]
     )]
     public readonly ?string $entityId;
