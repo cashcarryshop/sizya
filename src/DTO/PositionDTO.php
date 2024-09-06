@@ -60,7 +60,7 @@ class PositionDTO extends AbstractDTO
      * @var ?string
      */
     #[Assert\When(
-        expression: 'this->type !== null',
+        expression: 'this.type !== null',
         constraints: [new Assert\NotBlank]
     )]
     public readonly ?string $type;
@@ -111,7 +111,7 @@ class PositionDTO extends AbstractDTO
      * @var ?string
      */
     #[Assert\When(
-        expression: 'this->type !== null',
+        expression: 'this.type !== null',
         constraints: [new Assert\Currency]
     )]
     public readonly ?string $currency;
