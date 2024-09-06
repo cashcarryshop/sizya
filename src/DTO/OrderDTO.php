@@ -55,7 +55,7 @@ class OrderDTO extends AbstractDTO
      * @var ?string
      */
     #[Assert\When(
-        expression: 'this.article != null',
+        expression: 'this.article !== null',
         constraints: [new Assert\NotBlank]
     )]
     public readonly ?string $article;
