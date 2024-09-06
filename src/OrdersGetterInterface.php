@@ -4,7 +4,7 @@
  *
  * PHP version 8
  *
- * @category Sizya
+ * @category Orders
  * @package  Sizya
  * @author   TheWhatis <anton-gogo@mail.ru>
  * @license  Unlicense <https://unlicense.org>
@@ -16,7 +16,7 @@ namespace CashCarryShop\Sizya;
 /**
  * Интерфейс с методами для получения заказов
  *
- * @category Sizya
+ * @category Orders
  * @package  Sizya
  * @author   TheWhatis <anton-gogo@mail.ru>
  * @license  Unlicense <https://unlicense.org>
@@ -42,7 +42,7 @@ interface OrdersGetterInterface
      * - positions:                 (array)  Массив с позициями
      * - original:                  (mixed)  Оригинальный ответ
      *
-     * Массив в доп. данными:
+     * Массив с доп. данными:
      *
      * - optional(id):   (string) Идентификатор доп. поля
      * - entityId:       (string) Идентификатор доп. поля для создания

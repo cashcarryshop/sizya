@@ -4,7 +4,7 @@
  *
  * PHP version 8
  *
- * @category Sizya
+ * @category Orders
  * @package  Sizya
  * @author   TheWhatis <anton-gogo@mail.ru>
  * @license  Unlicense <https://unlicense.org>
@@ -16,7 +16,7 @@ namespace CashCarryShop\Sizya;
 /**
  * Интерфейс с методами для обновления заказов
  *
- * @category Sizya
+ * @category Orders
  * @package  Sizya
  * @author   TheWhatis <anton-gogo@mail.ru>
  * @license  Unlicense <https://unlicense.org>
