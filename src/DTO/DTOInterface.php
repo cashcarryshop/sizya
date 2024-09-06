@@ -48,12 +48,4 @@ interface DTOInterface
      * @return string
      */
     public function toJson(): string;
-
-    /**
-     * Валидировать данные
-     *
-     * @return void
-     * @throw  ValidationFailedException
-     */
-    public function validate(): void;
 }

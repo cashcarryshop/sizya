@@ -13,9 +13,6 @@
 
 namespace CashCarryShop\Sizya\DTO;
 
-use Symfony\Component\Validator\Exception\ValidationFailedException;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
-use Symfony\Component\Validator\Validation;
 use InvalidArgumentException;
 
 use function json_encode, is_string;
@@ -71,24 +68,5 @@ abstract class AbstractDTO implements DTOInterface
     public function toJson(): string
     {
         return json_encode($this->toArray());
-    }
-
-    /**
-     * Валидировать данные
-     *
-     * @return void
-     * @throw  ValidationFailedException
-     */
-    public function validate(): void
-    {
-        if (isset($this->validator)
-            && is_a($this->validator, ValidatorInterface::class)
-        ) {
-            $validator = $this->validator;
-        } else {
-            $validator = Validation::createValidator();
-        }
-
-        $validator->validate($this);
     }
 }
