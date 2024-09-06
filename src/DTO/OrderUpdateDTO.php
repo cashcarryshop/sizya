@@ -54,7 +54,7 @@ class OrderUpdateDTO extends AbstractDTO
      * @var ?string
      */
     #[Assert\When(
-        expression: 'this->article !== null',
+        expression: 'this.article !== null',
         constraints: [new Assert\NotBlank]
     )]
     public readonly ?string $article;
@@ -65,7 +65,7 @@ class OrderUpdateDTO extends AbstractDTO
      * @var ?string
      */
     #[Assert\When(
-        expression: 'this->created !== null',
+        expression: 'this.created !== null',
         constraints: [new Assert\DateTime('Y-m-d\TH:i:s\Z')]
     )]
     public readonly ?string $created;
@@ -76,7 +76,7 @@ class OrderUpdateDTO extends AbstractDTO
      * @var ?string
      */
     #[Assert\When(
-        expression: 'this->status !== null',
+        expression: 'this.status !== null',
         constraints: [new Assert\NotBlank]
     )]
     public readonly ?string $status;
@@ -87,7 +87,7 @@ class OrderUpdateDTO extends AbstractDTO
      * @var ?string
      */
     #[Assert\When(
-        expression: 'this->shipmentDate !== null',
+        expression: 'this.shipmentDate !== null',
         constraints: [new Assert\DateTime('Y-m-d\TH:i:s\Z')]
     )]
     public readonly ?string $shipmentDate;
@@ -98,7 +98,7 @@ class OrderUpdateDTO extends AbstractDTO
      * @var ?string
      */
     #[Assert\When(
-        expression: 'this->deliveringDate !== null',
+        expression: 'this.deliveringDate !== null',
         constraints: [new Assert\DateTime('Y-m-d\TH:i:s\Z')]
     )]
     public readonly ?string $deliveringDate;
