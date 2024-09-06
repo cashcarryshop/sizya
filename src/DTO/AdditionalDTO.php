@@ -54,7 +54,7 @@ class AdditionalDTO extends AbstractDTO
      * @var ?string
      */
     #[Assert\When(
-        expression: '$this->id !== null',
+        expression: 'this.id !== null',
         constraints: [new Assert\NotBlank]
     )]
     public readonly ?string $name;
