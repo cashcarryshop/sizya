@@ -54,7 +54,7 @@ class PositionUpdateDTO extends AbstractDTO
      * @var ?string
      */
     #[Assert\When(
-        expression: 'this->orderId !== null',
+        expression: 'this.orderId !== null',
         constraints: [new Assert\NotBlank]
     )]
     public readonly ?string $orderId;
@@ -65,7 +65,7 @@ class PositionUpdateDTO extends AbstractDTO
      * @var ?string
      */
     #[Assert\When(
-        expression: 'this->article !== null',
+        expression: 'this.article !== null',
         constraints: [new Assert\NotBlank]
     )]
     public readonly ?string $article;
@@ -76,7 +76,7 @@ class PositionUpdateDTO extends AbstractDTO
      * @var ?string
      */
     #[Assert\When(
-        expression: 'this->type !== null',
+        expression: 'this.type !== null',
         constraints: [new Assert\NotBlank]
     )]
     public readonly ?string $type;
@@ -119,7 +119,7 @@ class PositionUpdateDTO extends AbstractDTO
      * @var ?string
      */
     #[Assert\When(
-        expression: 'this->type !== null',
+        expression: 'this.type !== null',
         constraints: [new Assert\Currency]
     )]
     public readonly ?string $currency;
