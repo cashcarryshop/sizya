@@ -40,7 +40,7 @@ class StockUpdateDTO extends AbstractDTO
      * @var ?string
      */
     #[Assert\When(
-        expression: '$this->article === null',
+        expression: 'this.article === null',
         constraints: [new Assert\NotBlank]
     )]
     public readonly ?string $id;
@@ -51,7 +51,7 @@ class StockUpdateDTO extends AbstractDTO
      * @var ?string
      */
     #[Assert\When(
-        expression: '$this->id === null',
+        expression: 'this.id === null',
         constraints: [new Assert\NotBlank]
     )]
     public readonly ?string $article;
