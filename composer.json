@@ -8,7 +8,8 @@
         "cashcarryshop/synchronizer": "^1.1.0",
         "respect/validation": "^2.3.0",
         "guzzlehttp/guzzle": "^7.8",
-        "symfony/validator": "^7.1.4"
+        "symfony/validator": "^7.1.4",
+        "symfony/expression-language": "^7.1.4"
     },
     "require-dev": {
         "saggre/phpdocumentor-markdown": "^0.1.3",
