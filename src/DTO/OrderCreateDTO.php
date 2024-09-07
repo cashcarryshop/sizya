@@ -15,7 +15,6 @@ declare(strict_types=1);
 namespace CashCarryShop\Sizya\DTO;
 
 use Symfony\Component\Validator\Constraints as Assert;
-use CashCarryShop\Sizya\Validator\Constraints\Instance;
 
 /**
  * DTO для создания заказов
