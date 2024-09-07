@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * DTO для обновления дополнительных полей
  *
@@ -30,31 +31,6 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 class AdditionalUpdateDTO extends AbstractDTO
 {
-    /**
-     * Идентификатор доп. поля
-     *
-     * @var string
-     */
-    #[Assert\NotBlank]
-    public readonly string $id;
-
-    /**
-     * Идентификатор доп. поля (для создания, тип доп. поля)
-     *
-     * @var ?string
-     */
-    #[Assert\When(
-        expression: 'this.entityId !== null',
-        constraints: [new Assert\NotBlank]
-    )]
-    public readonly ?string $entityId;
-
-    /**
-     * Значение
-     *
-     * @var mixed
-     */
-    public readonly mixed $value;
 
     /**
      * Создать экземпляр доп. поля
@@ -64,12 +40,16 @@ class AdditionalUpdateDTO extends AbstractDTO
      * @param ?string  $entityId Идентификатор сущности доп. поля
      */
     public function __construct(
-        string  $id,
-        mixed   $value,
-        ?string $entityId = null,
-    ) {
-        $this->id       = $id;
-        $this->value    = $value;
-        $this->entityId = $entityId;
-    }
+        #[Assert\Type('string')]
+        #[Assert\NotBlank]
+        public readonly mixed $id = null,
+
+        #[Assert\Type(['string', 'null'])]
+        #[Assert\When(
+            expression: 'this.entityId !== null',
+            constraints: [new Assert\NotBlank]
+        )]
+        public readonly mixed $entityId = null,
+        public readonly mixed $value    = null
+    ) {}
 }

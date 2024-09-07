@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * DTO для остатков
  *
@@ -33,45 +34,6 @@ use Symfony\Component\Validator\Constraints as Assert;
 class StockDTO extends AbstractDTO
 {
     /**
-     * Идентификатор позиции
-     *
-     * @var string
-     */
-    #[Assert\NotBlank]
-    public readonly string $id;
-
-    /**
-     * Артикул товара
-     *
-     * @var string
-     */
-    #[Assert\NotBlank]
-    public readonly string $article;
-
-    /**
-     * Идентификатор склада
-     *
-     * @var string
-     */
-    #[Assert\NotBlank]
-    public readonly string $warehouseId;
-
-    /**
-     * Количество товара
-     *
-     * @var int
-     */
-    #[Assert\PositiveOrZero]
-    public readonly int $quantity;
-
-    /**
-     * Оригинальный ответ
-     *
-     * @var mixed
-     */
-    public readonly mixed $original;
-
-    /**
      * Создать экземпляр позиции
      *
      * @param string  $id          Идентификатор товарв
@@ -81,16 +43,23 @@ class StockDTO extends AbstractDTO
      * @param mixed   $original    Исходные данные
      */
     public function __construct(
-        string  $id,
-        string  $article,
-        string  $warehouseId,
-        int     $quantity,
-        mixed   $original,
-    ) {
-        $this->id          = $id;
-        $this->article     = $article;
-        $this->warehouseId = $warehouseId;
-        $this->quantity    = $quantity;
-        $this->original    = $original;
-    }
+        #[Assert\Type('string')]
+        #[Assert\NotBlank]
+        public readonly mixed $id = null,
+
+        #[Assert\Type('string')]
+        #[Assert\NotBlank]
+        public readonly mixed $article = null,
+
+        #[Assert\Type('string')]
+        #[Assert\NotBlank]
+        public readonly mixed $warehouseId = null,
+
+        #[Assert\Type('int')]
+        #[Assert\PositiveOrZero]
+        public readonly int $quantity = 0,
+
+        #[Assert\NotBlank]]
+        public readonly mixed $original = null
+    ) {}
 }

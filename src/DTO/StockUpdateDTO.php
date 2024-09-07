@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * DTO для обновления остатков
  *
@@ -27,68 +28,43 @@ use Symfony\Component\Validator\Constraints as Assert;
  * Поля `id` и `article` взаимозаменяемые,
  * но обязательные
  *
- * @property string  $id          Идентификатор позиции
- * @property string  $article     Артикул товара
+ * @property ?string $id          Идентификатор позиции
+ * @property ?string $article     Артикул товара
  * @property string  $warehouseId Идентификатор склада
  * @property int     $quantity    Количество товаров
  */
 class StockUpdateDTO extends AbstractDTO
 {
-    /**
-     * Идентификатор позиции
-     *
-     * @var ?string
-     */
-    #[Assert\When(
-        expression: 'this.article === null',
-        constraints: [new Assert\NotBlank]
-    )]
-    public readonly ?string $id;
-
-    /**
-     * Артикул товара
-     *
-     * @var ?string
-     */
-    #[Assert\When(
-        expression: 'this.id === null',
-        constraints: [new Assert\NotBlank]
-    )]
-    public readonly ?string $article;
-
-    /**
-     * Идентификатор склада
-     *
-     * @var string
-     */
-    #[Assert\NotBlank]
-    public readonly string $warehouseId;
-
-    /**
-     * Количество товара
-     *
-     * @var int
-     */
-    #[Assert\PositiveOrZero]
-    public readonly int $quantity;
 
     /**
      * Создать экземпляр позиции
      *
-     * @param string  $id          Идентификатор товарв
-     * @param string  $article     Артикул товара
+     * @param ?string $id          Идентификатор товарв
+     * @param ?string $article     Артикул товара
      * @param string  $warehouseId Идентификатор склада
      * @param int     $quantity    Количество товаров
      */
     public function __construct(
-        string  $id,
-        string  $article,
-        string  $warehouseId,
-        int     $quantity = 0,
-    ) {
-        $this->id          = $id;
-        $this->article     = $article;
-        $this->warehouseId = $warehouseId;
-        $this->quantity    = $quantity;
-    }
+        #[Assert\Type(['string', 'null'])]
+        #[Assert\When(
+            expression: 'this.article === null',
+            constraints: [new Assert\NotBlank]
+        )]
+        public readonly mixed $id = null,
+
+        #[Assert\Type(['string', 'null'])]
+        #[Assert\When(
+            expression: 'this.id === null',
+            constraints: [new Assert\NotBlank]
+        )]
+        public readonly mixed $article = null,
+
+        #[Assert\Type('string')]
+        #[Assert\NotBlank]
+        public readonly mixed $warehouseId = null,
+
+        #[Assert\Type('int')]
+        #[Assert\PositiveOrZero]
+        public readonly mixed $quantity = 0
+    ) {}
 }

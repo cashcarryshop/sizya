@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * DTO для создания заказов
  *
@@ -39,83 +40,6 @@ use CashCarryShop\Sizya\Validator\Constraints\Instance;
  */
 class OrderCreateDTO extends AbstractDTO
 {
-    /**
-     * Артикул
-     *
-     * @var ?string
-     */
-    #[Assert\When(
-        expression: 'this.article !== null',
-        constraints: [new Assert\NotBlank]
-    )]
-    public readonly ?string $article;
-
-    /**
-     * Дата создания заказа
-     *
-     * @var ?string
-     */
-    #[Assert\When(
-        expression: 'this.created !== null',
-        constraints: [new Assert\DateTime('Y-m-d\TH:i:s\Z')]
-    )]
-    public readonly ?string $created;
-
-    /**
-     * Статус заказа
-     *
-     * @var string
-     */
-    #[Assert\When(
-        expression: 'this.status !== null',
-        constraints: [new Assert\NotBlank]
-    )]
-    public readonly ?string $status;
-
-    /**
-     * Планованя дата отгрузки
-     *
-     * @var ?string
-     */
-    #[Assert\When(
-        expression: 'this.shipmentDate !== null',
-        constraints: [new Assert\DateTime('Y-m-d\TH:i:s\Z')]
-    )]
-    public readonly ?string $shipmentDate;
-
-    /**
-     * Дата передачи заказа в доставку
-     *
-     * @var ?string
-     */
-    #[Assert\When(
-        expression: 'this.deliveringDate !== null',
-        constraints: [new Assert\DateTime('Y-m-d\TH:i:s\Z')]
-    )]
-    public readonly ?string $deliveringDate;
-
-    /**
-     * Описание
-     *
-     * @var ?string
-     */
-    public readonly ?string $description;
-
-    /**
-     * Дополнительные поля
-     *
-     * @var AdditionalCreateDTO[]
-     */
-    #[Assert\All(new Instance(AdditionalCreateDTO::class))]
-    public readonly array $additionals;
-
-    /**
-     * Позиции
-     *
-     * @var PositionCreateDTO[]
-     */
-    #[Assert\All(new Instance(PositionCreateDTO::class))]
-    public readonly array $positions;
 
     /**
      * Создать экземпляр заказа
@@ -135,22 +59,50 @@ class OrderCreateDTO extends AbstractDTO
      * @see CreatePositionDTO
      */
     public function __construct(
-        ?string $created        = null,
-        ?string $status         = null,
-        ?string $shipmentDate   = null,
-        ?string $article        = null,
-        ?string $deliveringDate = null,
-        ?string $description    = null,
-        array   $additionals    = [],
-        array   $positions      = []
-    ) {
-        $this->created        = $created;
-        $this->status         = $status;
-        $this->shipmentDate   = $shipmentDate;
-        $this->article        = $article;
-        $this->deliveringDate = $deliveringDate;
-        $this->description    = $description;
-        $this->additionals    = $additionals;
-        $this->positions      = $positions;
-    }
+        #[Assert\Type(['string', 'null'])]
+        #[Assert\When(
+            expression: 'this.article !== null',
+            constraints: [new Assert\NotBlank]
+        )]
+        public readonly mixed $article = null,
+
+        #[Assert\Type(['string', 'null'])]
+        #[Assert\When(
+            expression: 'this.created !== null',
+            constraints: [new Assert\DateTime('Y-m-d\TH:i:s\Z')]
+        )]
+        public readonly mixed $created = null,
+
+        #[Assert\Type(['string', 'null'])]
+        #[Assert\When(
+            expression: 'this.status !== null',
+            constraints: [new Assert\NotBlank]
+        )]
+        public readonly mixed $status = null,
+
+        #[Assert\Type(['string', 'null'])]
+        #[Assert\When(
+            expression: 'this.shipmentDate !== null',
+            constraints: [new Assert\DateTime('Y-m-d\TH:i:s\Z')]
+        )]
+        public readonly mixed $shipmentDate = null,
+
+        #[Assert\Type(['string', 'null'])]
+        #[Assert\When(
+            expression: 'this.deliveringDate !== null',
+            constraints: [new Assert\DateTime('Y-m-d\TH:i:s\Z')]
+        )]
+        public readonly mixed $deliveringDate = null,
+
+        #[Assert\Type(['string', 'null'])]
+        public readonly mixed $description = null,
+
+        #[Assert\Type('array')]
+        #[Assert\All(new Assert\Type(AdditionalCreateDTO::class))]
+        public readonly mixed $additionals = [],
+
+        #[Assert\Type('array')]
+        #[Assert\All(new Assert\Type(PositionCreateDTO::class))]
+        public readonly mixed $positions = []
+    ) {}
 }

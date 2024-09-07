@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * DTO для обновления позиций
  *
@@ -40,130 +41,72 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 class PositionUpdateDTO extends AbstractDTO
 {
-    /**
-     * Идентификатор позиции
-     *
-     * @var string
-     */
-    #[Assert\NotBlank]
-    public readonly string $id;
-
-    /**
-     * Идентификатор товара
-     *
-     * @var ?string
-     */
-    #[Assert\When(
-        expression: 'this.orderId !== null',
-        constraints: [new Assert\NotBlank]
-    )]
-    public readonly ?string $orderId;
-
-    /**
-     * Артикул товара
-     *
-     * @var ?string
-     */
-    #[Assert\When(
-        expression: 'this.article !== null',
-        constraints: [new Assert\NotBlank]
-    )]
-    public readonly ?string $article;
-
-    /**
-     * Тип товара
-     *
-     * @var ?string
-     */
-    #[Assert\When(
-        expression: 'this.type !== null',
-        constraints: [new Assert\NotBlank]
-    )]
-    public readonly ?string $type;
-
-    /**
-     * Количество товара
-     *
-     * @var ?int
-     */
-    #[Assert\PositiveOrZero]
-    public readonly int $quantity;
-
-    /**
-     * Сколько товара зарезервировать
-     *
-     * @var int
-     */
-    #[Assert\PositiveOrZero]
-    public readonly int $reserve;
-
-    /**
-     * Стоимость товара
-     *
-     * @var float
-     */
-    #[Assert\PositiveOrZero]
-    public readonly float $price;
-
-    /**
-     * Скидка
-     *
-     * @var float
-     */
-    #[Assert\PositiveOrZero]
-    public readonly float $discount;
-
-    /**
-     * Валюта
-     *
-     * @var ?string
-     */
-    #[Assert\When(
-        expression: 'this.type !== null',
-        constraints: [new Assert\Currency]
-    )]
-    public readonly ?string $currency;
-
-    /**
-     * Учитывать ли НДС
-     *
-     * @var bool
-     */
-    public readonly bool $vat;
 
     /**
      * Создать экземпляр позиции
      *
-     * @param string $id Идентификатор позиции
+     * @param string  $id       Идентификатор позиции
      * @param ?string $orderId  Идентификатор товара
      * @param ?string $article  Артикул товара
+     * @param ?string $type     Тип товара
      * @param int     $quantity Количество товаров
      * @param int     $reserve  Количество зарезервированных товаров
      * @param float   $price    Цена товара
      * @param float   $discount Скидка
-     * @param ?string $type     Тип товара
      * @param ?string $currency Валюта
      * @param ?bool   $vat      Учитывать ли НДС
      */
     public function __construct(
-        ?string $orderId   = null,
-        ?string $article   = null,
-        int     $quantity  = 0,
-        int     $reserve   = 0,
-        float   $price     = 0,
-        float   $discount  = 0,
-        ?string $type     = null,
-        ?string $currency = null,
-        bool    $vat      = false,
-    ) {
-        $this->order    = $orderId;
-        $this->article  = $article;
-        $this->quantity = $quantity;
-        $this->reserve  = $reserve;
-        $this->price    = $price;
-        $this->discount = $discount;
-        $this->type     = $type;
-        $this->currency = $currency;
-        $this->vat      = $vat;
-    }
+        #[Assert\Type('string')]
+        #[Assert\NotBlank]
+        public readonly mixed $id = null,
+
+
+        #[Assert\Type(['string', 'null'])]
+        #[Assert\When(
+            expression: 'this.orderId !== null',
+            constraints: [new Assert\NotBlank]
+        )]
+        public readonly mixed $orderId = null,
+
+        #[Assert\Type(['string', 'null'])]
+        #[Assert\When(
+            expression: 'this.article !== null',
+            constraints: [new Assert\NotBlank]
+        )]
+        public readonly mixed $article = null,
+
+        #[Assert\Type(['string', 'null'])]
+        #[Assert\When(
+            expression: 'this.type !== null',
+            constraints: [new Assert\NotBlank]
+        )]
+        public readonly mixed $type = null,
+
+        #[Assert\Type('int')]
+        #[Assert\PositiveOrZero]
+        public readonly mixed $quantity = 0,
+
+        #[Assert\Type('int')]
+        #[Assert\PositiveOrZero]
+        public readonly mixed $reserve = 0,
+
+        #[Assert\Type('float')]
+        #[Assert\PositiveOrZero]
+        public readonly mixed $price = 0,
+
+        #[Assert\Type('float')]
+        #[Assert\PositiveOrZero]
+        public readonly mixed $discount = 0,
+
+        #[Assert\Type(['string', 'null'])]
+        #[Assert\When(
+            expression: 'this.type !== null',
+            constraints: [new Assert\Currency]
+        )]
+        public readonly mixed $currency = null,
+
+        #[Assert\Type(['string', 'null'])]
+        public readonly mixed $vat = false
+    ) {}
 }
