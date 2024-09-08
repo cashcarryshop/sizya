@@ -15,6 +15,8 @@ namespace CashCarryShop\Sizya\Moysklad;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
+use function array_replace, array_merge;
+
 /**
  * Абстрактный класс для заказов покупателей МойСклад
  *
