@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 namespace CashCarryShop\Sizya\DTO;
 
-use Symfony\Component\Validator\Exception\ValidationFailedException;
+use JsonException;
 
 /**
  * Интерфейс объекта передачи данных
@@ -42,6 +42,16 @@ interface DTOInterface
      * @return array
      */
     public function toArray(): array;
+
+    /**
+     * Создать dto из json
+     *
+     * @param string $json Данные в json
+     *
+     * @return static
+     * @throws JsonException Если невозможно декодировать json
+     */
+    public function fromJson(string $json): static;
 
     /**
      * Конвертировать в json
