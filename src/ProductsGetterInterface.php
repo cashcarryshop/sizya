@@ -13,6 +13,9 @@
 
 namespace CashCarryShop\Sizya;
 
+use CashCarryShop\Sizya\DTO\ProductDTO;
+use CashCarryShop\Sizya\DTO\ErrorDTO;
+
 /**
  * Интерфейс с методам для получения товаров
  *
@@ -27,63 +30,57 @@ interface ProductsGetterInterface
     /**
      * Получить товары
      *
-     * Возвращает массив с товарами:
+     * @see ProductDTO
      *
-     * - id: (string) Идентификатор товара
-     * - article: (string) Артикул товара
-     * - created: (string) Дата создания товара (в формате UTC Y-m-d\TH:i:s\Z)
-     * - price: (float) Цена товара
-     * - original: (mixed) Оригинальный ответ
-     *
-     * @return array
+     * @return array<ProductDTO>
      */
     public function getProducts(): array;
 
     /**
      * Получить товары по идентификаторам
      *
-     * Должен возвращать массив с данными товаров,
-     * смотреть `ProductsGetterInterface::getProducts`.
+     * @see ProductDTO
+     * @see ErrorDTO
      *
      * @param array $productIds Идентификаторы товаров
      *
-     * @return array
+     * @return array<ProductDTO|ErrorDTO>
      */
     public function getProductsByIds(array $productIds): array;
 
     /**
      * Получить товар по идентификатору
      *
-     * Должен возвращать массив с данными товара,
-     * смотреть `ProductsGetterInterface::getProducts`.
+     * @see ProductDTO
+     * @see ErrorDTO
      *
      * @param string $productId Идентификатор товара
      *
-     * @return array
+     * @return ProductDTO|ErrorDTO
      */
-    public function getProductById(string $productId): array;
+    public function getProductById(string $productId): ProductDTO|ErrorDTO;
 
     /**
      * Получить товары по артикулам
      *
-     * Должен возвращать массив с данными товаров,
-     * смотреть `ProductsGetterInterface::getProducts`.
+     * @see ProductDTO
+     * @see ErrorDTO
      *
      * @param array $articles Артикулы
      *
-     * @return array
+     * @return array<ProductDTO|ErrorDTO>
      */
     public function getProductsByArticles(array $articles): array;
 
     /**
      * Получить товар по артикулу
      *
-     * Должен возвращать массив с данными товара,
-     * смотреть `ProductsGetterInterface::getProducts`.
+     * @see ProductDTO
+     * @see ErrorDTO
      *
      * @param string $article Артикул
      *
-     * @return array
+     * @return ProductDTO|ErrorDTO
      */
-    public function getProductByArticle(string $article): array;
+    public function getProductByArticle(string $article): ProductDTO|ErrorDTO;
 }
