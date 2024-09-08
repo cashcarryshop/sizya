@@ -15,7 +15,7 @@ declare(strict_types=1);
 namespace CashCarryShop\Sizya\DTO;
 
 use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Component\Validator\ConstraintViolationList;
+use Symfony\Component\Validator\ConstraintViolationListInterface;
 use Psr\Http\Message\ResponseInterface;
 use Throwable;
 
@@ -35,10 +35,10 @@ use function is_int;
  * @const INTERNAL   Если произошла внутренная ошибка
  * @const HTTP       Если ошибка возникла в ходе http запроса
  *
- * @property string                   $type       Тип ошибки       (см. выше)
- * @property ?ConstraintViolationList $violations Ошибки валидации (при ReasonDTO::VALIDATION)
- * @property ?Throwable               $throwable  Исключение       (при ReasonDTO::INTERNAL)
- * @property ?ResponseInterface       $response   Ответ http       (при ReasonDTO::HTTP)
+ * @property string                            $type       Тип ошибки       (см. выше)
+ * @property ?ConstraintViolationListInterface $violations Ошибки валидации (при ReasonDTO::VALIDATION)
+ * @property ?Throwable                        $throwable  Исключение       (при ReasonDTO::INTERNAL)
+ * @property ?ResponseInterface                $response   Ответ http       (при ReasonDTO::HTTP)
  */
 class ReasonDTO extends AbstractDTO
 {
@@ -77,11 +77,10 @@ class ReasonDTO extends AbstractDTO
     /**
      * Создать экземпляр ошибки
      *
-     * @param string                   $type       Тип ошибки       (см. ReasonDTO::TYPES)
-     * @param ?ConstraintViolationList $violations Ошибки валидации (при ReasonDTO::VALIDATION)
-     * @param ?Throwable               $throwable  Исключение       (при ReasonDTO::INTERNAL)
-     * @param ?ResponseInterface       $response   Ответ http       (при ReasonDTO::HTTP)
-     *
+     * @param string                            $type       Тип ошибки       (см. ReasonDTO::TYPES)
+     * @param ?ConstraintViolationListInterface $violations Ошибки валидации (при ReasonDTO::VALIDATION)
+     * @param ?Throwable                        $throwable  Исключение       (при ReasonDTO::INTERNAL)
+     * @param ?ResponseInterface                $response   Ответ http       (при ReasonDTO::HTTP)
      */
     public function __construct(
         #[Assert\Type('string')]
@@ -89,7 +88,7 @@ class ReasonDTO extends AbstractDTO
         #[Assert\NotBlank]
         public $type = null,
 
-        #[Assert\Type(['null', ConstraintViolationList::class])]
+        #[Assert\Type(['null', ConstraintViolationListInterface::class])]
         #[Assert\When(
             expression: '$this->type === "validation"',
             constraints: [new Assert\NotBlank]
