@@ -22,7 +22,7 @@ use Throwable;
 use function is_int;
 
 /**
- * DTO Ошибки
+ * DTO причины ошибки
  *
  * @category Orders
  * @package  Sizya
@@ -30,8 +30,15 @@ use function is_int;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  *
- * @property DTOInterface $source По какому dto произошла ошибка (обновление/создание сущности)
- * @property ReasonDTO    $reason Причина ошибки
+ * @const TYPES      Типы причин
+ * @const VALIDATION Если данные не прошли валидацию
+ * @const INTERNAL   Если произошла внутренная ошибка
+ * @const HTTP       Если ошибка возникла в ходе http запроса
+ *
+ * @property string                   $type       Тип ошибки (см. выше)
+ * @property ?ConstraintViolationList $violations Ошибки валидации (при ReasonDTO::VALIDATION)
+ * @property ?Throwable               $throwable  Исключение       (при ReasonDTO::INTERNAL)
+ * @property ?ResponseInterface       $response   Ответ http       (при ReasonDTO::HTTP)
  *
  * @see ReasonDTO
  */
@@ -43,9 +50,9 @@ class ReasonDTO extends AbstractDTO
      * @const array<int, string>
      */
     public const TYPES = [
-        'validation', // Ошибка валидации
-        'internal',   // Внутренняя ошибка (ошибки в коде, TypeError и т.д.),
-        'http',       // Ошибки при выполнении запросов
+        'validation',
+        'internal',
+        'http',
     ];
 
     /**
@@ -72,7 +79,10 @@ class ReasonDTO extends AbstractDTO
     /**
      * Создать экземпляр ошибки
      *
-     * @param string $type Тип причины
+     * @param string                   $type       Тип ошибки       (см. ReasonDTO::TYPES)
+     * @param ?ConstraintViolationList $violations Ошибки валидации (при ReasonDTO::VALIDATION)
+     * @param ?Throwable               $throwable  Исключение       (при ReasonDTO::INTERNAL)
+     * @param ?ResponseInterface       $response   Ответ http       (при ReasonDTO::HTTP)
      *
      */
     public function __construct(
@@ -88,19 +98,19 @@ class ReasonDTO extends AbstractDTO
         )]
         public $violations = null,
 
-        #[Assert\Type(['null', ResponseInterface::class])]
-        #[Assert\When(
-            expression: '$this->type === "http"',
-            constraints: [new Assert\NotBlank]
-        )]
-        public $response = null,
-
         #[Assert\Type(['null', Throwable::class])]
         #[Assert\When(
             expression: '$this->type === "internal"',
             constraints: [new Assert\NotBlank]
         )]
-        public $throwable = null
+        public $throwable = null,
+
+        #[Assert\Type(['null', ResponseInterface::class])]
+        #[Assert\When(
+            expression: '$this->type === "http"',
+            constraints: [new Assert\NotBlank]
+        )]
+        public $response = null
     ) {
         if (is_int($this->type) && isset($type = static::TYPES[this->type])) {
             $this->type = $type;
