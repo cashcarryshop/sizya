@@ -40,16 +40,16 @@ class ValidationException extends Exception
     /**
      * Создание исключения
      *
-     * @param string                  $message                  Сообщеине
-     * @param int                     $code                     Код ошибки
-     * @param Throwable               $previous                 Предыдущая ошибки
+     * @param string                  $message    Сообщеине
+     * @param int                     $code       Код ошибки
+     * @param Throwable               $previous   Предыдущая ошибки
      * @param ConstraintViolationList $violations Список ошибок валидации
      *
      */
     public function __construct(
-        string                  $message = 'Validated entity have some violations',
-        int                     $code = 0,
-        Throwable               $previous = null,
+        string                  $message    = 'Validated entity have some violations',
+        int                     $code       = 0,
+        Throwable               $previous   = null,
         ConstraintViolationList $violations = null
     ) {
         parent::__construct($message, $code, $previous);
