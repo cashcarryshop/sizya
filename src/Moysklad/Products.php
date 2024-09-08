@@ -14,8 +14,11 @@
 namespace CashCarryShop\Sizya\Moysklad;
 
 use CashCarryShop\Sizya\ProductsGetterInterface;
+use CashCarryShop\Sizya\DTO\ProductDTO;
+use CashCarryShop\Sizya\DTO\ErrorDTO;
 use GuzzleHttp\Promise\Utils as PromiseUtils;
 use GuzzleHttp\Promise\PromiseInterface;
+use GuzzleHttp\Exception\RequestException;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
@@ -84,40 +87,11 @@ class Products extends AbstractSource implements ProductsGetterInterface
     }
 
     /**
-     * Конвертировать Товар
-     *
-     * @param array $product Товар
-     *
-     * @return array
-     */
-    private function _convertProduct(array $product): array
-    {
-        if ($priceType = $this->getSettings('priceType')) {
-            $price = null;
-            foreach ($product['salePrices'] as $salePrice) {
-                if ($salePrice['priceType']['id'] === $priceType) {
-                    $price = $salePrice['value'];
-                    break;
-                }
-            }
-        }
-
-        return [
-            'id' => $product['id'],
-            'article' => $product['meta']['type'] === 'variant'
-                ? $product['code'] : $product['article'],
-            'created' => Utils::dateToUtc($product['updated']),
-            'price' => $price ?? $product['salePrices'][0]['value'] / 100,
-            'original' => $product
-        ];
-    }
-
-    /**
      * Получить товары
      *
-     * Смотреть `ProductsInterface::getProducts`
+     * @see ProductsGetterInterface
      *
-     * @return array
+     * @return array<ProductDTO>
      */
     public function getProducts(): array
     {
@@ -153,6 +127,111 @@ class Products extends AbstractSource implements ProductsGetterInterface
     }
 
     /**
+     * Получить товар по идентификатору
+     *
+     * @see ProductsGetterInterface
+     *
+     * @param string $productId Идентификатор товара
+     *
+     * @return array<ProductDTO|ErrorDTO>
+     */
+    public function getProductById(string $productId): array
+    {
+        return $this->getProductsByIds([$productId])[0] ?? [];
+    }
+
+    /**
+     * Получить товары по идентификаторам
+     *
+     * @see ProductsGetterInterface
+     *
+     * @param array $productIds Идентификаторы товаров
+     *
+     * @return array<ProductDTO|ErrorDTO>
+     */
+    public function getProductsByIds(array $productIds): array
+    {
+        return $this->_getByFilter('id', $productIds);
+    }
+
+    /**
+     * Получить товар по артикулу
+     *
+     * @see ProductsGetterInterface
+     *
+     * @param string $article Артикул
+     *
+     * @return ProductDTO|ErrorDTO
+     */
+    public function getProductByArticle(string $article): ProductDTO|ErrorDTO
+    {
+        return $this->getProductsByArticles([$article])[0];
+    }
+
+    /**
+     * Получить товары по артикулам
+     *
+     * @see ProductsGetterInterface
+     *
+     * @param array $articles Артикулы
+     *
+     * @return array<ProductDTO|ErrorDTO>
+     */
+    public function getProductsByArticles(array $articles): array
+    {
+        $byArticles = $this->_getByFilterWithPromise('article', $articles);
+        $byCodes    = $this->_getByFilterWithPromise('code', $articles);
+
+        return array_merge($byArticles->wait(), $byCodes->wait());
+    }
+
+    /**
+     * Конвертировать Товар
+     *
+     * @param array $product Товар
+     *
+     * @return array<ProductDTO>
+     */
+    private function _convertProduct(array $product): array
+    {
+        if ($priceType = $this->getSettings('priceType')) {
+            $price = null;
+            foreach ($product['salePrices'] as $salePrice) {
+                if ($salePrice['priceType']['id'] === $priceType) {
+                    $price = $salePrice['value'];
+                    break;
+                }
+            }
+        }
+
+        $article = $product['meta']['type'] === 'variant'
+            ? $product['code']
+        : $product['article'];
+
+        return ProductDTO::fromArray([
+            'id'       => $product['id'],
+            'article'  => $article,
+            'created'  => Utils::dateToUtc($product['updated']),
+            'price'    => (float) ($price ?? $product['salePrices'][0]['value'] / 100),
+            'original' => $product
+        ]);
+    }
+
+    /**
+     * Получить элементы с помощью фильтров
+     *
+     * @param string $filter Название фильтра
+     * @param array  $values Значение
+     * @param int    $size   Размер чанка
+     *
+     * @return array<ProductDTO|ErrorDTO>
+     */
+    private function _getByFilter(string $filter, array $values, int $size = 80): array
+    {
+        return $this->_getByFilterWithPromise($filter, $values, $size)->wait();
+    }
+
+    /**
      * Получить элементы с помощью фильтров
      *
      * Возвращает PromiseInterface
@@ -161,7 +240,7 @@ class Products extends AbstractSource implements ProductsGetterInterface
      * @param array  $values Значение
      * @param int    $size   Размер чанка
      *
-     * @return array
+     * @return PromiseInterface<ProductDTO|ErrorDTO>
      */
     private function _getByFilterWithPromise(
         string $filter,
@@ -178,100 +257,52 @@ class Products extends AbstractSource implements ProductsGetterInterface
                 $clone->filter($filter, $value);
             }
 
-            $promises[] = $this->decode($this->send($clone->build('GET')));
+            $promises[] = $this->send($clone->build('GET'));
         }
 
-        return PromiseUtils::all($promises)->then(
-            function ($results) {
+        return PromiseUtils::settle($promises)->then(
+            function ($results) use ($size, $values) {
                 $products = [];
 
-                foreach ($results as $result) {
-                    $products = array_merge(
-                        $products, array_map(
-                            fn ($product) => $this->_convertProduct($product),
-                            $result['rows']
-                        )
-                    );
+                foreach ($results as $idx => $result) {
+                    // Проверяем есть ли ошибки, если да, вместо
+                    // их вывода добавляем ErrorDTO в результат
+                    // выполнения.
+                    if ($result['state'] === PromiseInterface::FULFILLED) {
+                        // Если ошибок нет
+                        if ($result['value']->getCode() < 300) {
+                            try {
+                                $products = array_merge(
+                                    $products, array_map(
+                                        fn ($product) => $this->_convertProduct($product),
+                                        $this->decodeResponse($result['value'])['rows']
+                                    )
+                                );
+
+                                continue;
+                            } catch (Throwable $throwable) {
+                                $reason = $throwable;
+                            }
+                        } else {
+                            $reason = $result['value'];
+                        }
+                    } else {
+                        $reason = $result['reason'] instanceof RequestException
+                            ? $result['reason']->getResponse()
+                            : $result['reason'];
+                    }
+
+                    // Если ошибки есть
+                    for ($i = 0; $i < $size; ++$i) {
+                        $products[] = ErrorDTO::fromArray([
+                            'value'  => $values[$idx * $i],
+                            'reason' => $reason
+                        ]);
+                    }
                 }
 
                 return $products;
             }
         );
-    }
-
-    /**
-     * Получить элементы с помощью фильтров
-     *
-     * @param string $filter Название фильтра
-     * @param array  $values Значение
-     * @param int    $size   Размер чанка
-     *
-     * @return array
-     */
-    private function _getByFilter(string $filter, array $values, int $size = 80): array
-    {
-        return $this->_getByFilterWithPromise($filter, $values, $size)->wait();
-    }
-
-    /**
-     * Получить товары по идентификаторам
-     *
-     * Смотреть `ProductsInterface::getProductsByIds`
-     *
-     * @param array $productIds Идентификаторы товаров
-     *
-     * @return array
-     */
-    public function getProductsByIds(array $productIds): array
-    {
-        return $this->_getByFilter('id', $productIds);
-    }
-
-    /**
-     * Получить товар по идентификатору
-     *
-     * Смотреть `ProductsInterface::getProductById`
-     *
-     * @param string $productId Идентификатор товара
-     *
-     * @return array
-     */
-    public function getProductById(string $productId): array
-    {
-        return $this->getProductsByIds([$productId])[0] ?? [];
-    }
-
-    /**
-     * Получить товары по артикулам
-     *
-     * Смотреть `ProductsInterface::getProductsByArticles`
-     *
-     * @param array $articles Артикулы
-     *
-     * @return array
-     */
-    public function getProductsByArticles(array $articles): array
-    {
-        $byArticle = $this->_getByFilterWithPromise('article', $articles);
-        $byCodes = $this->_getByFilterWithPromise('code', $articles);
-
-        return array_merge(
-            $byArticle->wait(),
-            $byCodes->wait()
-        );
-    }
-
-    /**
-     * Получить товар по артикулу
-     *
-     * Смотреть `ProductsInterface::getProductByArticle`
-     *
-     * @param string $article Артикул
-     *
-     * @return array
-     */
-    public function getProductByArticle(string $article): array
-    {
-        return $this->getProductsByArticles([$article])[0] ?? [];
     }
 }
