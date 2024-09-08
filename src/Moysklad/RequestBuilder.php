@@ -1,6 +1,6 @@
 <?php
 /**
- * Сборщик RequestInterface для МойСклад
+ * Этот файл является частью пакета sizya
  *
  * PHP version 8
  *
@@ -27,7 +27,7 @@ use GuzzleHttp\Psr7\Request;
 use InvalidArgumentException;
 
 /**
- * Сборщик RequestInterface для МойСклад
+ * Конструктор запросов для МойСклад
  *
  * @category Moysklad
  * @package  Sizya

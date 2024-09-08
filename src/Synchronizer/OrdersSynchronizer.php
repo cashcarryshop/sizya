@@ -1,6 +1,6 @@
 <?php
 /**
- * Синхронизатор заказов
+ * Этот файл является частью пакета sizya
  *
  * PHP version 8
  *
@@ -451,8 +451,9 @@ class OrdersSynchronizer extends AbstractSynchronizer
                             $update,
                             $settings['middleware'] ?? null,
                             [
-                                'source' => $orders[$i],
-                                'target' => $target
+                                'index' => $i,
+                                'sources' => $orders,
+                                'targets' => $targets
                             ]
                         );
                     }
@@ -493,8 +494,9 @@ class OrdersSynchronizer extends AbstractSynchronizer
                         $create,
                         $settings['middleware'] ?? null,
                         [
-                            'source' => $orders[$i],
-                            'target' => null
+                            'index' => $i,
+                            'sources' => $orders,
+                            'targets' => $targets
                         ]
                     );
                 }

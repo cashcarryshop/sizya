@@ -1,6 +1,6 @@
 <?php
 /**
- * Сборщик RequestInterface для Ozon
+ * Этот файл является частью пакета sizya
  *
  * PHP version 8
  *
@@ -19,7 +19,7 @@ use GuzzleHttp\Psr7\Request;
 use InvalidArgumentException;
 
 /**
- * Сборщик RequestInterface для Ozon
+ * Конструктор запросов для Ozon Seller
  *
  * @category Ozon
  * @package  Sizya
