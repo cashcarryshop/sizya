@@ -27,6 +27,8 @@ use JsonException;
  */
 interface DTOInterface
 {
+    public const DATE_FORMAT = 'Y-m-d\TH:i:s\Z';
+
     /**
      * Создать DTO из массива
      *

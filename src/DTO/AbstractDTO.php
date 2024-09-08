@@ -30,8 +30,6 @@ use function json_encode, is_string;
  */
 abstract class AbstractDTO implements DTOInterface
 {
-    public const DATE_FORMAT = 'Y-m-d\TH:i:s\Z';
-
     /**
      * Создать DTO
      *
