@@ -73,7 +73,7 @@ class OrderUpdateDTO extends AbstractDTO
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
             expression: 'value !== null',
-            constraints: [new Assert\DateTime('Y-m-d\TH:i:s\Z')]
+            constraints: [new Assert\DateTime(static::DATE_FORMAT)]
         )]
         public $created = null,
 
@@ -87,14 +87,14 @@ class OrderUpdateDTO extends AbstractDTO
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
             expression: 'value !== null',
-            constraints: [new Assert\DateTime('Y-m-d\TH:i:s\Z')]
+            constraints: [new Assert\DateTime(static::DATE_FORMAT)]
         )]
         public $shipmentDate = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
             expression: 'value !== null',
-            constraints: [new Assert\DateTime('Y-m-d\TH:i:s\Z')]
+            constraints: [new Assert\DateTime(static::DATE_FORMAT)]
         )]
         public $deliveringDate = null,
 
