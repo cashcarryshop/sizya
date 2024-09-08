@@ -13,6 +13,9 @@
 
 namespace CashCarryShop\Sizya;
 
+use CashCarryShop\Sizya\DTO\OrderDTO;
+use CashCarryShop\Sizya\DTO\ErrorDTO;
+
 /**
  * Интерфейс с методами для получения заказов
  *
@@ -27,68 +30,37 @@ interface OrdersGetterInterface
     /**
      * Получить заказы
      *
-     * Все даты должны быть в формате UTC `Y-m-d\TH:i:s\Z`
+     * @see OrderDTO
      *
-     * На выходе должен возвращать массив из заказов:
-     *
-     * - id:                        (string) Идентификатор заказа
-     * - optional(article):         (string) Артикул заказа
-     * - created:                   (string) Дата создания заказа
-     * - status:                    (string) Статус заказа
-     * - optional(shipment_date):   (string) Планируемая дата отгрузки
-     * - optional(delivering_date): (string) Дата передачи заказа в доставку
-     * - optional(description):     (string) Описание
-     * - optional(additional)       (array)  Доп. данные
-     * - positions:                 (array)  Массив с позициями
-     * - original:                  (mixed)  Оригинальный ответ
-     *
-     * Массив с доп. данными:
-     *
-     * - optional(id):   (string) Идентификатор доп. поля
-     * - entityId:       (string) Идентификатор доп. поля для создания
-     * - optional(name): (string) Название доп. поля
-     * - value:          (mixed)  Значение доп. поля
-     * - original:       (mixed)  Оригинальные данные
-     *
-     * Массив с позициями:
-     *
-     * - id:                 (string) Идентификатор позиции
-     * - orderId:            (string) Идентификатор товара
-     * - optional(type)      (string) Тип товара
-     * - article:            (string) Артикул товара
-     * - quantity:           (int)    Количество товаров
-     * - reserve:            (int)    Количество зарезервированных товаров
-     * - price:              (float)  Цена товара
-     * - discount:           (float)  Скидка
-     * - optional(currency): (string) Валюта
-     * - optional(vat):      (bool)   Учитывать ли НДС
-     * - original:           (mixed)  Оригинальный ответ
-     *
-     * @return array
+     * @return OrderDTO[]
      */
     public function getOrders(): array;
 
     /**
      * Получить заказы по идентификаторам
      *
-     * Должен возвращать массив с данными заказа,
-     * смотреть `OrdersGetterInterface::getOrders`.
+     * Заказы должны возвращаться в той-же последовательности
+     * и в том же количестве, что и были переданы идентификаторы
+     * в метод.
      *
      * @param array<string> $orderIds Идентификаторы заказов
      *
-     * @return array
+     * @see OrderDTO
+     * @see ErrorDTO
+     *
+     * @return array<OrderDTO|ErrorDTO>
      */
     public function getOrdersByIds(array $orderIds): array;
 
     /**
      * Получить заказ по идентификатору
      *
-     * Должен возвращать массив с данными заказа,
-     * смотреть `OrdersGetterInterface::getOrders`.
-     *
      * @param string $orderId Идентификатор заказа
      *
-     * @return array
+     * @see OrderDTO
+     * @see ErrorDTO
+     *
+     * @return OrderDTO|ErrorDTO
      */
-    public function getOrderById(string $orderId): array;
+    public function getOrderById(string $orderId): OrderDTO|ErrorDTO;
 }
