@@ -41,6 +41,5 @@ class AdditionalCreateDTO extends AbstractDTO
         #[Assert\NotBlank]
         public $entityId = null,
         public $value    = null,
-
     ) {}
 }

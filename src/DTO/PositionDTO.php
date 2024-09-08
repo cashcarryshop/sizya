@@ -70,7 +70,7 @@ class PositionDTO extends AbstractDTO
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
-            expression: 'this.type !== null',
+            expression: 'value !== null',
             constraints: [new Assert\NotBlank]
         )]
         public $type = null,

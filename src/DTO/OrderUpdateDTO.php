@@ -65,35 +65,35 @@ class OrderUpdateDTO extends AbstractDTO
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
-            expression: 'this.article !== null',
+            expression: 'value !== null',
             constraints: [new Assert\NotBlank]
         )]
         public $article = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
-            expression: 'this.created !== null',
+            expression: 'value !== null',
             constraints: [new Assert\DateTime('Y-m-d\TH:i:s\Z')]
         )]
         public $created = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
-            expression: 'this.status !== null',
+            expression: 'value !== null',
             constraints: [new Assert\NotBlank]
         )]
         public $status = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
-            expression: 'this.shipmentDate !== null',
+            expression: 'value !== null',
             constraints: [new Assert\DateTime('Y-m-d\TH:i:s\Z')]
         )]
         public $shipmentDate = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
-            expression: 'this.deliveringDate !== null',
+            expression: 'value !== null',
             constraints: [new Assert\DateTime('Y-m-d\TH:i:s\Z')]
         )]
         public $deliveringDate = null,

@@ -46,7 +46,7 @@ class AdditionalUpdateDTO extends AbstractDTO
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
-            expression: 'this.entityId !== null',
+            expression: 'value !== null',
             constraints: [new Assert\NotBlank]
         )]
         public $entityId = null,

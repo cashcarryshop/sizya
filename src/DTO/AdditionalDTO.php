@@ -53,7 +53,7 @@ class AdditionalDTO extends AbstractDTO
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
-            expression: 'this.id !== null',
+            expression: 'value !== null',
             constraints: [new Assert\NotBlank]
         )]
         public $name  = null,

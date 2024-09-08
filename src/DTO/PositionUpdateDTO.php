@@ -63,21 +63,21 @@ class PositionUpdateDTO extends AbstractDTO
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
-            expression: 'this.orderId !== null',
+            expression: 'value !== null',
             constraints: [new Assert\NotBlank]
         )]
         public $orderId = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
-            expression: 'this.article !== null',
+            expression: 'value !== null',
             constraints: [new Assert\NotBlank]
         )]
         public $article = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
-            expression: 'this.type !== null',
+            expression: 'value !== null',
             constraints: [new Assert\NotBlank]
         )]
         public $type = null,
@@ -100,7 +100,7 @@ class PositionUpdateDTO extends AbstractDTO
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
-            expression: 'this.type !== null',
+            expression: 'value !== null',
             constraints: [new Assert\Currency]
         )]
         public $currency = null,

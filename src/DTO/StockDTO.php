@@ -59,7 +59,7 @@ class StockDTO extends AbstractDTO
         #[Assert\PositiveOrZero]
         public readonly int $quantity = 0,
 
-        #[Assert\NotBlank]]
+        #[Assert\NotBlank]
         public $original = null
     ) {}
 }
