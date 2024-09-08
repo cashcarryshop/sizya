@@ -19,6 +19,9 @@ use JsonException;
 /**
  * Интерфейс объекта передачи данных
  *
+ * Все даты должны быть в формате, который
+ * указан в константе DATE_FORMAT.
+ *
  * @category DTO
  * @package  Sizya
  * @author   TheWhatis <anton-gogo@mail.ru>
