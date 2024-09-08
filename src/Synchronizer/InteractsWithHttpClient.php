@@ -1,6 +1,6 @@
 <?php
 /**
- * Трейт с методами для работы с клиентом GuzzleHttp
+ * Этот файл является частью пакета sizya
  *
  * PHP version 8
  *
@@ -13,11 +13,11 @@
 
 namespace CashCarryShop\Sizya\Synchronizer;
 
+use Symfony\Component\Validator\Constraints as Assert;
 use Psr\Http\Message\RequestInterface;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Client;
-use InvalidArgumentException;
 
 /**
  * Трейт с методами для работы с клиентом GuzzleHttp
@@ -43,19 +43,22 @@ trait InteractsWithHttpClient
      */
     public function __construct(array $settings)
     {
-        if (isset($settings['client'])) {
-            if (is_a($settings['client'], ClientInterface::class)) {
-                $this->_settingsConstruct($settings);
-                return;
-            }
-
-            throw new InvalidArgumentException(
-                'Setting [client] must be implements ' . ClientInterface::class
-            );
+        if (!isset($settings['client']) || is_null($settings['client'])) {
+            $settings['client'] = new Client;
         }
-
-        $settings['client'] = new Client;
         $this->_settingsConstruct($settings);
+    }
+
+    /**
+     * Правила валидации настроек для работы с http
+     *
+     * @return array
+     */
+    protected function rules(): array
+    {
+        return [
+            'client' => new Assert\Type(ClientInterface::class)
+        ];
     }
 
     /**

@@ -1,6 +1,6 @@
 <?php
 /**
- * Класс для работы с заказами покупателей МойСклад
+ * Этот файл является частью пакета sizya
  *
  * PHP version 8
  *
@@ -16,8 +16,8 @@ namespace CashCarryShop\Sizya\Moysklad;
 use CashCarryShop\Sizya\OrdersGetterInterface;
 use CashCarryShop\Sizya\OrdersGetterByAdditionalInterface;
 use CashCarryShop\Synchronizer\SynchronizerTargetInterface;
+use CashCarryShop\Sizya\Exceptions\ValidationException;
 use GuzzleHttp\Promise\Utils as PromiseUtils;
-use Respect\Validation\Validator as v;
 
 /**
  * Класс для работы с заказами покупателей МойСклад
@@ -28,81 +28,9 @@ use Respect\Validation\Validator as v;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-class CustomerOrdersSource extends AbstractSource
+class CustomerOrdersSource extends CustomerOrders
     implements OrdersGetterInterface, OrdersGetterByAdditionalInterface
 {
-    /**
-     * Объект для работы товарами МойСклад
-     *
-     * @var Products
-     */
-    public readonly Products $products;
-
-    /**
-     * Создать экземпляр класса для
-     * работы с заказами покупателей
-     * МойСклад
-     *
-     * @param array $settings Настройки
-     */
-    public function __construct(array $settings)
-    {
-        $defaults = [
-            'limit' => 100,
-            'order' => [['created', 'desc']]
-        ];
-
-        parent::__construct(array_replace($defaults, $settings));
-        v::allOf(
-            v::key(
-                'organization',
-                v::stringType()->length(36, 36),
-                $this instanceof SynchronizerTargetInterface
-            ),
-            v::key(
-                'agent',
-                v::stringType()->length(36, 36),
-                $this instanceof SynchronizerTargetInterface
-            ),
-            v::key('vatEnabled', v::boolType(), false),
-            v::key('vatIncluded', v::boolType(), false),
-            v::key('project', v::anyOf(
-                v::nullType(),
-                v::stringType()->length(36, 36)
-            ), false),
-            v::key('contract', v::anyOf(
-                v::nullType(),
-                v::stringType()->length(36, 36)
-            ), false),
-            v::key('salesChannel', v::anyOf(
-                v::nullType(),
-                v::stringType()->length(36, 36)
-            ), false),
-            v::key('store', v::anyOf(
-                v::nullType(),
-                v::stringType()->length(36, 36)
-            ), false),
-            v::key('products', v::instance(Products::class), false),
-            v::key('limit', v::intType()->min(100), false),
-            v::key('order', v::each(
-                v::key(0, v::stringType()->in([
-                    'created',
-                    'deliveryPlannedMoment',
-                    'name',
-                    'id',
-                    'deleted',
-                    'sum'
-                ])),
-                v::key(1, v::stringType()->in('asc', 'desc'))
-            ), false),
-        )->assert($this->settings);
-
-        $this->products = $this->getSettings('products', new Products([
-            'credentials' => $this->getCredentials(),
-            'client' => $this->getSettings('client')
-        ]));;
-    }
-
     /**
      * Конвертировать позицию
      *

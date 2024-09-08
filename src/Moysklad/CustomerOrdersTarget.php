@@ -17,7 +17,6 @@ use CashCarryShop\Sizya\OrdersCreatorInterface;
 use CashCarryShop\Sizya\OrdersUpdaterInterface;
 use CashCarryShop\Synchronizer\SynchronizerTargetInterface;
 use GuzzleHttp\Promise\Utils as PromiseUtils;
-use Respect\Validation\Validator as v;
 
 /**
  * Класс для работы с заказами покупателей МойСклад

@@ -12,8 +12,8 @@
 namespace CashCarryShop\Sizya\Ozon;
 
 use CashCarryShop\Sizya\OrdersGetterInterface;
+use Symfony\Component\Validator\Constraints as Assert;
 use GuzzleHttp\Promise\Utils;
-use Respect\Validation\Validator as v;
 use DateTimeZone;
 
 /**
@@ -38,52 +38,107 @@ class Orders extends AbstractSource implements OrdersGetterInterface
         $format = 'Y-m-d\TH:i:s\Z';
 
         $defaults = [
-            'limit' => 100,
-            'dir' => 'ASC',
-            'cutoff_from' => date_create('-30 days', $timezone)->format($format),
-            'cutoff_to' => date_create('now', $timezone)->format($format),
-            'since' => date_create('-30 days', $timezone)->format($format),
-            'to' => date_create('now', $timezone)->format($format),
+            'limit'          => 100,
+            'dir'            => 'ASC',
+            'cutoff_from'    => date_create('-30 days', $timezone)->format($format),
+            'cutoff_to'      => date_create('now', $timezone)->format($format),
+            'since'          => date_create('-30 days', $timezone)->format($format),
+            'to'             => date_create('now', $timezone)->format($format),
             'analytics_data' => true,
-            'barcodes' => true,
+            'barcodes'       => true,
             'financial_data' => true,
-            'translit' => true,
-            'status' => null,
-            'unfulfilled' => true
+            'translit'       => true,
+            'status'         => null,
+            'unfulfilled'    => true
         ];
 
         parent::__construct(array_replace($defaults, $settings));
+    }
 
-        v::allOf(
-            v::key('limit', v::intType()),
-            v::key('dir', v::in(['ASC', 'DESC'])),
-            v::key('cutoff_from', v::dateTime($format)),
-            v::key('cutoff_to', v::dateTime($format)),
-            v::key('since', v::dateTime($format)),
-            v::key('to', v::dateTime($format)),
-            v::key('analytics_data', v::boolType()),
-            v::key('barcodes', v::boolType()),
-            v::key('financial_data', v::boolType()),
-            v::key('translit', v::boolType()),
-            v::key('status', v::optional(v::in([
-                'acceptance_in_progress',
-                'awaiting_approve',
-                'awaiting_packaging',
-                'awaiting_registration',
-                'awaiting_deliver',
-                'arbitration',
-                'client_arbitration',
-                'delivering',
-                'driver_pickup',
-                'not_accepted'
-            ]))),
-            v::key('provider_id', v::each(v::intType()), false),
-            v::key('delivery_method_id', v::each(v::intType()), false),
-            v::key('warehouse_id', v::each(v::intType()), false),
-            // При установке этого параметра в true, из метода `get`
-            // будет возвращены только не обработанные заказы
-            v::key('unfulfilled', v::boolType()),
-        )->assert($this->settings);
+    /**
+     * Правила валидации для настроек
+     *
+     * @return array
+     */
+    protected function rules(): array
+    {
+        $format = 'Y-m-d\TH:i:s\Z';
+
+        return array_merge(
+            parent::rules(), [
+                'limit' => [
+                    new Assert\Type('int'),
+                    new Assert\Range(min: 100),
+                ],
+                'dir' => [
+                    new Assert\Type('string'),
+                    new Assert\Choice(['ASC', 'DESC'])
+                ],
+                'cutoff_from' => [
+                    new Assert\Type('string'),
+                    new Assert\DateTime($format)
+                ],
+                'cutoff_to' => [
+                    new Assert\Type('string'),
+                    new Assert\DateTime($format)
+                ],
+                'since' => [
+                    new Assert\Type('string'),
+                    new Assert\DateTime($format)
+                ],
+                'to' => [
+                    new Assert\Type('string'),
+                    new Assert\DateTime($format)
+                ],
+                'analytics_data' => [
+                    new Assert\Type('bool'),
+                ],
+                'barcodes' => [
+                    new Assert\Type('bool'),
+                ],
+                'financial_data' => [
+                    new Assert\Type('bool'),
+                ],
+                'translit' => [
+                    new Assert\Type('bool'),
+                ],
+                'status' => [
+                    new Assert\Type(['null', 'string']),
+                    new Assert\When(
+                        expression: 'value !== null',
+                        constraints: [
+                            new Assert\Choice([
+                                'acceptance_in_progress',
+                                'awaiting_approve',
+                                'awaiting_packaging',
+                                'awaiting_registration',
+                                'awaiting_deliver',
+                                'arbitration',
+                                'client_arbitration',
+                                'delivering',
+                                'driver_pickup',
+                                'not_accepted'
+                            ])
+                        ]
+                    )
+                ],
+                'provider_id' => [
+                    new Assert\Type('array'),
+                    new Assert\All(new Assert\Type('int')),
+                ],
+                'delivery_method_id' => [
+                    new Assert\Type('array'),
+                    new Assert\All(new Assert\Type('int')),
+                ],
+                'warehouse_id' => [
+                    new Assert\Type('array'),
+                    new Assert\All(new Assert\Type('int')),
+                ],
+                'unfulfilled' => [
+                    new Assert\Type('bool'),
+                ]
+            ]
+        );
     }
 
     /**

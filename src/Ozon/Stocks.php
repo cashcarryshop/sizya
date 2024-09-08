@@ -16,7 +16,6 @@ namespace CashCarryShop\Sizya\Ozon;
 use CashCarryShop\Sizya\StocksUpdaterInterface;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\Utils;
-use Respect\Validation\Validator as v;
 
 /**
  * Элемент для синхронизации остатков Ozon

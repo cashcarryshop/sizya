@@ -16,8 +16,7 @@ namespace CashCarryShop\Sizya\Moysklad;
 use CashCarryShop\Sizya\ProductsGetterInterface;
 use GuzzleHttp\Promise\Utils as PromiseUtils;
 use GuzzleHttp\Promise\PromiseInterface;
-use Respect\Validation\Validator as v;
-use BadMethodCallException;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Класс для работы с товарами МойСклад
@@ -39,24 +38,49 @@ class Products extends AbstractSource implements ProductsGetterInterface
     public function __construct(array $settings)
     {
         $defaults = [
-            'limit' => 100,
-            'order' => [['created', 'desc']]
+            'limit'     => 100,
+            'order'     => [['created', 'desc']],
+            'priceType' => null
         ];
 
         parent::__construct(array_replace($defaults, $settings));
-        v::allOf(
-            v::key('limit', v::intType()->min(100), false),
-            v::key('priceType', v::stringType()->length(36, 36), false),
-            v::key('order', v::each(
-                v::key(0, v::stringType()->in([
-                    'created',
-                    'name',
-                    'id',
-                    'article',
-                ])),
-                v::key(1, v::stringType()->in('asc', 'desc'))
-            ), false)
-        )->assert($this->settings);
+    }
+
+    /**
+     * Правила валидации настроек для
+     * работы с товарами
+     *
+     * @return array
+     */
+    protected function rules(): array
+    {
+        return array_merge(
+            parent::rules(), [
+                'limit' => [
+                    new Assert\Type('int'),
+                    new Assert\Range(min: 100)
+                ],
+                'order' => new Assert\Collection([
+                    0 => [
+                        new Assert\Type('string'),
+                        new Assert\Choice([
+                            'created',
+                            'name',
+                            'id',
+                            'article',
+                        ])
+                    ],
+                    1 => [
+                        new Assert\Type('string'),
+                        new Assert\Choice(['asc', 'desc'])
+                    ],
+                ]),
+                'priceType' => [
+                    new Assert\Type(['string', 'null']),
+                    new Assert\Length(36, 36)
+                ]
+            ]
+        );
     }
 
     /**

@@ -13,8 +13,8 @@
 namespace CashCarryShop\Sizya\Ozon;
 
 use CashCarryShop\Sizya\Synchronizer\InteractsWithHttpClient;
+use Symfony\Component\Validator\Constraints as Assert;
 use GuzzleHttp\Promise\PromiseInterface;
-use Respect\Validation\Validator as v;
 
 /**
  * Трейт с методами для взаимодействия с
@@ -29,22 +29,8 @@ use Respect\Validation\Validator as v;
 trait InteractsWithOzonSeller
 {
     use InteractsWithHttpClient {
-        __construct as private _clientConstruct;
+        __construct as private _httpConstruct;
     }
-
-    /**
-     * Идентификатор клиента
-     *
-     * @var int
-     */
-    protected int $clientId;
-
-    /**
-     * Токен
-     *
-     * @var string
-     */
-    protected string $token;
 
     /**
      * Создать экземпляр сущности
@@ -53,13 +39,28 @@ trait InteractsWithOzonSeller
      */
     public function __construct(array $settings)
     {
-        $this->_clientConstruct($settings);
-        v::key('token', v::stringType())
-            ->key('clientId', v::intType())
-            ->assert($settings);
+        $this->_httpConstruct($settings);
+    }
 
-        $this->token = $settings['token'];
-        $this->clientId = $settings['clientId'];
+    /**
+     * Правила валидации для настроек
+     *
+     * @return array
+     */
+    protected function rules(): array
+    {
+        return array_merge(
+            parent::rules(), [
+                'token' => [
+                    new Assert\Type('string'),
+                    new Assert\NotBlank
+                ],
+                'clientId' => [
+                    new Assert\Type('int'),
+                    new Assert\PositiveOrZero
+                ]
+            ]
+        );
     }
 
     /**

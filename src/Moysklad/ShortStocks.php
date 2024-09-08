@@ -14,7 +14,7 @@
 namespace CashCarryShop\Sizya\Moysklad;
 
 use CashCarryShop\Sizya\StocksGetterInterface;
-use Respect\Validation\Validator as v;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Элемент для синхронизации остатков МойСклад
@@ -30,13 +30,6 @@ use Respect\Validation\Validator as v;
 class ShortStocks extends AbstractSource implements StocksGetterInterface
 {
     /**
-     * Объект для работы товарами МойСклад
-     *
-     * @var Products
-     */
-    public readonly Products $products;
-
-    /**
      * Создать объект для работы с
      * коротким отчетом об остатках
      *
@@ -44,25 +37,49 @@ class ShortStocks extends AbstractSource implements StocksGetterInterface
      */
     public function __construct(array $settings)
     {
-        parent::__construct($settings);
-        v::allOf(
-            v::key('changedSince', v::dateTime('Y-m-d H:i:s'), false),
-            v::key('products', v::instance(Products::class), false),
-            v::key(
-                'stockType', v::stringType()->in([
-                    'quantity',
-                    'freeStock',
-                    'reserve',
-                    'inTransit',
-                    'stock'
-                ]), false
-            ),
-        )->assert($settings);
+        $defaults = [
+            'changedSince' => null,
+            'stockType'    => 'quantity',
+            'products'     => null
+        ];
 
-        $this->products = $this->getSettings('products', new Products([
+        parent::__construct(array_replace($defaults, $settings));
+
+        $this->settings['products'] = $this->getSettings('products', new Products([
             'credentials' => $this->getCredentials(),
             'client' => $this->getSettings('client')
         ]));
+    }
+
+    /**
+     * Правила валидации для настроек
+     *
+     * @return array
+     */
+    protected function rules(): array
+    {
+        return array_merge(
+            parent::rules(), [
+                'changedSince' => [
+                    new Assert\Type(['string', 'null']),
+                    new Assert\When(
+                        expression: 'value !== null',
+                        constraints: [new Assert\DateTime('Y-m-d H:i:s')]
+                    )
+                ],
+                'stockType' => [
+                    new Assert\Type('string'),
+                    new Assert\Choice([
+                        'quantity',
+                        'freeStock',
+                        'reserve',
+                        'inTransit',
+                        'stock',
+                    ]),
+                ],
+                'products' => new Assert\Type(['null', Products::class]),
+            ]
+        );
     }
 
     /**
@@ -74,7 +91,7 @@ class ShortStocks extends AbstractSource implements StocksGetterInterface
      */
     public function getStocks(): array
     {
-        $stockType = $this->getSettings('stockType', 'quantity');
+        $stockType = $this->getSettings('stockType');
 
         $builder = $this->builder()
             ->point("report/stock/bystore/current")
@@ -87,7 +104,7 @@ class ShortStocks extends AbstractSource implements StocksGetterInterface
         $stocks = $this->decode($this->send($builder->build('GET')))->wait();
 
         $productIds = array_unique(array_column($stocks, 'assortmentId'));
-        $products = $this->products->getProductsByIds($productIds);
+        $products = $this->getSettings('products')->getProductsByIds($productIds);
         $productIds = array_column($products, 'id');
 
         $output = [];

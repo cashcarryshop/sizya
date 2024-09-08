@@ -1,7 +1,6 @@
 <?php
 /**
- * Трейт с методами для взаимодействия с
- * МойСклад API
+ * Этот файл является частью пакета sizya
  *
  * PHP version 8
  *
@@ -15,9 +14,9 @@
 namespace CashCarryShop\Sizya\Moysklad;
 
 use CashCarryShop\Sizya\Synchronizer\InteractsWithHttpClient;
+use Symfony\Component\Validator\Constraints as Assert;
 use GuzzleHttp\Promise\PromiseInterface;
 use Psr\Http\Message\RequestInterface;
-use Respect\Validation\Validator as v;
 
 /**
  * Трейт с методами для взаимодействия с
@@ -33,14 +32,8 @@ trait InteractsWithMoysklad
 {
     use InteractsWithHttpClient {
         __construct as private _httpClientConstruct;
+        rules as private _httpRules;
     }
-
-    /**
-     * Данные авторизации
-     *
-     * @var array
-     */
-    protected array $credentials;
 
     /**
      * Иницилизировать объект
@@ -50,23 +43,25 @@ trait InteractsWithMoysklad
     public function __construct(array $settings)
     {
         $this->_httpClientConstruct($settings);
-
-        v::key('credentials', v::allOf(
-            v::arrayType(),
-            v::anyOf(v::length(1), v::length(2))
-        ))->assert($settings);
-
-        $this->credentials = $settings['credentials'];
     }
 
     /**
-     * Получить данные авторизации
+     * Основные правила валидации настроек
+     * для работы с МойСклад
      *
      * @return array
      */
-    final public function getCredentials(): array
+    protected function rules(): array
     {
-        return $this->credentials;
+        return array_merge(
+            $this->_httpRules(), [
+                'credentials' => [
+                    new Assert\Type('array'),
+                    new Assert\All(new Assert\Type('string')),
+                    new Assert\Length(1, 2)
+                ]
+            ]
+        );
     }
 
     /**
@@ -76,7 +71,7 @@ trait InteractsWithMoysklad
      */
     final public function builder(): RequestBuilder
     {
-        return new RequestBuilder($this->credentials);
+        return new RequestBuilder($this->getSettings('credentials'));
     }
 
     /**

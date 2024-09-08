@@ -1,7 +1,6 @@
 <?php
 /**
- * Трейт с реализацией методов для
- * взаимодействия с настройками
+ * Этот файл является частью пакета sizya
  *
  * PHP version 8
  *
@@ -14,7 +13,11 @@
 
 namespace CashCarryShop\Sizya\Synchronizer;
 
+use Symfony\Component\Validator\Validation;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 use CashCarryShop\Synchronizer\SynchronizerDualRoleInterface;
+use CashCarryShop\Sizya\Exceptions\ValidationException;
 
 /**
  * Трейт с реализацией методов для
@@ -39,10 +42,13 @@ trait InteractsWithSettings
      * Создание элемента синхронизации
      *
      * @param array $settings Настройки
+     *
+     * @throws ValidationException
      */
     public function __construct(array $settings)
     {
         $this->settings = $settings;
+        $this->_validate();
     }
 
     /**
@@ -85,4 +91,43 @@ trait InteractsWithSettings
 
         return $settings;
     }
+
+    /**
+     * Валидировать настройки
+     *
+     * @return void
+     * @throws ValidationException
+     */
+    private function _validate(): void
+    {
+        $validator = $this->getSettings('validator');
+        if (!is_a($validator, ValidatorInterface)) {
+            $validator = Validation::createValidatorBuilder()
+                ->enableAnnotationMapping()
+                ->getValidator();
+
+            $this->settings['validator'] = $validator;
+        }
+
+        $violations = $validator->validate(
+            $this->settings, new Assert\Collection(
+                array_merge(
+                    $this->rules(), [
+                        'validator' => new Assert\Type(ValidatorInterface::class)
+                    ]
+                )
+            )
+        );
+
+        if (count($violations)) {
+            throw new ValidationException(violations: $violations);
+        }
+    }
+
+    /**
+     * Правила валидации для настроек
+     *
+     * @return array
+     */
+    abstract protected function rules(): array;
 }
