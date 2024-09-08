@@ -40,9 +40,7 @@ use Throwable;
  * @link     https://github.com/cashcarryshop/sizya
  *
  * @property mixed $value  По какому значению возникла ошибка
- * @property mixed $reason Причина ошибки (тип зависит от правил валидации в DTO)
- *
- * @see ReasonDTO
+ * @property mixed $reason Причина ошибки (тип зависит от правил валидации)
  */
 class ErrorDTO extends AbstractDTO
 {
@@ -50,7 +48,7 @@ class ErrorDTO extends AbstractDTO
      * Создать экземпляр ошибки
      *
      * @param mixed $value  По какому значению возникла ошибка
-     * @param mixed $reason Причина ошибка (тип зависит от правил валидации в DTO)
+     * @param mixed $reason Причина ошибка (тип зависит от правил валидации)
      */
     public function __construct(
         public $value = null,
