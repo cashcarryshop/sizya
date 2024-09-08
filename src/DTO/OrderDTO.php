@@ -64,49 +64,49 @@ class OrderDTO extends AbstractDTO
     public function __construct(
         #[Assert\Type('string')]
         #[Assert\NotBlank]
-        public readonly mixed $id = null,
+        public $id = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
             expression: 'this.article !== null',
             constraints: [new Assert\NotBlank]
         )]
-        public readonly mixed $article = null,
+        public $article = null,
 
         #[Assert\NotBlank]
         #[Assert\DateTime('Y-m-d\TH:i:s\Z')]
-        public readonly mixed $created = null,
+        public $created = null,
 
         #[Assert\Type('string')]
         #[Assert\NotBlank]
-        public readonly mixed $status = null,
+        public $status = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
             expression: 'this.shipmentDate !== null',
             constraints: [new Assert\DateTime('Y-m-d\TH:i:s\Z')]
         )]
-        public readonly mixed $shipmentDate = null,
+        public $shipmentDate = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
             expression: 'this.deliveringDate !== null',
             constraints: [new Assert\DateTime('Y-m-d\TH:i:s\Z')]
         )]
-        public readonly mixed $deliveringDate = null,
+        public $deliveringDate = null,
 
         #[Assert\Type(['string', 'null'])]
-        public readonly mixed $description = null,
+        public $description = null,
 
         #[Assert\Type('array')]
         #[Assert\All(new Assert\Type(AdditionalDTO::class))]
-        public readonly mixed $additionals = null,
+        public $additionals = null,
 
         #[Assert\Type('array')]
         #[Assert\All(new Assert\Type(PositionDTO::class))]
-        public readonly mixed $positions = null,
+        public $positions = null,
 
         #[Assert\NotBlank]
-        public readonly mixed $original = null
+        public $original = null
     ) {}
 }

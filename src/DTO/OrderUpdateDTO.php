@@ -61,52 +61,52 @@ class OrderUpdateDTO extends AbstractDTO
     public function __construct(
         #[Assert\Type('string')]
         #[Assert\NotBlank]
-        public readonly mixed $id = null,
+        public $id = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
             expression: 'this.article !== null',
             constraints: [new Assert\NotBlank]
         )]
-        public readonly mixed $article = null,
+        public $article = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
             expression: 'this.created !== null',
             constraints: [new Assert\DateTime('Y-m-d\TH:i:s\Z')]
         )]
-        public readonly mixed $created = null,
+        public $created = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
             expression: 'this.status !== null',
             constraints: [new Assert\NotBlank]
         )]
-        public readonly mixed $status = null,
+        public $status = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
             expression: 'this.shipmentDate !== null',
             constraints: [new Assert\DateTime('Y-m-d\TH:i:s\Z')]
         )]
-        public readonly mixed $shipmentDate = null,
+        public $shipmentDate = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
             expression: 'this.deliveringDate !== null',
             constraints: [new Assert\DateTime('Y-m-d\TH:i:s\Z')]
         )]
-        public readonly mixed $deliveringDate = null,
+        public $deliveringDate = null,
 
         #[Assert\Type(['string', 'null'])]
-        public readonly mixed $description = null,
+        public $description = null,
 
         #[Assert\Type('array')]
         #[Assert\All(new Assert\Type(AdditionalUpdateDTO::class))]
-        public readonly mixed $additionals = [],
+        public $additionals = [],
 
         #[Assert\Type('array')]
         #[Assert\All(new Assert\Type(PositionUpdateDTO::class))]
-        public readonly mixed $positions = []
+        public $positions = []
     ) {}
 }

@@ -59,21 +59,21 @@ class PositionCreateDTO extends AbstractDTO
             expression: 'this.article === null',
             constraints: [new Assert\NotBlank]
         )]
-        public readonly mixed $orderId = null,
+        public $orderId = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
             expression: 'this.orderId === null',
             constraints: [new Assert\NotBlank]
         )]
-        public readonly mixed $article = null,
+        public $article = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
             expression: 'this.type !== null',
             constraints: [new Assert\NotBlank]
         )]
-        public readonly mixed $type = null,
+        public $type = null,
 
         #[Assert\Type(['int', 'null'])]
         #[Assert\PositiveOrZero]
@@ -86,20 +86,20 @@ class PositionCreateDTO extends AbstractDTO
 
         #[Assert\Type(['float'])]
         #[Assert\PositiveOrZero]
-        public readonly mixed $price = 0,
+        public $price = 0,
 
         #[Assert\Type(['float'])]
         #[Assert\PositiveOrZero]
-        public readonly mixed $discount = 0,
+        public $discount = 0,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
             expression: 'this.currency !== null',
             constraints: [new Assert\Currency]
         )]
-        public readonly mixed $currency = null,
+        public $currency = null,
 
         #[Assert\Type('bool')]
-        public readonly mixed $vat= false
+        public $vat= false
     ) {}
 }

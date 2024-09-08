@@ -39,8 +39,8 @@ class AdditionalCreateDTO extends AbstractDTO
     public function __construct(
         #[Assert\Type('string')]
         #[Assert\NotBlank]
-        public readonly mixed $entityId = null,
-        public readonly mixed $value    = null,
+        public $entityId = null,
+        public $value    = null,
 
     ) {}
 }

@@ -50,21 +50,21 @@ class StockUpdateDTO extends AbstractDTO
             expression: 'this.article === null',
             constraints: [new Assert\NotBlank]
         )]
-        public readonly mixed $id = null,
+        public $id = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
             expression: 'this.id === null',
             constraints: [new Assert\NotBlank]
         )]
-        public readonly mixed $article = null,
+        public $article = null,
 
         #[Assert\Type('string')]
         #[Assert\NotBlank]
-        public readonly mixed $warehouseId = null,
+        public $warehouseId = null,
 
         #[Assert\Type('int')]
         #[Assert\PositiveOrZero]
-        public readonly mixed $quantity = 0
+        public $quantity = 0
     ) {}
 }

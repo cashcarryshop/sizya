@@ -45,21 +45,21 @@ class StockDTO extends AbstractDTO
     public function __construct(
         #[Assert\Type('string')]
         #[Assert\NotBlank]
-        public readonly mixed $id = null,
+        public $id = null,
 
         #[Assert\Type('string')]
         #[Assert\NotBlank]
-        public readonly mixed $article = null,
+        public $article = null,
 
         #[Assert\Type('string')]
         #[Assert\NotBlank]
-        public readonly mixed $warehouseId = null,
+        public $warehouseId = null,
 
         #[Assert\Type('int')]
         #[Assert\PositiveOrZero]
         public readonly int $quantity = 0,
 
         #[Assert\NotBlank]]
-        public readonly mixed $original = null
+        public $original = null
     ) {}
 }
