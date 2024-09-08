@@ -35,7 +35,7 @@ use function is_int;
  * @const INTERNAL   Если произошла внутренная ошибка
  * @const HTTP       Если ошибка возникла в ходе http запроса
  *
- * @property string                   $type       Тип ошибки (см. выше)
+ * @property string                   $type       Тип ошибки       (см. выше)
  * @property ?ConstraintViolationList $violations Ошибки валидации (при ReasonDTO::VALIDATION)
  * @property ?Throwable               $throwable  Исключение       (при ReasonDTO::INTERNAL)
  * @property ?ResponseInterface       $response   Ответ http       (при ReasonDTO::HTTP)
