@@ -37,18 +37,6 @@ interface ProductsGetterInterface
     public function getProducts(): array;
 
     /**
-     * Получить товары по идентификаторам
-     *
-     * @see ProductDTO
-     * @see ErrorDTO
-     *
-     * @param array $productIds Идентификаторы товаров
-     *
-     * @return array<ProductDTO|ErrorDTO>
-     */
-    public function getProductsByIds(array $productIds): array;
-
-    /**
      * Получить товар по идентификатору
      *
      * @see ProductDTO
@@ -61,16 +49,16 @@ interface ProductsGetterInterface
     public function getProductById(string $productId): ProductDTO|ErrorDTO;
 
     /**
-     * Получить товары по артикулам
+     * Получить товары по идентификаторам
      *
      * @see ProductDTO
      * @see ErrorDTO
      *
-     * @param array $articles Артикулы
+     * @param array $productIds Идентификаторы товаров
      *
      * @return array<ProductDTO|ErrorDTO>
      */
-    public function getProductsByArticles(array $articles): array;
+    public function getProductsByIds(array $productIds): array;
 
     /**
      * Получить товар по артикулу
@@ -83,4 +71,16 @@ interface ProductsGetterInterface
      * @return ProductDTO|ErrorDTO
      */
     public function getProductByArticle(string $article): ProductDTO|ErrorDTO;
+
+    /**
+     * Получить товары по артикулам
+     *
+     * @see ProductDTO
+     * @see ErrorDTO
+     *
+     * @param array $articles Артикулы
+     *
+     * @return array<ProductDTO|ErrorDTO>
+     */
+    public function getProductsByArticles(array $articles): array;
 }
