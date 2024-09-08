@@ -39,8 +39,6 @@ use function is_int;
  * @property ?ConstraintViolationList $violations Ошибки валидации (при ReasonDTO::VALIDATION)
  * @property ?Throwable               $throwable  Исключение       (при ReasonDTO::INTERNAL)
  * @property ?ResponseInterface       $response   Ответ http       (при ReasonDTO::HTTP)
- *
- * @see ReasonDTO
  */
 class ReasonDTO extends AbstractDTO
 {
