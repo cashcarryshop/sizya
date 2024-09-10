@@ -35,7 +35,6 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 class StockUpdateDTO extends AbstractDTO
 {
-
     /**
      * Создать экземпляр позиции
      *
