@@ -22,43 +22,66 @@ use Throwable;
 /**
  * DTO Ошибки
  *
- * При использовании этого DTO нужно учитывать, что
- * $reason (причина ошибки) должна быть соответствнно
- * типу ошибки:
- *
- * - Если ошибка возникла в ходе валидации полученных данных,
- *   то $reason должен быть `ConstraintViolationListInterface`.
- * - Если ошибка возникла в ходе обращения к API,
- *   то $reason должен быть `ResponseInterface`.
- * - Если возникла непредвиденная ошибка, приводящая
- *   к выводу исключения, то $reason должен быть `Throwable`.
- *
  * @category Orders
  * @package  Sizya
  * @author   TheWhatis <anton-gogo@mail.ru>
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  *
- * @property mixed $value  По какому значению возникла ошибка
- * @property mixed $reason Причина ошибки (тип зависит от правил валидации)
+ * @const TYPES      Типы ошибок
+ * @const VALIDATION Тип ошибки `validation`
+ * @const UNDEFINED  Тип ошибки `undefined`
+ * @const NOT_FOUND  Тип ошибки `not_found`
+ * @const INTERNAL   Тип ошибки `internal`
+ * @const HTTP       Тип ошибки `internal`
+ *
+ * @property string $type   Тип ошибки (должен быть одним из значений константы TYPES)
+ * @property mixed  $reason Причина ошибки (тип зависит от правил валидации)
  */
 class ErrorDTO extends AbstractDTO
 {
+    public const TYPES = [
+        'validation',
+        'undefined',
+        'not_found',
+        'internal',
+        'http'
+    ];
+
+    public const VALIDATION = 'validation';
+    public const UNDEFINED  = 'undefined';
+    public const NOT_FOUND  = 'not_found';
+    public const INTERNAL   = 'internal';
+    public const HTTP       = 'http';
+
     /**
      * Создать экземпляр ошибки
      *
-     * @param mixed $value  По какому значению возникла ошибка
-     * @param mixed $reason Причина ошибка (тип зависит от правил валидации)
+     * @param string $type   Тип ошибки (должен быть одним из значений константы TYPES)
+     * @param mixed  $reason Причина ошибка (тип зависит от правил валидации)
      */
     public function __construct(
-        public $value = null,
-
+        #[Asert\Type('string')]
         #[Assert\NotBlank]
-        #[Assert\Type([
-            ConstraintViolationListInterface::class,
-            ResponseInterface::class,
-            Throwable::class
-        ])]
+        #[Assert\Choice(static::TYPES)]
+        public $type = null,
+
+        #[Assert\When(
+            expression: 'this.type !== "not_found"',
+            constraints: [new Assert\NotBlank]
+        )]
+        #[Assert\When(
+            expression: 'this.type === "validation"',
+            constraints: [new Assert\Type(ConstraintViolationListInterface::class)]
+        )]
+        #[Assert\When(
+            expression: 'this.type === "internal"',
+            constraints: [new Assert\Type(Throwable::class)]
+        )]
+        #[Assert\When(
+            expression: 'this.type === "http"',
+            constraints: [new Assert\Type(ResponseInterface::class)]
+        )]
         public $reason = null
     ) {}
 }
