@@ -101,9 +101,9 @@ trait InteractsWithSettings
     private function _validate(): void
     {
         $validator = $this->getSettings('validator');
-        if (!is_a($validator, ValidatorInterface)) {
+        if (!is_a($validator, ValidatorInterface::class)) {
             $validator = Validation::createValidatorBuilder()
-                ->enableAnnotationMapping()
+                ->enableAttributeMapping()
                 ->getValidator();
 
             $this->settings['validator'] = $validator;
