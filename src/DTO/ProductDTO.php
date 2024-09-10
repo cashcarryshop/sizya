@@ -55,7 +55,7 @@ class ProductDTO extends AbstractDTO
 
         #[Assert\Type('string')]
         #[Assert\NotBlank]
-        #[Assert\DateTime(static::DATE_FORMAT)]
+        #[Assert\DateTime(ProductDTO::DATE_FORMAT)]
         public $created = null,
 
         #[Assert\Type('float')]
