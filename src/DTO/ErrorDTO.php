@@ -63,7 +63,7 @@ class ErrorDTO extends AbstractDTO
     public function __construct(
         #[Asert\Type('string')]
         #[Assert\NotBlank]
-        #[Assert\Choice(static::TYPES)]
+        #[Assert\Choice(ErrorDTO::TYPES)]
         public $type = null,
 
         #[Assert\When(
