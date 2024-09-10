@@ -63,7 +63,7 @@ class Utils
             // выполнения.
             if ($result['state'] === 'fulfilled') {
                 if ($result['value'] instanceof ResponseInterface) {
-                    if ($result['value']->getCode() < 300) {
+                    if ($result['value']->getStatusCode() < 300) {
                         try {
                             $setDto($items, $result['value']);
                             continue;
