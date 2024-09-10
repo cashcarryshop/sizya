@@ -14,7 +14,7 @@
 namespace CashCarryShop\Sizya;
 
 use CashCarryShop\Sizya\DTO\ProductDTO;
-use CashCarryShop\Sizya\DTO\ErrorDTO;
+use CashCarryShop\Sizya\DTO\ByErrorDTO;
 
 /**
  * Интерфейс с методам для получения товаров
@@ -30,6 +30,9 @@ interface ProductsGetterInterface
     /**
      * Получить товары
      *
+     * В отличии от остальных методов, может
+     * выкинуть ошибку при выполнении.
+     *
      * @see ProductDTO
      *
      * @return array<ProductDTO>
@@ -42,38 +45,43 @@ interface ProductsGetterInterface
      * @param string $productId Идентификатор товара
      *
      * @see ProductDTO
-     * @see ErrorDTO
+     * @see ByErrorDTO
      *
-     * @return ProductDTO|ErrorDTO
+     * @return ProductDTO|ByErrorDTO
      */
-    public function getProductById(string $productId): ProductDTO|ErrorDTO;
+    public function getProductById(string $productId): ProductDTO|ByErrorDTO;
 
     /**
      * Получить товары по идентификаторам
      *
-     * @see ProductDTO
-     * @see ErrorDTO
+     * Количество возвращаемых элементов должно
+     * соответствовать переданным + сохранять
+     * последовательность переданных.
      *
      * @param array $productIds Идентификаторы товаров
      *
      * @see ProductDTO
-     * @see ErrorDTO
+     * @see ByErrorDTO
      *
-     * @return array<ProductDTO|ErrorDTO>
+     * @return array<ProductDTO|ByErrorDTO>
      */
     public function getProductsByIds(array $productIds): array;
 
     /**
      * Получить товар по артикулу
      *
+     * Количество возвращаемых элементов должно
+     * соответствовать переданным + сохранять
+     * последовательность переданных.
+     *
      * @param string $article Артикул
      *
      * @see ProductDTO
-     * @see ErrorDTO
+     * @see ByErrorDTO
      *
-     * @return ProductDTO|ErrorDTO
+     * @return ProductDTO|ByErrorDTO
      */
-    public function getProductByArticle(string $article): ProductDTO|ErrorDTO;
+    public function getProductByArticle(string $article): ProductDTO|ByErrorDTO;
 
     /**
      * Получить товары по артикулам
@@ -81,9 +89,9 @@ interface ProductsGetterInterface
      * @param array $articles Артикулы
      *
      * @see ProductDTO
-     * @see ErrorDTO
+     * @see ByErrorDTO
      *
-     * @return array<ProductDTO|ErrorDTO>
+     * @return array<ProductDTO|ByErrorDTO>
      */
     public function getProductsByArticles(array $articles): array;
 }
