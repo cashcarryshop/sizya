@@ -13,9 +13,14 @@
 
 namespace CashCarryShop\Sizya;
 
+use CashCarryShop\Sizya\DTO\ErrorDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
+use CashCarryShop\Sizya\DTO\ViolationsContainsDTO;
+use Symfony\Component\Validator\ConstraintViolationListInterface;
+use Symfony\Component\Validator\ConstraintViolationInterface;
 use GuzzleHttp\Exception\RequestException;
 use Psr\Http\Message\ResponseInterface;
+use Iterator;
 use Throwable;
 
 use function
@@ -41,21 +46,14 @@ class Utils
     /**
      * На основе переданных данных сопоставить результаты.
      *
-     * @param array<S>                  $values  Значения
+     * @param array<array>              $chunks  Чанки соответственно результатам выполнения
      * @param array                     $results Результаты выполнения
      * @param callable(&array, mixed):T $setDto  Функция для получения dto по результатам
-     * @param callable(T|ByErrorDTO):S  $pluck   Вытащить значения по полю из поиска
-     * @param int                       $size    Размер чанка
      *
      * @return array<T|ByErrorDTO>
      */
-    public static function mapResults(
-        array    $values,
-        array    $results,
-        callable $setDto,
-        callable $pluck,
-        int      $size
-    ): array {
+    public static function mapResults(array $chunks, array $results, callable $setDto): array
+    {
         $items = [];
         foreach ($results as $idx => $result) {
             // Проверяем есть ли ошибки, если да, вместо
@@ -97,56 +95,64 @@ class Utils
                 }
             }
 
-            // Если ошибки есть
-            for ($i = 0; $i < $size; ++$i) {
-                $items[] = ByErrorDTO::fromArray([
-                    'value'  => $values[$i * $idx],
-                    'type'   => $type,
-                    'reason' => $reason
-                ]);
+            foreach ($chunks[$idx] as $values) {
+                foreach ($values as $value) {
+                    $items[] = ByErrorDTO::fromArray([
+                        'value'  => $value,
+                        'type'   => $type,
+                        'reason' => $reason
+                    ]);
+                }
             }
         }
 
-        // Вытягиваем значения, по которым был
-        // произведен поиск из полученных элементов,
-        // сортируем их, чтобы они шли в одинаковой
-        // последовательности с исходными значениями,
-        // устанавливаем на результаты, которые не
-        // были найдены, ошибку ByErrorDTO::NOT_FOUND.
-        // На выходе возвращаем полученные элементы
-        // в той-же последовательности, в которой
-        // были переданы значения для поиска.
+        return $items;
+    }
 
-        $filtered = array_map($pluck, $items);
+    /**
+     * Исключить из массива данные, которые
+     * не прошли валидацию.
+     *
+     * Связи с индексами сохраняются.
+     *
+     * @param T[]                              $values     Значения
+     * @param ConstraintViolationListInterface $violations Ошибки валидации
+     *
+     * @return array<T[], ConstraintViolationInterface[]>
+     */
+    public static function splitByValidationErrors(
+        array                            $values,
+        ConstraintViolationListInterface $violations
+    ): array {
+        $validated = [];
+        $errors    = [];
 
-        asort($values,   SORT_ASC);
-        asort($filtered, SORT_ASC);
+        $position = 0;
+        $last     = $violations->count() - 1;
 
-        $result = [];
-
-        reset($filtered);
         foreach ($values as $idx => $value) {
-            $itemIndex = key($filtered);
+            $violation = $last === $position ? null : $violations->get($position);
 
-            if ($itemIndex === null
-                || current($filtered) !== $value
+            if ($violation
+                && $violation->getInvalidValue() === $value
             ) {
-                $result[$idx] = ByErrorDTO::fromArray([
-                    'value' => $value,
-                    'type'  => ByErrorDTO::NOT_FOUND
-                ]);
+                if (isset($errors[$idx])) {
+                    $errors[$idx]->reason->offsets[] = $position;
+                } else {
+                    $errors[$idx] = ViolationsContainsDTO::fromArray([
+                        'value'      => $value,
+                        'offsets'    => [$position],
+                        'violations' => $violations
+                    ]);
+                }
 
+                ++$position;
                 continue;
             }
 
-            $result[$idx] = $items[$itemIndex];
-            next($filtered);
+            $validated[$idx] = $value;
         }
-        unset($filtered);
-        unset($items);
 
-        ksort($result);
-
-        return $result;
+        return [$validated, $errors];
     }
 }
