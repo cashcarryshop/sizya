@@ -17,6 +17,7 @@ use CashCarryShop\Sizya\Http\Utils as HttpUtils;
 use GuzzleHttp\Promise\PromiseInterface;
 use Psr\Http\Message\ResponseInterface;
 use DateTimeZone;
+use RuntimeException;
 
 /**
  * Набор вспомогательных методов для МойСклад
@@ -110,16 +111,17 @@ class Utils
     }
 
     /**
-     * Разделить массив со строками по чанкам по
-     * переданному размеру в КБ.
+     * Разделить массив со строками по чанкам, каждый
+     * из которых не должен превышать размера $size.
      *
      * @param array<string> $array      Массив
      * @param int           $size       Размер
      * @param int           $additional Доп. размер каждого элемента
      *
      * @return array<array> Массив с чанками
+     * @throws RuntimeException
      */
-    public function chunkBySize(array $array, int $size = 3072, int $additional = 0): array
+    public static function chunkBySize(array $array, int $size = 3072, int $additional = 0): array
     {
         $size = $size * 1024;
 
@@ -128,7 +130,17 @@ class Utils
         $currentChunk = [];
 
         foreach ($array as $idx => $item) {
-            $itemSize = mb_strlen(serialize($item), '8bit') + $additional;
+            $itemSize = mb_strlen($item, '8bit') + $additional;
+
+            if ($itemSize > $size) {
+                throw new RuntimeException(
+                    sprintf(
+                        'Item with key [%s] have size more then [%d], expected less or equal',
+                        $idx,
+                        $size
+                    )
+                );
+            }
 
             if ($currentChunkSize + $itemSize > $size) {
                 $chunks[] = $currentChunk;
