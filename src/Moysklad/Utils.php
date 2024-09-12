@@ -108,4 +108,42 @@ class Utils
 
         return $datetime->setTimezone($uTimezone)->format($uFormat);
     }
+
+    /**
+     * Разделить массив со строками по чанкам по
+     * переданному размеру в КБ.
+     *
+     * @param array<string> $array      Массив
+     * @param int           $size       Размер
+     * @param int           $additional Доп. размер каждого элемента
+     *
+     * @return array<array> Массив с чанками
+     */
+    public function chunkBySize(array $array, int $size = 3072, int $additional = 0): array
+    {
+        $size = $size * 1024;
+
+        $chunks = [];
+        $currentChunkSize = 0;
+        $currentChunk = [];
+
+        foreach ($array as $idx => $item) {
+            $itemSize = mb_strlen(serialize($item), '8bit') + $additional;
+
+            if ($currentChunkSize + $itemSize > $size) {
+                $chunks[] = $currentChunk;
+                $currentChunk = [];
+                $currentChunkSize = 0;
+            }
+
+            $currentChunk[$idx] = $item;
+            $currentChunkSize += $itemSize;
+        }
+
+        if (!empty($currentChunk)) {
+            $chunks[] = $currentChunk;
+        }
+
+        return $chunks;
+    }
 }
