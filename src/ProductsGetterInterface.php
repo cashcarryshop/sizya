@@ -35,7 +35,7 @@ interface ProductsGetterInterface
      *
      * @see ProductDTO
      *
-     * @return array<ProductDTO>
+     * @return array<int, ProductDTO>
      */
     public function getProducts(): array;
 
@@ -55,15 +55,14 @@ interface ProductsGetterInterface
      * Получить товары по идентификаторам
      *
      * Количество возвращаемых элементов должно
-     * соответствовать переданным + сохранять
-     * последовательность переданных.
+     * соответствовать переданным.
      *
      * @param array $productIds Идентификаторы товаров
      *
      * @see ProductDTO
      * @see ByErrorDTO
      *
-     * @return array<ProductDTO|ByErrorDTO>
+     * @return array<int, ProductDTO|ByErrorDTO>
      */
     public function getProductsByIds(array $productIds): array;
 
@@ -71,8 +70,7 @@ interface ProductsGetterInterface
      * Получить товар по артикулу
      *
      * Количество возвращаемых элементов должно
-     * соответствовать переданным + сохранять
-     * последовательность переданных.
+     * соответствовать переданным.
      *
      * @param string $article Артикул
      *
@@ -86,12 +84,15 @@ interface ProductsGetterInterface
     /**
      * Получить товары по артикулам
      *
+     * Количество возвращаемых элементов должно
+     * соответствовать переданным.
+     *
      * @param array $articles Артикулы
      *
      * @see ProductDTO
      * @see ByErrorDTO
      *
-     * @return array<ProductDTO|ByErrorDTO>
+     * @return array<int, ProductDTO|ByErrorDTO>
      */
     public function getProductsByArticles(array $articles): array;
 }
