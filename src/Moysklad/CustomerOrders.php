@@ -79,7 +79,7 @@ abstract class CustomerOrders extends AbstractSource
                     ...$this instanceof SynchronizerTargetInterface
                         ? [
                             new Assert\NotBlank,
-                            new Assert\Length(36, 36)
+                            new Assert\Uuid(strict: false)
                         ] : []
                 ],
                 'agent' => [
@@ -87,35 +87,35 @@ abstract class CustomerOrders extends AbstractSource
                     ...$this instanceof SynchronizerTargetInterface
                         ? [
                             new Assert\NotBlank,
-                            new Assert\Length(36, 36)
+                            new Assert\Uuid(strict: false)
                         ] : []
                 ],
                 'project' => [
                     new Assert\Type(['string', 'null']),
                     new Assert\When(
                         expression: 'value !== null',
-                        constraints: [new Assert\Length(36, 36)]
+                        constraints: [new Assert\Uuid(strict: false)]
                     )
                 ],
                 'contract' => [
                     new Assert\Type(['string', 'null']),
                     new Assert\When(
                         expression: 'value !== null',
-                        constraints: [new Assert\Length(36, 36)]
+                        constraints: [new Assert\Uuid(strict: false)]
                     )
                 ],
                 'salesChannel' => [
                     new Assert\Type(['string', 'null']),
                     new Assert\When(
                         expression: 'value !== null',
-                        constraints: [new Assert\Length(36, 36)]
+                        constraints: [new Assert\Uuid(strict: false)]
                     )
                 ],
                 'store' => [
                     new Assert\Type(['string', 'null']),
                     new Assert\When(
                         expression: 'value !== null',
-                        constraints: [new Assert\Length(36, 36)]
+                        constraints: [new Assert\Uuid(strict: false)]
                     )
                 ],
                 'limit' => [
