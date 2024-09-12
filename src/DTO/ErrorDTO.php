@@ -16,6 +16,7 @@ namespace CashCarryShop\Sizya\DTO;
 
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
+use Symfony\Component\Validator\ConstraintViolationInterface;
 use Psr\Http\Message\ResponseInterface;
 use Throwable;
 
@@ -72,7 +73,12 @@ class ErrorDTO extends AbstractDTO
         )]
         #[Assert\When(
             expression: 'this.type === "validation"',
-            constraints: [new Assert\Type(ConstraintViolationListInterface::class)]
+            constraints: [
+                new Assert\Type([
+                    ConstraintViolationListInterface::class,
+                    ViolationContainsDTO::class
+                ]),
+            ]
         )]
         #[Assert\When(
             expression: 'this.type === "internal"',
