@@ -13,9 +13,11 @@
 
 namespace CashCarryShop\Sizya\Moysklad;
 
-use CashCarryShop\Sizya\Http\Utils as HttpUtils;
+use CashCarryShop\Sizya\Utils as SizyaUtils;
+use GuzzleHttp\Promise\Utils as PromiseUtils;
 use GuzzleHttp\Promise\PromiseInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\RequestInterface;
 use DateTimeZone;
 use RuntimeException;
 
@@ -39,7 +41,7 @@ class Utils
      */
     public static function prepareQueryValue(string|bool|null $value): string
     {
-        if (is_bool($value)) {
+        if (\is_bool($value)) {
             return $value ? 'true' : 'false';
         }
 
@@ -55,8 +57,8 @@ class Utils
      */
     public static function guidFromMeta(array $meta): string
     {
-        $exp = explode('/', $meta['href']);
-        return end($exp);
+        $exp = \explode('/', $meta['href']);
+        return \end($exp);
     }
 
     /**
@@ -76,7 +78,7 @@ class Utils
         $mTimezone ??= new DateTimeZone('Europe/Moscow');
         $uTimezone ??= new DateTimeZone('UTC');
 
-        $datetime = date_create_from_format($uFormat, $date, $uTimezone);
+        $datetime = \date_create_from_format($uFormat, $date, $uTimezone);
 
         return $datetime->setTimezone($mTimezone)->format($mFormat);
     }
@@ -102,8 +104,8 @@ class Utils
         $mTimezone ??= new DateTimeZone('Europe/Moscow');
         $uTimezone ??= new DateTimeZone('UTC');
 
-        $datetime = date_create_from_format($mFormat1, $date, $mTimezone);
-        $datetime = $datetime ? $datetime : date_create_from_format(
+        $datetime = \date_create_from_format($mFormat1, $date, $mTimezone);
+        $datetime = $datetime ? $datetime : \date_create_from_format(
             $mFormat2, $date, $mTimezone
         );
 
@@ -117,12 +119,17 @@ class Utils
      * @param array<string> $array      Массив
      * @param int           $size       Размер
      * @param int           $additional Доп. размер каждого элемента
+     * @param int           $maxLength  Максимальная длинна чанка
      *
      * @return array<array> Массив с чанками
      * @throws RuntimeException
      */
-    public static function chunkBySize(array $array, int $size = 3072, int $additional = 0): array
-    {
+    public static function chunkBySize(
+        array $array,
+        int $size = 3072,
+        int $additional = 0,
+        int $maxLength  = 0,
+    ): array {
         $size = $size * 1024;
 
         $chunks = [];
@@ -130,7 +137,7 @@ class Utils
         $currentChunk = [];
 
         foreach ($array as $idx => $item) {
-            $itemSize = mb_strlen($item, '8bit') + $additional;
+            $itemSize = \mb_strlen($item, '8bit') + $additional;
 
             if ($itemSize > $size) {
                 throw new RuntimeException(
@@ -142,9 +149,14 @@ class Utils
                 );
             }
 
-            if ($currentChunkSize + $itemSize > $size) {
-                $chunks[] = $currentChunk;
-                $currentChunk = [];
+            if ($currentChunkSize + $itemSize > $size
+                || (
+                    $maxLength > 0
+                        && \count($currentChunk) === $maxLength
+                )
+            ) {
+                $chunks[]         = $currentChunk;
+                $currentChunk     = [];
                 $currentChunkSize = 0;
             }
 
@@ -157,5 +169,102 @@ class Utils
         }
 
         return $chunks;
+    }
+
+    /**
+     * Получить данные по фильтрам.
+     *
+     * @param string          $filter    Название фильтра
+     * @param array           $values    Значения для фильтра
+     * @param RequestBuilder  $builder   Конструктор запросов
+     * @param callable        $send      Функция отправки запросов
+     * @param callable(R):D[] $getDtos   Функция для получения dto на выход
+     * @apram callable(D):S   $pluck     Получить из dto из функции $getDtos найденное значение
+     * @param int             $maxLength Максимальная длинна чанка
+     *
+     * @return PromiseInterface<D|ByErrorDTO>
+     */
+    public static function getByFilter(
+        string         $filter,
+        array          $values,
+        RequestBuilder $builder,
+        callable       $send,
+        callable       $getDtos,
+        callable       $pluck,
+        int            $maxLength = 0
+    ): PromiseInterface {
+        $promises = [];
+        $addSize  = mb_strlen($filter, '8bit');
+        $chunks   = static::chunkBySize(
+            $values,
+            3072 + $addSize,
+            $addSize,
+            $maxLength
+        );
+        unset($additionalSize);
+        unset($chunkSize);
+        unset($values);
+
+        foreach ($chunks as $chunk) {
+            $clone = clone $builder;
+
+            foreach ($chunk as $value) {
+                $clone->filter($filter, $value);
+            }
+
+            $promises[] = $send($clone->build('GET'));
+        }
+
+        return PromiseUtils::settle($promises)->then(
+            static function ($results) use ($chunks, $getDtos, $pluck) {
+                return SizyaUtils::mapResults(
+                    $chunks,
+                    $results,
+                    $getDtos,
+                    $pluck
+                );
+            }
+        );
+    }
+
+    /**
+     * Просто получить данные
+     *
+     * @param RequestBuilder               $builder    Конструктор запросов
+     * @param int                          $limit      Ограничение по количеству элементов
+     * @param int                          $chunkLimit Ограничение по количеству для чанка
+     * @param callable(RequestInterface):R $send       Отправить запрос
+     * @param callable(R):T[]              $getDtos    Получить dto
+     *
+     *
+     * @return T[]
+     */
+    public static function getAll(
+        RequestBuilder $builder,
+        int            $limit,
+        int            $chunkLimit,
+        callable       $send,
+        callable       $getDtos
+    ): array {
+        $offset = 0;
+        $maxOffset = $counter = $limit;
+
+        $items = [];
+
+        do {
+            $clone = (clone $builder)
+                ->offset($offset)
+                ->limit($counter > $chunkLimit ? $chunkLimit : $counter);
+
+            $items = \array_merge(
+                $items,
+                $chunk = $getDtos($send($clone->build('GET'))->wait())
+            );
+
+            $offset  += 100;
+            $counter -= 100;
+        } while (\count($chunk) === $chunkLimit && $offset < $maxOffset);
+
+        return $items;
     }
 }
