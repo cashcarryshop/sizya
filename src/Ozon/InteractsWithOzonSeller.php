@@ -15,6 +15,8 @@ namespace CashCarryShop\Sizya\Ozon;
 use CashCarryShop\Sizya\Synchronizer\InteractsWithHttpClient;
 use Symfony\Component\Validator\Constraints as Assert;
 use GuzzleHttp\Promise\PromiseInterface;
+use Psr\Http\Message\ResponseInterface;
+use JsonException;
 
 /**
  * Трейт с методами для взаимодействия с
@@ -100,10 +102,26 @@ trait InteractsWithOzonSeller
      *
      * @return PromiseInterface
      */
-    protected function decode(PromiseInterface $promise): PromiseInterface
+    public function decode(PromiseInterface $promise): PromiseInterface
     {
-        return $promise->then(static fn ($response) => json_decode(
-            $response->getBody()->getContents(), true
-        ));
+        return $promise->then([$this, 'decodeResponse']);
+    }
+
+    /**
+     * Декодировать ResponseInterface
+     *
+     * @param ResponseInterface $response Ответ
+     *
+     * @return array
+     * @throws JsonException Если произошла ошибка декдоирования
+     */
+    public function decodeResponse(ResponseInterface $response): array
+    {
+        return json_decode(
+            $response->getBody()->getContents(),
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
     }
 }
