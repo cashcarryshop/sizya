@@ -15,9 +15,10 @@ namespace CashCarryShop\Sizya\Moysklad;
 
 use CashCarryShop\Sizya\OrdersGetterInterface;
 use CashCarryShop\Sizya\OrdersGetterByAdditionalInterface;
-use CashCarryShop\Synchronizer\SynchronizerTargetInterface;
-use CashCarryShop\Sizya\Exceptions\ValidationException;
-use GuzzleHttp\Promise\Utils as PromiseUtils;
+use CashCarryShop\Sizya\DTO\OrderDTO;
+use CashCarryShop\Sizya\DTO\PositionDTO;
+use CashCarryShop\Sizya\DTO\AdditionalDTO;
+use CashCarryShop\Sizya\DTO\ByErrorDTO;
 
 /**
  * Класс для работы с заказами покупателей МойСклад
@@ -32,90 +33,136 @@ class CustomerOrdersSource extends CustomerOrders
     implements OrdersGetterInterface, OrdersGetterByAdditionalInterface
 {
     /**
-     * Конвертировать позицию
+     * Получить заказы
      *
-     * @param array $position Позиция
+     * @see OrdersGetterInterface
      *
-     * @return array
+     * @return OrderDTO[]
      */
-    private function _convertPosition(array $position): array
+    public function getOrders(): array
     {
-        $output = [
-            'id' => $position['id'],
-            'orderId' => $position['assortment']['id'],
-            'type' => $position['assortment']['meta']['type'],
-            'quantity' => $position['quantity'],
-            'reserve' => $position['reserve'] ?? 0,
-            'price' => (int) ($position['price'] / 100),
-            'discount' => $position['discount'],
-            'original' => $position
-        ];
+        $builder = $this->builder()
+            ->point('entity/customerorder')
+            ->expand('positions.assortment');
 
-        $article = $position['assortment']['article'] ?? null;
-        $code = $position['assortment']['code'] ?? null;
+        foreach ($this->getSettings('order') as $order) {
+            $builder->order(...$order);
+        }
 
-        if ($position['assortment']['meta']['type'] === 'variant') {
-            if ($article || $code) {
-                $output['article'] = $code ?? $article;
-                return $output;
+        $this->_setFilterIfExist('organization', $builder);
+        $this->_setFilterIfExist('agent',        $builder);
+        $this->_setFilterIfExist('project',      $builder);
+        $this->_setFilterIfExist('contract',     $builder);
+        $this->_setFilterIfExist('salesChannel', $builder);
+        $this->_setFilterIfExist('store',        $builder);
+
+        return Utils::getAll(
+            $builder,
+            $this->getSettings('limit'),
+            min($this->getSettings('limit'), 100),
+            [$this, 'send'],
+            fn ($response) => array_map(
+                fn ($order) => $this->_convertOrder($order),
+                $this->decodeResponse($response)['rows']
+            )
+        );
+    }
+
+    /**
+     * Получить заказы по идентификаторам
+     *
+     * @see OrdersGetterInterface
+     *
+     * @param array<string> $orderIds Идентификаторы заказов
+     *
+     * @return array<int, OrderDTO|ByErrorDTO>
+     */
+    public function getOrdersByIds(array $orderIds): array
+    {
+        return $this->_getByFilter('id', $orderIds);
+    }
+
+    /**
+     * Получить заказ по идентификатору
+     *
+     * @see OrdersGetterInterface
+     *
+     * @param string $orderId Идентификатор заказа
+     *
+     * @return OrderDTO|ByErrorDTO
+     */
+    public function getOrderById(string $orderId): OrderDTO|ByErrorDTO
+    {
+        return $this->getOrdersByIds([$orderId])[0] ?? [];
+    }
+
+    /**
+     * Получить заказы по доп. полю
+     *
+     * @see OrdersGetterByAdditionalInterface
+     *
+     * @param string $entityId Идентификатор сущности
+     * @param array  $values   Значения доп. поля
+     *
+     * @return array<int, OrderDTO|ByErrorDTO>
+     */
+    public function getOrdersByAdditional(string $entityId, array $values): array
+    {
+        $additionalKey = null;
+
+        return $this->_getByFilter(
+            $this->meta()->href(
+                "entity/customerorder/metadata/attributes/$entityId"
+            ),
+            $values,
+            static function ($order) use ($entityId, &$additionalKey) {
+                if (is_null($additionalKey)) {
+                    foreach ($order->additionals as $key => $additional) {
+                        if ($additional->entityId === $entityId) {
+                            $additionalKey = $key;
+                            return $additional->value;
+                        }
+                    }
+                }
+
+                return $order->additionals[$additionalKey];
             }
-        } else if ($article || $code) {
-            $output['article'] = $article ?? $code;
-        }
-
-        return $output;
+        );
     }
 
     /**
-     * Преобразовать доп. поле
+     * Получить заказы по фильтру
      *
-     * @param array $additional Доп поле
+     * @see Utils
      *
-     * @return array
+     * @param string   $filter Фильтр
+     * @param array    $values Значения для фильтра
+     * @param callable $pluck  Функция для передачи Utils::getByFilter
+     *
+     * @return array<int, OrderDTO|ByErrorDTO>
      */
-    private function _convertAdditional(array $additional): array
-    {
-        return [
-            'id' => $additional['id'],
-            'entityId' => Utils::guidFromMeta($additional['meta']),
-            'name' => $additional['name'],
-            'value' => $additional['value'],
-            'original' => $additional
-        ];
-    }
-
-    /**
-     * Преобразовать заказ
-     *
-     * @param array $order Заказ
-     *
-     * @return array
-     */
-    private function _convertOrder(array $order): array
-    {
-        $output = [
-            'id' => $order['id'],
-            'article' => $order['name'],
-            'created' => Utils::dateToUtc($order['created']),
-            'status' => Utils::guidFromMeta($order['state']['meta']),
-            'positions' => array_map(
-                fn ($position) => $this->_convertPosition($position),
-                $order['positions']['rows']
-            ),
-            'additional' => array_map(
-                fn ($additional) => $this->_convertAdditional($additional),
-                $order['attributes'] ?? []
-            ),
-            'original' => $order
-        ];
-
-        if (isset($order['deliveryPlannedMoment'])) {
-            $output['shipment_date'] = Utils::dateToUtc(
-                $order['deliveryPlannedMoment']
-            );
-        }
-
-        return $output;
+    private function _getByFilter(
+        string   $filter,
+        array    $values,
+        callable $pluck
+    ): array {
+        return Utils::getByFilter(
+            $filter,
+            $values,
+            $this->builder()
+                ->point('entity/customerorder')
+                ->limit(100)
+                ->expand('positions.assortment'),
+            [$this, 'send'],
+            function ($response) {
+                return \array_map(
+                    fn ($order) => $this->_convertOrder($order),
+                    $this->decodeResponse($response)['rows']
+                );
+            },
+            $pluck,
+            100
+        )->wait();
     }
 
     /**
@@ -138,140 +185,90 @@ class CustomerOrdersSource extends CustomerOrders
     }
 
     /**
-     * Получить заказы
+     * Преобразовать заказ
      *
-     * Смотреть `OrdersGetterInterface::getOrders`.
+     * @param array $order Заказ
      *
-     * @return array
+     * @return OrderDTO
      */
-    public function getOrders(): array
+    private function _convertOrder(array $order): OrderDTO
     {
-        $builder = $this->builder()
-            ->point('entity/customerorder')
-            ->expand('positions.assortment');
-
-        foreach ($this->getSettings('order') as $order) {
-            $builder->order(...$order);
-        }
-
-        $this->_setFilterIfExist('organization', $builder);
-        $this->_setFilterIfExist('agent', $builder);
-        $this->_setFilterIfExist('project', $builder);
-        $this->_setFilterIfExist('contract', $builder);
-        $this->_setFilterIfExist('salesChannel', $builder);
-        $this->_setFilterIfExist('store', $builder);
-
-        $offset = 0;
-        $maxOffset = $counter = $this->getSettings('limit');
-
-        $orders = [];
-
-        do {
-            $clone = (clone $builder)
-                ->offset($offset)
-                ->limit($counter > 100 ? 100 : $counter);
-
-            $chunk = $this->decode($this->send($clone->build('GET')))->wait();
-            $orders = array_merge(
-                $orders, array_map(
-                    fn ($order) => $this->_convertOrder($order),
-                    $chunk['rows']
-                )
-            );
-
-            $offset += 100;
-            $counter -= 100;
-        } while (count($chunk['rows']) === 100 && $offset < $maxOffset);
-
-        return $orders;
-    }
-
-    /**
-     * Получить заказы по фильтру
-     *
-     * @param string $filter Фильтр
-     * @param array  $values Значения для фильтра
-     * @param int    $size   Размер чанка
-     *
-     * @return array
-     */
-    private function _getByFilter(string $filter, array $values, int $size = 80): array
-    {
-        $builder = $this->builder()
-            ->point('entity/customerorder')
-            ->limit(100)
-            ->expand('positions.assortment');
-
-        $promises = [];
-        foreach (array_chunk($values, $size) as $chunk) {
-            $clone = clone $builder;
-
-            foreach ($chunk as $value) {
-                $clone->filter($filter, $value);
-            }
-
-            $promises[] = $this->decode($this->send($clone->build('GET')));
-        }
-
-        return array_map(
-            fn ($order) => $this->_convertOrder($order),
-            array_merge(
-                ...array_map(
-                    static fn ($result) => $result['rows'],
-                    PromiseUtils::all($promises)->wait()
-                )
-            )
-        );
-    }
-
-    /**
-     * Получить заказы по идентификаторам
-     *
-     * Должен возвращать массив с данными заказа,
-     * смотреть `OrdersGetterInterface::getOrdersByIds`.
-     *
-     * @param array<string> $orderIds Идентификаторы заказов
-     *
-     * @return array
-     */
-    public function getOrdersByIds(array $orderIds): array
-    {
-        return $this->_getByFilter('id', $orderIds);
-    }
-
-    /**
-     * Получить заказ по идентификатору
-     *
-     * Должен возвращать массив с данными заказа,
-     * смотреть `OrdersGetterInterface::getOrderById`.
-     *
-     * @param string $orderId Идентификатор заказа
-     *
-     * @return array
-     */
-    public function getOrderById(string $orderId): array
-    {
-        return $this->getOrdersByIds([$orderId])[0] ?? [];
-    }
-
-    /**
-     * Получить заказы по доп. полю
-     *
-     * Должен вовращать тот-же формат данных
-     * что и `OrdersGetterByAdditionalInterface::getOrdersByAdditional`
-     *
-     * @param string $entityId Идентификатор сущности
-     * @param array  $values   Значения доп. поля
-     *
-     * @return array
-     */
-    public function getOrdersByAdditional(string $entityId, array $values): array
-    {
-        return $this->_getByFilter(
-            $this->meta()->href(
-                "entity/customerorder/metadata/attributes/$entityId",
+        $data = [
+            'id'        => $order['id'],
+            'article'   => $order['name'],
+            'created'   => Utils::dateToUtc($order['created']),
+            'status'    => Utils::guidFromMeta($order['state']['meta']),
+            'positions' => \array_map(
+                fn ($position) => $this->_convertPosition($position),
+                $order['positions']['rows']
             ),
-            $values
-        );
+            'additionals' => \array_map(
+                fn ($additional) => $this->_convertAdditional($additional),
+                $order['attributes'] ?? []
+            ),
+            'original' => $order
+        ];
+
+        if (isset($order['deliveryPlannedMoment'])) {
+            $data['shipment_date'] = Utils::dateToUtc(
+                $order['deliveryPlannedMoment']
+            );
+        }
+
+        return OrderDTO::fromArray($data);
+    }
+
+    /**
+     * Конвертировать позицию заказа покупателя
+     *
+     * @param array $position Данные позиции
+     *
+     * @return PositionDTO
+     */
+    private function _convertPosition(array $position): PositionDTO
+    {
+        $data = [
+            'id'       => $position['id'],
+            'orderId'  => $position['assortment']['id'],
+            'type'     => $position['assortment']['meta']['type'],
+            'quantity' => $position['quantity'],
+            'reserve'  => $position['reserve'] ?? 0,
+            'price'    => (float) ($position['price'] / 100),
+            'discount' => (float) $position['discount'],
+            'original' => $position
+        ];
+
+        $article = (string) $position['assortment']['article'] ?? null;
+        $code    = (string) $position['assortment']['code'] ?? null;
+
+        if ($position['assortment']['meta']['type'] === 'variant') {
+            if ($article || $code) {
+                $data['article'] = $code ?? $article;
+                return $data;
+            }
+        } else if ($article || $code) {
+            $data['article'] = $article ?? $code;
+        }
+
+        return PositionDTO::fromArray($data);
+    }
+
+    /**
+     * Преобразовать дополнительное поле
+     * заказа покупателя
+     *
+     * @param array $additional Данные дополнительного поля
+     *
+     * @return AdditionalDTO
+     */
+    private function _convertAdditional(array $additional): AdditionalDTO
+    {
+        return AdditionalDTO::fromArray([
+            'id'        => $additional['id'],
+            'entityId'  => Utils::guidFromMeta($additional['meta']),
+            'name'      => $additional['name'],
+            'value'     => $additional['value'],
+            'original'  => $additional
+        ]);
     }
 }
