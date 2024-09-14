@@ -25,7 +25,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  *
- * @property string  $id          Идентификатор позиции
+ * @property string  $id          Идентификатор товара
  * @property string  $article     Артикул товара
  * @property string  $warehouseId Идентификатор склада
  * @property int     $quantity    Количество товаров
@@ -36,7 +36,7 @@ class StockDTO extends AbstractDTO
     /**
      * Создать экземпляр позиции
      *
-     * @param string  $id          Идентификатор товарв
+     * @param string  $id          Идентификатор товара
      * @param string  $article     Артикул товара
      * @param string  $warehouseId Идентификатор склада
      * @param int     $quantity    Количество товаров
@@ -57,7 +57,7 @@ class StockDTO extends AbstractDTO
 
         #[Assert\Type('int')]
         #[Assert\PositiveOrZero]
-        public readonly int $quantity = 0,
+        public $quantity = 0,
 
         #[Assert\NotBlank]
         public $original = null
