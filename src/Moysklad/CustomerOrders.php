@@ -15,8 +15,6 @@ namespace CashCarryShop\Sizya\Moysklad;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
-use function array_replace, array_merge;
-
 /**
  * Абстрактный класс для заказов покупателей МойСклад
  *
@@ -55,7 +53,7 @@ abstract class CustomerOrders extends AbstractSource
             'products'     => null
         ];
 
-        parent::__construct(array_replace($defaults, $settings));
+        parent::__construct(\array_replace($defaults, $settings));
 
         $this->settings['products'] = $this->getSettings(
             'products', new Products([
@@ -72,7 +70,7 @@ abstract class CustomerOrders extends AbstractSource
      */
     protected function rules(): array
     {
-        return array_merge(
+        return \array_merge(
             parent::rules(), [
                 'organization' => [
                     new Assert\Type('string', 'null'),
