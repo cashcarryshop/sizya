@@ -13,6 +13,8 @@
 
 namespace CashCarryShop\Sizya;
 
+use CashCarryShop\Sizya\DTO\StockDTO;
+
 /**
  * Интерфейс с методами для получения остатков
  *
@@ -27,15 +29,9 @@ interface StocksGetterInterface
     /**
      * Получить остатки товаров
      *
-     * Возвращает массив с остатками товаров:
+     * @see StockDTO
      *
-     * - id:           (string) Идентификатор товара
-     * - article:      (string) Артикул товара
-     * - warehouse_id: (string) Идентификатор склада
-     * - quantity:     (int)    Количество товара на складе
-     * - original:     (mixed)  Оригинальный ответ
-     *
-     * @return array
+     * @return StockDTO[]
      */
     public function getStocks(): array;
 }
