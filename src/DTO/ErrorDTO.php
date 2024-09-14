@@ -14,10 +14,10 @@ declare(strict_types=1);
 
 namespace CashCarryShop\Sizya\DTO;
 
+use CashCarryShop\Sizya\Exceptions\BadResponseException;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 use Symfony\Component\Validator\ConstraintViolationInterface;
-use Psr\Http\Message\ResponseInterface;
 use Throwable;
 
 /**
@@ -86,7 +86,7 @@ class ErrorDTO extends AbstractDTO
         )]
         #[Assert\When(
             expression: 'this.type === "http"',
-            constraints: [new Assert\Type(ResponseInterface::class)]
+            constraints: [new Assert\Type(BadResponseException::class)]
         )]
         public $reason = null
     ) {}
