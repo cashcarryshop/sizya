@@ -117,7 +117,7 @@ class Utils
      * из которых не должен превышать размера $size.
      *
      * @param array<string> $array      Массив
-     * @param int           $size       Размер
+     * @param int           $size       Размер в байтах
      * @param int           $additional Доп. размер каждого элемента
      * @param int           $maxLength  Максимальная длинна чанка
      *
@@ -126,12 +126,10 @@ class Utils
      */
     public static function chunkBySize(
         array $array,
-        int $size = 3072,
+        int $size = 6144,
         int $additional = 0,
         int $maxLength  = 0,
     ): array {
-        $size = $size * 1024;
-
         $chunks = [];
         $currentChunkSize = 0;
         $currentChunk = [];
@@ -194,10 +192,10 @@ class Utils
         int            $maxLength = 0
     ): PromiseInterface {
         $promises = [];
-        $addSize  = mb_strlen($filter, '8bit');
+        $addSize  = \mb_strlen($filter, '8bit');
         $chunks   = static::chunkBySize(
             $values,
-            3072 + $addSize,
+            6144 + $addSize,
             $addSize,
             $maxLength
         );

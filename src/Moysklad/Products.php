@@ -261,7 +261,6 @@ class Products extends AbstractSource implements ProductsGetterInterface
             $this->builder()->point('entity/assortment'),
             [$this, 'send'],
             function ($response) {
-
                 return \array_map(
                     fn ($item) => $this->_convertProduct($item),
                     $this->decodeResponse($response)['rows']
