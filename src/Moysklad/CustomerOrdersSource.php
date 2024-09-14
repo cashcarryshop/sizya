@@ -61,7 +61,7 @@ class CustomerOrdersSource extends CustomerOrders
             $this->getSettings('limit'),
             min($this->getSettings('limit'), 100),
             [$this, 'send'],
-            fn ($response) => array_map(
+            fn ($response) => \array_map(
                 fn ($order) => $this->_convertOrder($order),
                 $this->decodeResponse($response)['rows']
             )
@@ -116,7 +116,7 @@ class CustomerOrdersSource extends CustomerOrders
             ),
             $values,
             static function ($order) use ($entityId, &$additionalKey) {
-                if (is_null($additionalKey)) {
+                if (\is_null($additionalKey)) {
                     foreach ($order->additionals as $key => $additional) {
                         if ($additional->entityId === $entityId) {
                             $additionalKey = $key;
@@ -176,7 +176,7 @@ class CustomerOrdersSource extends CustomerOrders
     private function _setFilterIfExist(string $key, object &$builder): bool
     {
         $value = $this->getSettings($key);
-        if (is_null($value)) {
+        if (\is_null($value)) {
             return false;
         }
 
@@ -210,7 +210,7 @@ class CustomerOrdersSource extends CustomerOrders
         ];
 
         if (isset($order['deliveryPlannedMoment'])) {
-            $data['shipment_date'] = Utils::dateToUtc(
+            $data['shipmentDate'] = Utils::dateToUtc(
                 $order['deliveryPlannedMoment']
             );
         }
@@ -238,14 +238,20 @@ class CustomerOrdersSource extends CustomerOrders
             'original' => $position
         ];
 
-        $article = (string) $position['assortment']['article'] ?? null;
-        $code    = (string) $position['assortment']['code'] ?? null;
+        $article = $position['assortment']['article'] ?? null;
+        $code    = $position['assortment']['code']    ?? null;
 
         if ($position['assortment']['meta']['type'] === 'variant') {
             if ($article || $code) {
-                $data['article'] = $code ?? $article;
-                return $data;
+                $data['article'] = (string) ($code ?? $article);
             }
+
+            throw new \RuntimeException(
+                sprintf(
+                    'Cannot get assortment article for assortment id [%s]',
+                    $position['assortment']['id']
+                )
+            );
         } else if ($article || $code) {
             $data['article'] = $article ?? $code;
         }
