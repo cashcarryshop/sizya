@@ -39,16 +39,15 @@ interface OrdersGetterInterface
     /**
      * Получить заказы по идентификаторам
      *
-     * Заказы должны возвращаться в той-же последовательности
-     * и в том же количестве, что и были переданы идентификаторы
-     * в метод.
+     * Количество возвращаемых элементов должно
+     * соответствовать переданным.
      *
      * @param array<string> $orderIds Идентификаторы заказов
      *
      * @see OrderDTO
-     * @see ErrorDTO
+     * @see ByErrorDTO
      *
-     * @return array<OrderDTO|ErrorDTO>
+     * @return array<int, OrderDTO|ByErrorDTO>
      */
     public function getOrdersByIds(array $orderIds): array;
 
@@ -58,9 +57,9 @@ interface OrdersGetterInterface
      * @param string $orderId Идентификатор заказа
      *
      * @see OrderDTO
-     * @see ErrorDTO
+     * @see ByErrorDTO
      *
-     * @return OrderDTO|ErrorDTO
+     * @return OrderDTO|ByErrorDTO
      */
-    public function getOrderById(string $orderId): OrderDTO|ErrorDTO;
+    public function getOrderById(string $orderId): OrderDTO|ByErrorDTO;
 }

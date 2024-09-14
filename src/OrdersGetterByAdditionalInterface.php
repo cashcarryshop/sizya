@@ -1,6 +1,6 @@
 <?php
 /**
- * Интерфейс с методом для получение заказов по доп. полю
+ * Этот файл является частью пакета sizya
  *
  * PHP version 8
  *
@@ -12,6 +12,9 @@
  */
 
 namespace CashCarryShop\Sizya;
+
+use CashCarryShop\Sizya\DTO\OrderDTO;
+use CashCarryShop\Sizya\DTO\ByErrorDTO;
 
 /**
  * Интерфейс с методом для получение заказов по доп. полю
@@ -27,14 +30,13 @@ interface OrdersGetterByAdditionalInterface
     /**
      * Получить заказы по доп. полю
      *
-     * Должен вовращать тот-же формат данных
-     * что и `OrdersGetterInterface::get`, только
-     * в этом случае поле `additional` обязательно
+     * @param string            $entityId Идентификатор сущности
+     * @param array<int, mixed> $values   Значения доп. поля
      *
-     * @param string $entityId Идентификатор сущности
-     * @param array  $values   Значения доп. поля
+     * @see OrderDTO
+     * @see ByErrorDTO
      *
-     * @return array
+     * @return array<int, OrderDTO|ByErrorDTO>
      */
     public function getOrdersByAdditional(string $entityId, array $values): array;
 }
