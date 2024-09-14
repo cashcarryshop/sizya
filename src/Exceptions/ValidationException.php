@@ -1,6 +1,6 @@
 <?php
 /**
- * Ошибка валидации
+ * Этот файл является частью пакета sizya.
  *
  * PHP version 8
  *
@@ -18,7 +18,7 @@ use Exception;
 use Throwable;
 
 /**
- * Ошибка валидации
+ * Ошибка валидации.
  *
  * PHP version 8
  *
@@ -42,9 +42,8 @@ class ValidationException extends Exception
      *
      * @param string                  $message    Сообщеине
      * @param int                     $code       Код ошибки
-     * @param Throwable               $previous   Предыдущая ошибки
+     * @param Throwable               $previous   Предыдущая ошибка
      * @param ConstraintViolationList $violations Список ошибок валидации
-     *
      */
     public function __construct(
         string                  $message    = 'Validated entity have some violations',
