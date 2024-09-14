@@ -14,6 +14,8 @@
 namespace CashCarryShop\Sizya\Moysklad;
 
 use CashCarryShop\Sizya\StocksGetterInterface;
+use CashCarryShop\Sizya\DTO\StockDTO;
+use CashCarryShop\Sizya\DTO\ProductDTO;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
@@ -43,12 +45,14 @@ class ShortStocks extends AbstractSource implements StocksGetterInterface
             'products'     => null
         ];
 
-        parent::__construct(array_replace($defaults, $settings));
+        parent::__construct(\array_replace($defaults, $settings));
 
-        $this->settings['products'] = $this->getSettings('products', new Products([
-            'credentials' => $this->getCredentials(),
-            'client' => $this->getSettings('client')
-        ]));
+        if (\is_null($this->getSettings('products'))) {
+            $this->settings['products'] = new Products([
+                'credentials' => $this->getSettings('credentials'),
+                'client'      => $this->getSettings('client')
+            ]);
+        }
     }
 
     /**
@@ -85,9 +89,9 @@ class ShortStocks extends AbstractSource implements StocksGetterInterface
     /**
      * Получить остатки
      *
-     * Смотреть `StocksInterface::getStocks`
+     * @see StocksGetterInterface
      *
-     * @return array
+     * @return StockDTO[]
      */
     public function getStocks(): array
     {
@@ -100,30 +104,61 @@ class ShortStocks extends AbstractSource implements StocksGetterInterface
         if ($since = $this->getSettings('changedSince')) {
             $builder->param('changedSince', $since);
         }
+        unset($since);
 
-        $stocks = $this->decode($this->send($builder->build('GET')))->wait();
+        $result = $this->decode($this->send($builder->build('GET')))->wait();
 
-        $productIds = array_unique(array_column($stocks, 'assortmentId'));
-        $products = $this->getSettings('products')->getProductsByIds($productIds);
-        $productIds = array_column($products, 'id');
+        $assortmentIds = \array_column($result, 'assortmentId');
 
-        $output = [];
+        $products = \array_filter(
+            $this->getSettings('products')
+                ->getProductsByIds(
+                    \array_unique(
+                        $assortmentIds,
+                        SORT_STRING
+                    )
+                ),
+            static function ($item) {
+                if ($item instanceof ProductDTO) {
+                    return true;
+                }
 
-        foreach ($stocks as $stock) {
-            $index = array_search($stock['assortmentId'], $productIds);
-            if ($index === false) {
-                continue;
+                if (in_array($item->type, ['internal', 'http'])) {
+                    throw $item->reason;
+                }
+
+                return false;
             }
+        );
+        $productsIds = \array_column($products, 'id');
 
-            $output[] = [
-                'id' => $stock['assortmentId'],
-                'article' => $products[$index]['article'],
-                'warehouse_id' => $stock['storeId'],
-                'quantity' => $stock[$stockType],
-                'original' => $stock
-            ];
+        \asort($assortmentIds, SORT_STRING);
+        \asort($productsIds,   SORT_STRING);
+
+        $stocks = [];
+
+        \reset($assortmentIds);
+        foreach ($productsIds as $idx => $productId) {
+            if (\current($assortmentIds) === $productId) {
+                do {
+                    $item = $result[\key($assortmentIds)];
+
+                    $stocks[] = StockDTO::fromArray([
+                        'id'          => $productId,
+                        'article'     => $products[$idx],
+                        'warehouseId' => $item['storeId'],
+                        'quantity'    => $item[$stockType],
+                        'original'    => [
+                            'stock'   => $item,
+                            'product' => $products[$idx]
+                        ]
+                    ]);
+
+                    \next($assortmentIds);
+                } while (\current($assortmentIds) === $productId);
+            }
         }
 
-        return $output;
+        return $stocks;
     }
 }
