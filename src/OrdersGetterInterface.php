@@ -14,7 +14,7 @@
 namespace CashCarryShop\Sizya;
 
 use CashCarryShop\Sizya\DTO\OrderDTO;
-use CashCarryShop\Sizya\DTO\ErrorDTO;
+use CashCarryShop\Sizya\DTO\ByErrorDTO;
 
 /**
  * Интерфейс с методами для получения заказов
