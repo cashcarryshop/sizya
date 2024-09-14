@@ -13,7 +13,7 @@
 
 namespace CashCarryShop\Sizya\Exceptions;
 
-use Symfony\Component\Validator\ConstraintViolationList;
+use Symfony\Component\Validator\ConstraintViolationListInterface;
 use Exception;
 use Throwable;
 
@@ -33,23 +33,23 @@ class ValidationException extends Exception
     /**
      * Список ошибок валидации
      *
-     * @var ConstraintViolationList
+     * @var ConstraintViolationListInterface
      */
-    public readonly ConstraintViolationList $violations;
+    protected ConstraintViolationListInterface $violations;
 
     /**
      * Создание исключения
      *
-     * @param string                  $message    Сообщеине
-     * @param int                     $code       Код ошибки
-     * @param Throwable               $previous   Предыдущая ошибка
-     * @param ConstraintViolationList $violations Список ошибок валидации
+     * @param string                           $message    Сообщеине
+     * @param int                              $code       Код ошибки
+     * @param Throwable                        $previous   Предыдущая ошибка
+     * @param ConstraintViolationListInterface $violations Список ошибок валидации
      */
     public function __construct(
-        string                  $message    = 'Validated entity have some violations',
-        int                     $code       = 0,
-        Throwable               $previous   = null,
-        ConstraintViolationList $violations = null
+        string                           $message    = 'Validated entity have some violations',
+        int                              $code       = 0,
+        Throwable                        $previous   = null,
+        ConstraintViolationListInterface $violations = null
     ) {
         parent::__construct($message, $code, $previous);
         $this->violations = $violations;
@@ -64,5 +64,15 @@ class ValidationException extends Exception
     {
         return parent::__toString() . PHP_EOL
             . PHP_EOL . (string) $this->violations;
+    }
+
+    /**
+     * Получить ошибки валидации
+     *
+     * @return ConstraintViolationListInterface
+     */
+    public function getViolations(): ConstraintViolationListInterface
+    {
+        return $this->violations;
     }
 }
