@@ -57,7 +57,7 @@ abstract class CustomerOrders extends AbstractSource
 
         $this->settings['products'] = $this->getSettings(
             'products', new Products([
-                'credentials' => $this->getCredentials(),
+                'credentials' => $this->getSettings('credentials'),
                 'client'      => $this->getSettings('client')
             ])
         );;
@@ -120,23 +120,25 @@ abstract class CustomerOrders extends AbstractSource
                     new Assert\Type('int'),
                     new Assert\Range(min: 100)
                 ],
-                'order' => new Assert\Collection([
-                    0 => [
-                        new Assert\Type('string'),
-                        new Assert\Choice([
-                            'created',
-                            'deliveryPlannedMoment',
-                            'name',
-                            'id',
-                            'deleted',
-                            'sum'
-                        ])
-                    ],
-                    1 => [
-                        new Assert\Type('string'),
-                        new Assert\Choice(['asc', 'desc'])
-                    ]
-                ]),
+                'order' => new Assert\All(
+                    new Assert\Collection([
+                        0 => [
+                            new Assert\Type('string'),
+                            new Assert\Choice([
+                                'created',
+                                'deliveryPlannedMoment',
+                                'name',
+                                'id',
+                                'deleted',
+                                'sum'
+                            ])
+                        ],
+                        1 => [
+                            new Assert\Type('string'),
+                            new Assert\Choice(['asc', 'desc'])
+                        ]
+                    ])
+                ),
                 'products'    => [new Assert\Type([null, Products::class])],
                 'vatEnabled'  => [new Assert\Type('bool')],
                 'vatIncluded' => [new Assert\Type('bool')]
