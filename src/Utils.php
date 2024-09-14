@@ -17,20 +17,9 @@ use CashCarryShop\Sizya\DTO\ErrorDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
 use CashCarryShop\Sizya\DTO\ViolationsContainsDTO;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
-use Symfony\Component\Validator\ConstraintViolationInterface;
 use GuzzleHttp\Exception\RequestException;
 use Psr\Http\Message\ResponseInterface;
-use Iterator;
 use Throwable;
-
-use function
-    array_map,
-    asort,
-    ksort,
-    reset,
-    key,
-    current,
-    next;
 
 /**
  * Набор вспомогательных методов для пакета.
@@ -46,41 +35,43 @@ class Utils
     /**
      * На основе переданных данных сопоставить результаты.
      *
-     * @param array<array>              $chunks  Чанки соответственно результатам выполнения
-     * @param array                     $results Результаты выполнения
-     * @param callable(&array, mixed):T $setDto  Функция для получения dto по результатам
+     * Обрабатывает ошибки, которые могут возникнуть в результаты
+     * выполнения, вместо них устанавливает ErrorDTO.
      *
-     * @return array<T|ByErrorDTO>
+     * Учитывает отсутствие ответа по переданному значению,
+     * вместо него устанавливает ErrorDTO::NOT_FOUND.
+     *
+     * S - generic тип обозначающий "Search"
+     * R - generic тип обозначающий "Result"
+     * D - generic тип обозначающий "DTO"
+     *
+     * @param S[]             $chunks  Чанки соответственно результатам выполнения
+     * @param R[]             $results Результаты выполнения
+     * @param callable(R):D[] $getDtos Функция для получения dto на выход
+     * @param callable(D):S   $pluck   Получить из dto из функции $getDtos найденное значение
+     *
+     * @return array<D|ByErrorDTO>
      */
-    public static function mapResults(array $chunks, array $results, callable $setDto): array
-    {
+    public static function mapResults(
+        array    $chunks,
+        array    $results,
+        callable $getDtos,
+        callable $pluck
+    ): array {
         $items = [];
+
         foreach ($results as $idx => $result) {
-            // Проверяем есть ли ошибки, если да, вместо
-            // их вывода добавляем ErrorDTO в результат
-            // выполнения.
+            // Объявляем переменные, если их нет. Если есть,
+            // то сбрасываем значения чтобы оператинвую память
+            // не занимали.
+            $reason = $type = $found = $foundValues = $chunk = null;
+
             if ($result['state'] === 'fulfilled') {
-                if ($result['value'] instanceof ResponseInterface) {
-                    if ($result['value']->getStatusCode() < 300) {
-                        try {
-                            $setDto($items, $result['value']);
-                            continue;
-                        } catch (Throwable $throwable) {
-                            $type   = ByErrorDTO::INTERNAL;
-                            $reason = $throwable;
-                        }
-                    } else {
-                        $type   = ByErrorDTO::HTTP;
-                        $reason = $result['value'];
-                    }
-                } else {
-                    try {
-                        $setDto($items, $result['value']);
-                        continue;
-                    } catch (Throwable $throwable) {
-                        $type   = ByErrorDTO::INTERNAL;
-                        $reason = $throwable;
-                    }
+                if ($result['value'] instanceof ResponseInterface
+                    && $result['value']->getStatusCode() >= 300
+                ) {
+                    $type   = ByErrorDTO::HTTP;
+                    $reason = $result['value'];
                 }
             } else {
                 if ($result['reason'] instanceof RequestException) {
@@ -95,15 +86,50 @@ class Utils
                 }
             }
 
-            foreach ($chunks[$idx] as $values) {
-                foreach ($values as $value) {
-                    $items[] = ByErrorDTO::fromArray([
-                        'value'  => $value,
-                        'type'   => $type,
-                        'reason' => $reason
-                    ]);
+            // Ошибок не найдено
+            if (\is_null($reason)) {
+                try {
+                    $found       = $getDtos($result['value']);
+                    $foundValues = \array_map($pluck, $found);
+                    $chunk       = $chunks[$idx];
+
+                    \asort($foundValues, SORT_STRING);
+                    \asort($chunk,       SORT_STRING);
+
+                    \reset($foundValues);
+                    foreach ($chunk as $value) {
+                        if (\current($foundValues) === $value) {
+                            do {
+                                $items[] = $found[\key($foundValues)];
+                                \next($foundValues);
+                            } while (\current($foundValues) === $value);
+
+                            continue;
+                        }
+
+                        $items[] = ByErrorDTO::fromArray([
+                            'value' => $value,
+                            'type'  => ByErrorDTO::NOT_FOUND,
+                        ]);
+                    }
+
+                    continue;
+                } catch (Throwable $throwable) {
+                    $type   = ByErrorDTO::INTERNAL;
+                    $reason = $throwable;
                 }
             }
+
+            // С ошибкой
+            foreach ($chunks[$idx] as $value) {
+                $items[] = ByErrorDTO::fromArray([
+                    'value'  => $value,
+                    'type'   => $type,
+                    'reason' => $reason
+                ]);
+            }
+
+            continue;
         }
 
         return $items;
@@ -118,7 +144,7 @@ class Utils
      * @param T[]                              $values     Значения
      * @param ConstraintViolationListInterface $violations Ошибки валидации
      *
-     * @return array<T[], ConstraintViolationInterface[]>
+     * @return array<T[], ViolationsContainsDTO[]>
      */
     public static function splitByValidationErrors(
         array                            $values,
@@ -128,10 +154,10 @@ class Utils
         $errors    = [];
 
         $position = 0;
-        $last     = $violations->count() - 1;
+        $last     = $violations->count();
 
         foreach ($values as $idx => $value) {
-            $violation = $last === $position ? null : $violations->get($position);
+            $violation = $last <= $position ? null : $violations->get($position);
 
             if ($violation
                 && $violation->getInvalidValue() === $value
