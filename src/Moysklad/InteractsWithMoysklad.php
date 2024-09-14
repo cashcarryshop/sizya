@@ -59,8 +59,7 @@ trait InteractsWithMoysklad
             $this->_httpRules(), [
                 'credentials' => [
                     new Assert\Type('array'),
-                    new Assert\All(new Assert\Type('string')),
-                    new Assert\Length(1, 2)
+                    new Assert\All(new Assert\Type('string'))
                 ]
             ]
         );
