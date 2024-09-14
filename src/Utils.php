@@ -16,6 +16,7 @@ namespace CashCarryShop\Sizya;
 use CashCarryShop\Sizya\DTO\ErrorDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
 use CashCarryShop\Sizya\DTO\ViolationsContainsDTO;
+use CashCarryShop\Sizya\Exceptions\BadResponseException;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 use GuzzleHttp\Exception\RequestException;
 use Psr\Http\Message\ResponseInterface;
@@ -71,12 +72,12 @@ class Utils
                     && $result['value']->getStatusCode() >= 300
                 ) {
                     $type   = ByErrorDTO::HTTP;
-                    $reason = $result['value'];
+                    $reason = new BadResponseException($result['value']);
                 }
             } else {
                 if ($result['reason'] instanceof RequestException) {
                     $type   = ByErrorDTO::HTTP;
-                    $reason = $result['reason']->getResponse();
+                    $reason = new BadResponseException($result['reason']->getResponse());
                 } else if ($result['reason'] instanceof Throwable) {
                     $type   = ByErrorDTO::INTERNAL;
                     $reason = $result['reason'];
