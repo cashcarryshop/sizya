@@ -15,10 +15,10 @@ namespace CashCarryShop\Sizya\Moysklad;
 
 use CashCarryShop\Sizya\ProductsGetterInterface;
 use CashCarryShop\Sizya\DTO\ProductDTO;
-use CashCarryShop\Sizya\DTO\ErrorDTO;
+use CashCarryShop\Sizya\DTO\ByErrorDTO;
+use CashCarryShop\Sizya\Utils as SizyaUtils;
 use GuzzleHttp\Promise\Utils as PromiseUtils;
 use GuzzleHttp\Promise\PromiseInterface;
-use GuzzleHttp\Exception\RequestException;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
@@ -42,11 +42,11 @@ class Products extends AbstractSource implements ProductsGetterInterface
     {
         $defaults = [
             'limit'     => 100,
-            'order'     => [['created', 'desc']],
+            'groupBy'   => 'consignment',
             'priceType' => null
         ];
 
-        parent::__construct(array_replace($defaults, $settings));
+        parent::__construct(\array_replace($defaults, $settings));
     }
 
     /**
@@ -57,30 +57,19 @@ class Products extends AbstractSource implements ProductsGetterInterface
      */
     protected function rules(): array
     {
-        return array_merge(
+        return \array_merge(
             parent::rules(), [
                 'limit' => [
                     new Assert\Type('int'),
                     new Assert\Range(min: 100)
                 ],
-                'order' => new Assert\Collection([
-                    0 => [
-                        new Assert\Type('string'),
-                        new Assert\Choice([
-                            'created',
-                            'name',
-                            'id',
-                            'article',
-                        ])
-                    ],
-                    1 => [
-                        new Assert\Type('string'),
-                        new Assert\Choice(['asc', 'desc'])
-                    ],
-                ]),
+                'groupBy' => [
+                    new Assert\Type('string'),
+                    new Assert\Choice(['consignment', 'variant', 'product'])
+                ],
                 'priceType' => [
                     new Assert\Type(['string', 'null']),
-                    new Assert\Length(36, 36)
+                    new Assert\Uuid(strict: false)
                 ]
             ]
         );
@@ -97,31 +86,21 @@ class Products extends AbstractSource implements ProductsGetterInterface
     {
         $builder = $this->builder()->point('entity/assortment');
 
-        foreach ($this->getSettings('order') as $order) {
-            $builder->order(...$order);
+        if ($groupBy = $this->getSettings('groupBy')) {
+            $builder->param('groupBy', $groupBy);
         }
+        unset($groupBy);
 
-        $offset = 0;
-        $maxOffset = $counter = $this->getSettings('limit');
-
-        $products = [];
-
-        do {
-            $clone = (clone $builder)
-                ->offset($offset)
-                ->limit($counter > 100 ? 100 : $counter);
-
-            $chunk = $this->decode($this->send($clone->build('GET')))->wait();
-            $products = array_merge(
-                $products, array_map(
-                    fn ($product) => $this->_convertProduct($product),
-                    $chunk['rows']
-                )
-            );
-
-            $offset += 100;
-            $counter -= 100;
-        } while (count($chunk['rows']) === 100 && $offset < $maxOffset);
+        $products = Utils::getAll(
+            $builder,
+            $this->getSettings('limit'),
+            min($this->getSettings('limit'), 1000),
+            [$this, 'send'],
+            fn ($response) => \array_map(
+                fn ($product) => $this->_convertProduct($product),
+                $this->decodeResponse($response)['rows']
+            )
+        );
 
         return $products;
     }
@@ -133,9 +112,9 @@ class Products extends AbstractSource implements ProductsGetterInterface
      *
      * @param string $productId Идентификатор товара
      *
-     * @return array<ProductDTO|ErrorDTO>
+     * @return ProductDTO|ByErrorDTO
      */
-    public function getProductById(string $productId): array
+    public function getProductById(string $productId): ProductDTO|ByErrorDTO
     {
         return $this->getProductsByIds([$productId])[0] ?? [];
     }
@@ -147,11 +126,39 @@ class Products extends AbstractSource implements ProductsGetterInterface
      *
      * @param array $productIds Идентификаторы товаров
      *
-     * @return array<ProductDTO|ErrorDTO>
+     * @return array<ProductDTO|ByErrorDTO>
      */
     public function getProductsByIds(array $productIds): array
     {
-        return $this->_getByFilter('id', $productIds);
+        [
+            $validated,
+            $errors
+        ] = SizyaUtils::splitByValidationErrors(
+            $productIds,
+            $this->getSettings('validator')
+                ->validate(
+                    $productIds, new Assert\All([
+                        new Assert\Type('string'),
+                        new Assert\NotBlank,
+                        new Assert\Uuid(strict: false)
+                    ])
+                )
+        );
+        unset($productIds);
+
+        $products = $this->_getByFilter('id', $validated)->wait();
+        unset($validated);
+
+        foreach ($errors as $error) {
+            $products[] = ByErrorDTO::fromArray([
+                'type'   => ByErrorDTO::VALIDATION,
+                'reason' => $error,
+                'value'  => $error->value
+            ]);
+        }
+        unset($errors);
+
+        return $products;
     }
 
     /**
@@ -161,9 +168,9 @@ class Products extends AbstractSource implements ProductsGetterInterface
      *
      * @param string $article Артикул
      *
-     * @return ProductDTO|ErrorDTO
+     * @return ProductDTO|ByErrorDTO
      */
-    public function getProductByArticle(string $article): ProductDTO|ErrorDTO
+    public function getProductByArticle(string $article): ProductDTO|ByErrorDTO
     {
         return $this->getProductsByArticles([$article])[0];
     }
@@ -175,14 +182,93 @@ class Products extends AbstractSource implements ProductsGetterInterface
      *
      * @param array $articles Артикулы
      *
-     * @return array<ProductDTO|ErrorDTO>
+     * @return array<ProductDTO|ByErrorDTO>
      */
     public function getProductsByArticles(array $articles): array
     {
-        $byArticles = $this->_getByFilterWithPromise('article', $articles);
-        $byCodes    = $this->_getByFilterWithPromise('code', $articles);
+        [
+            $validated,
+            $errors
+        ] = SizyaUtils::splitByValidationErrors(
+            $articles,
+            $this->getSettings('validator')
+                ->validate($articles, new Assert\All([
+                    new Assert\NotBlank,
+                    new Assert\Length(max: 3072, countUnit: Assert\Length::COUNT_BYTES)
+                ]))
+        );
+        unset($articles);
 
-        return array_merge($byArticles->wait(), $byCodes->wait());
+        $byArticles = $this->_getByFilter('article', $validated);
+        $byCodes    = $this->_getByFilter('code',    $validated, field: 'article');
+
+        $products = PromiseUtils::all([$byArticles, $byCodes])->then(
+            static function ($results) {
+                [$byArticles, $byCodes] = $results;
+
+                $products = [];
+                foreach ($byArticles as $idx => $byArticle) {
+                    if ($byArticle instanceof ByErrorDTO
+                        && !($byCodes[$idx] instanceof ByErrorDTO)
+                    ) {
+                        $products[$idx] = $byCodes[$idx];
+                        continue;
+                    }
+
+                    $products[$idx] = $byArticle;
+                }
+
+                return $products;
+            }
+        )->wait();
+        unset($validated);
+
+        foreach ($errors as $error) {
+            $products[] = ByErrorDTO::fromArray([
+                'type'   => ByErrorDTO::VALIDATION,
+                'reason' => $error,
+                'value'  => $error->value
+            ]);
+        }
+        unset($errors);
+
+        return $products;
+    }
+
+    /**
+     * Получить элементы с помощью фильтров
+     *
+     * Возвращает PromiseInterface
+     *
+     * @param string $filter    Название фильтра
+     * @param array  $values    Значение
+     * @param int    $chunkSize Размер чанка
+     * @param string $field     Название поля в dto по которому производиться поиск
+     *
+     * @return PromiseInterface<ProductDTO|ByErrorDTO>
+     */
+    private function _getByFilter(
+        string  $filter,
+        array   $values,
+        int     $chunkSize = 3072,
+        string  $field     = null
+    ): PromiseInterface {
+        $field = $field ? $field : $filter;
+
+        return Utils::getByFilter(
+            $filter,
+            $values,
+            $this->builder()->point('entity/assortment'),
+            [$this, 'send'],
+            function ($response) {
+
+                return \array_map(
+                    fn ($item) => $this->_convertProduct($item),
+                    $this->decodeResponse($response)['rows']
+                );
+            },
+            static fn ($product) => $product->$field
+        );
     }
 
     /**
@@ -190,9 +276,9 @@ class Products extends AbstractSource implements ProductsGetterInterface
      *
      * @param array $product Товар
      *
-     * @return array<ProductDTO>
+     * @return ProductDTO
      */
-    private function _convertProduct(array $product): array
+    private function _convertProduct(array $product): ProductDTO
     {
         if ($priceType = $this->getSettings('priceType')) {
             $price = null;
@@ -206,7 +292,7 @@ class Products extends AbstractSource implements ProductsGetterInterface
 
         $article = $product['meta']['type'] === 'variant'
             ? $product['code']
-        : $product['article'];
+            : $product['article'];
 
         return ProductDTO::fromArray([
             'id'       => $product['id'],
@@ -215,94 +301,5 @@ class Products extends AbstractSource implements ProductsGetterInterface
             'price'    => (float) ($price ?? $product['salePrices'][0]['value'] / 100),
             'original' => $product
         ]);
-    }
-
-    /**
-     * Получить элементы с помощью фильтров
-     *
-     * @param string $filter Название фильтра
-     * @param array  $values Значение
-     * @param int    $size   Размер чанка
-     *
-     * @return array<ProductDTO|ErrorDTO>
-     */
-    private function _getByFilter(string $filter, array $values, int $size = 80): array
-    {
-        return $this->_getByFilterWithPromise($filter, $values, $size)->wait();
-    }
-
-    /**
-     * Получить элементы с помощью фильтров
-     *
-     * Возвращает PromiseInterface
-     *
-     * @param string $filter Название фильтра
-     * @param array  $values Значение
-     * @param int    $size   Размер чанка
-     *
-     * @return PromiseInterface<ProductDTO|ErrorDTO>
-     */
-    private function _getByFilterWithPromise(
-        string $filter,
-        array $values,
-        int $size = 80
-    ): PromiseInterface {
-        $builder = $this->builder()->point('entity/assortment');
-
-        $promises = [];
-        foreach (array_chunk($values, $size) as $chunk) {
-            $clone = clone $builder;
-
-            foreach ($chunk as $value) {
-                $clone->filter($filter, $value);
-            }
-
-            $promises[] = $this->send($clone->build('GET'));
-        }
-
-        return PromiseUtils::settle($promises)->then(
-            function ($results) use ($size, $values) {
-                $products = [];
-
-                foreach ($results as $idx => $result) {
-                    // Проверяем есть ли ошибки, если да, вместо
-                    // их вывода добавляем ErrorDTO в результат
-                    // выполнения.
-                    if ($result['state'] === PromiseInterface::FULFILLED) {
-                        // Если ошибок нет
-                        if ($result['value']->getCode() < 300) {
-                            try {
-                                $products = array_merge(
-                                    $products, array_map(
-                                        fn ($product) => $this->_convertProduct($product),
-                                        $this->decodeResponse($result['value'])['rows']
-                                    )
-                                );
-
-                                continue;
-                            } catch (Throwable $throwable) {
-                                $reason = $throwable;
-                            }
-                        } else {
-                            $reason = $result['value'];
-                        }
-                    } else {
-                        $reason = $result['reason'] instanceof RequestException
-                            ? $result['reason']->getResponse()
-                            : $result['reason'];
-                    }
-
-                    // Если ошибки есть
-                    for ($i = 0; $i < $size; ++$i) {
-                        $products[] = ErrorDTO::fromArray([
-                            'value'  => $values[$idx * $i],
-                            'reason' => $reason
-                        ]);
-                    }
-                }
-
-                return $products;
-            }
-        );
     }
 }
