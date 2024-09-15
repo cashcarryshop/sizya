@@ -177,35 +177,47 @@ class Orders extends AbstractSource implements OrdersGetterInterface
     {
         $builder = $this->builder()->point('v3/posting/fbs/get');
 
-        return PromiseUtils::settle(
-            \array_map(
-                function ($orderId) use ($builder) {
-                    return $this->send(
-                        (clone $builder)->body([
-                            'posting_number' => $orderId,
-                            'with'           => [
-                                'barcodes'       => $this->getSettings('barcodes'),
-                                'translit'       => $this->getSettings('translit'),
-                                'financial_data' => $this->getSettings('financial_data'),
-                                'analytics_data' => $this->getSettings('analytics_data'),
-                            ]
-                        ])->build('POST')
-                    );
-                },
-                $ordersIds
-            )
-        )->then(
-            fn ($results) => SizyaUtils::mapResults(
-                \array_map(static fn ($id) => [$id], $ordersIds),
-                $results,
-                fn ($response) => [
-                    $this->_convertOrder(
-                        $this->decodeResponse($response)['result']
-                    )
-                ],
-                fn ($order) => $order->id
-            )
-        )->wait();
+        return \array_map(
+            static function ($item) {
+                if ($item instanceof ByErrorDTO
+                    && $item->type === ByErrorDTO::HTTP
+                    && $item->reason->getResponse()->getStatusCode() === 404
+                ) {
+                    $item->type = ByErrorDTO::NOT_FOUND;
+                }
+
+                return $item;
+            },
+            PromiseUtils::settle(
+                \array_map(
+                    function ($orderId) use ($builder) {
+                        return $this->send(
+                            (clone $builder)->body([
+                                'posting_number' => $orderId,
+                                'with'           => [
+                                    'barcodes'       => $this->getSettings('barcodes'),
+                                    'translit'       => $this->getSettings('translit'),
+                                    'financial_data' => $this->getSettings('financial_data'),
+                                    'analytics_data' => $this->getSettings('analytics_data'),
+                                ]
+                            ])->build('POST')
+                        );
+                    },
+                    $ordersIds
+                )
+            )->then(
+                fn ($results) => SizyaUtils::mapResults(
+                    \array_map(static fn ($id) => [$id], $ordersIds),
+                    $results,
+                    fn ($response) => [
+                        $this->_convertOrder(
+                            $this->decodeResponse($response)['result']
+                        )
+                    ],
+                    fn ($order) => $order->id
+                )
+            )->wait()
+        );
     }
 
     /**
