@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 /**
- * Этот файл является частью пакета sizya
+ * Этот файл является частью пакета sizya.
  *
  * PHP version 8
  *
@@ -21,7 +21,7 @@ use Symfony\Component\Validator\ConstraintViolationInterface;
 use Throwable;
 
 /**
- * DTO Ошибки
+ * DTO Ошибки.
  *
  * @category Orders
  * @package  Sizya

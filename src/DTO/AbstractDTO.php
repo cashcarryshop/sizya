@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 /**
- * Абстрактный класс DTO с реализацией основных методов
+ * Этот файл является частью пакета sizya.
  *
  * PHP version 8
  *
@@ -20,7 +20,7 @@ use JsonException;
 use function json_encode, is_string;
 
 /**
- * Абстрактный класс DTO с реализацией основных методов
+ * Абстрактный класс DTO с реализацией основных методов.
  *
  * @category DTO
  * @package  Sizya

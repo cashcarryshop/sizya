@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 /**
- * DTO для позиций
+ * Этот файл является частью пакета sizya.
  *
  * PHP version 8
  *
@@ -17,7 +17,7 @@ namespace CashCarryShop\Sizya\DTO;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * DTO для позиций
+ * DTO для позиций.
  *
  * @category DTO
  * @package  Sizya

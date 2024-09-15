@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 /**
- * DTO с индексами нарушений у списка нарушений для значения
+ * Этот файл является частью пакета sizya.
  *
  * PHP version 8
  *
@@ -18,7 +18,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 
 /**
- * DTO с индексами нарушений у списка нарушений для значения
+ * DTO с индексами нарушений у списка нарушений для значения.
  *
  * @category Orders
  * @package  Sizya
