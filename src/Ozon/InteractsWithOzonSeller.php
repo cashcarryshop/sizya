@@ -32,6 +32,7 @@ trait InteractsWithOzonSeller
 {
     use InteractsWithHttpClient {
         __construct as private _httpConstruct;
+        rules as private __httpRules;
     }
 
     /**
@@ -52,7 +53,7 @@ trait InteractsWithOzonSeller
     protected function rules(): array
     {
         return array_merge(
-            parent::rules(), [
+            $this->__httpRules(), [
                 'token' => [
                     new Assert\Type('string'),
                     new Assert\NotBlank
@@ -66,33 +67,16 @@ trait InteractsWithOzonSeller
     }
 
     /**
-     * Получить идентификатор клиента
-     *
-     * @return int
-     */
-    final public function getClientId(): int
-    {
-        return $this->clientId;
-    }
-
-    /**
-     * Получить токен
-     *
-     * @return string
-     */
-    final public function getToken(): string
-    {
-        return $this->token;
-    }
-
-    /**
      * Получить сборщик запросов
      *
      * @return RequestBuilder
      */
     final public function builder(): RequestBuilder
     {
-        return new RequestBuilder($this->getToken(), $this->getClientId());
+        return new RequestBuilder(
+            $this->getSettings('token'),
+            $this->getSettings('clientId')
+        );
     }
 
     /**
