@@ -19,6 +19,8 @@ use CashCarryShop\Sizya\DTO\OrderDTO;
 use CashCarryShop\Sizya\DTO\PositionDTO;
 use CashCarryShop\Sizya\DTO\AdditionalDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
+use CashCarryShop\Sizya\Utils as SizyaUtils;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Класс для работы с заказами покупателей МойСклад
@@ -73,13 +75,44 @@ class CustomerOrdersSource extends CustomerOrders
      *
      * @see OrdersGetterInterface
      *
-     * @param array<string> $orderIds Идентификаторы заказов
+     * @param array<string> $ordersIds Идентификаторы заказов
      *
      * @return array<int, OrderDTO|ByErrorDTO>
      */
-    public function getOrdersByIds(array $orderIds): array
+    public function getOrdersByIds(array $ordersIds): array
     {
-        return $this->_getByFilter('id', $orderIds);
+        [
+            $validated,
+            $errors
+        ] = SizyaUtils::splitByValidationErrors(
+            $ordersIds,
+            $this->getSettings('validator')
+                ->validate(
+                    $ordersIds, new Assert\All([
+                        new Assert\Type('string'),
+                        new Assert\NotBlank,
+                        new Assert\Uuid(strict: false)
+                    ])
+                )
+        );
+        unset($ordersIds);
+
+        $orders = $this->_getByFilter(
+            'id',
+            $validated,
+            static fn ($order) => $order->id
+        );
+        unset($validated);
+
+        foreach ($errors as $error) {
+            $orders[]= ByErrorDTO::fromArray([
+                'type'   => ByErrorDTO::VALIDATION,
+                'reason' => $error,
+                'value'  => $error->value
+            ]);
+        }
+
+        return $orders;
     }
 
     /**

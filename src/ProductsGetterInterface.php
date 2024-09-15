@@ -57,14 +57,14 @@ interface ProductsGetterInterface
      * Количество возвращаемых элементов должно
      * соответствовать переданным.
      *
-     * @param array $productIds Идентификаторы товаров
+     * @param array $productsIds Идентификаторы товаров
      *
      * @see ProductDTO
      * @see ByErrorDTO
      *
      * @return array<int, ProductDTO|ByErrorDTO>
      */
-    public function getProductsByIds(array $productIds): array;
+    public function getProductsByIds(array $productsIds): array;
 
     /**
      * Получить товар по артикулу
