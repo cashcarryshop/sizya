@@ -166,14 +166,14 @@ class Orders extends AbstractSource implements OrdersGetterInterface
     /**
      * Получить заказы по идентификаторам
      *
-     * @param array $orderIds Идентификаторы заказов
+     * @param array $ordersIds Идентификаторы заказов
      *
      * @see OrdersGetterInterface
      * @see SizyaUtils
      *
      * @return array<int, OrderDTO|ByErrorDTO>
      */
-    public function getOrdersByIds(array $orderIds): array
+    public function getOrdersByIds(array $ordersIds): array
     {
         $builder = $this->builder()->point('v3/posting/fbs/get');
 
@@ -192,11 +192,11 @@ class Orders extends AbstractSource implements OrdersGetterInterface
                         ])->build('POST')
                     );
                 },
-                $orderIds
+                $ordersIds
             )
         )->then(
             fn ($results) => SizyaUtils::mapResults(
-                \array_map(static fn ($id) => [$id], $orderIds),
+                \array_map(static fn ($id) => [$id], $ordersIds),
                 $results,
                 fn ($response) => [
                     $this->_convertOrder(
