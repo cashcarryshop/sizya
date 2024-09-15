@@ -244,14 +244,14 @@ class CustomerOrdersSource extends CustomerOrders
         if ($position['assortment']['meta']['type'] === 'variant') {
             if ($article || $code) {
                 $data['article'] = (string) ($code ?? $article);
+            } else {
+                throw new \RuntimeException(
+                    sprintf(
+                        'Cannot get assortment article for assortment id [%s]',
+                        $position['assortment']['id']
+                    )
+                );
             }
-
-            throw new \RuntimeException(
-                sprintf(
-                    'Cannot get assortment article for assortment id [%s]',
-                    $position['assortment']['id']
-                )
-            );
         } else if ($article || $code) {
             $data['article'] = $article ?? $code;
         }
