@@ -12,8 +12,13 @@
 namespace CashCarryShop\Sizya\Ozon;
 
 use CashCarryShop\Sizya\OrdersGetterInterface;
+use CashCarryShop\Sizya\DTO\OrderDTO;
+use CashCarryShop\Sizya\DTO\PositionDTO;
+use CashCarryShop\Sizya\DTO\ByErrorDTO;
+use CashCarryShop\Sizya\Utils as SizyaUtils;
 use Symfony\Component\Validator\Constraints as Assert;
-use GuzzleHttp\Promise\Utils;
+use GuzzleHttp\Promise\Utils as PromiseUtils;
+use Psr\Http\Message\RequestInterface;
 use DateTimeZone;
 
 /**
@@ -38,18 +43,21 @@ class Orders extends AbstractSource implements OrdersGetterInterface
         $format = 'Y-m-d\TH:i:s\Z';
 
         $defaults = [
-            'limit'          => 100,
-            'dir'            => 'ASC',
-            'cutoff_from'    => date_create('-30 days', $timezone)->format($format),
-            'cutoff_to'      => date_create('now', $timezone)->format($format),
-            'since'          => date_create('-30 days', $timezone)->format($format),
-            'to'             => date_create('now', $timezone)->format($format),
-            'analytics_data' => true,
-            'barcodes'       => true,
-            'financial_data' => true,
-            'translit'       => true,
-            'status'         => null,
-            'unfulfilled'    => true
+            'limit'              => 100,
+            'dir'                => 'ASC',
+            'cutoff_from'        => date_create('-30 days', $timezone)->format($format),
+            'cutoff_to'          => date_create('now', $timezone)->format($format),
+            'since'              => date_create('-30 days', $timezone)->format($format),
+            'to'                 => date_create('now', $timezone)->format($format),
+            'analytics_data'     => true,
+            'barcodes'           => true,
+            'financial_data'     => true,
+            'translit'           => true,
+            'status'             => null,
+            'provider_id'        => [],
+            'delivery_method_id' => [],
+            'warehouse_id'       => [],
+            'unfulfilled'        => true
         ];
 
         parent::__construct(array_replace($defaults, $settings));
@@ -142,182 +150,11 @@ class Orders extends AbstractSource implements OrdersGetterInterface
     }
 
     /**
-     * Конвертировать позицию
-     *
-     * @param array $position Позиция
-     *
-     * @return array
-     */
-    private function _convertPosition(array $position): array
-    {
-        return [
-            'id' => (string) $position['sku'],
-            'orderId' => (string) $position['sku'],
-            'article' => $position['offer_id'],
-            'quantity' => $position['quantity'],
-            'reserve' => $position['quantity'],
-            'currency' => $position['currency_code'],
-            'price' => (float) $position['price'],
-            'discount' => 0.0,
-            'original' => $position
-        ];
-    }
-
-    /**
-     * Конвертировать заказ
-     *
-     * @param array $order Заказ
-     *
-     * @return array
-     */
-    private function _convertOrder(array $order): array
-    {
-        return [
-            'id' => $order['posting_number'],
-            'created' => $order['in_process_at'],
-            'status' => $order['substatus'],
-            'shipment_date' => $order['shipment_date'],
-            'delivering_date' => $order['delivering_date'],
-            'positions' => array_map(
-                fn ($position) => $this->_convertPosition($position),
-                $order['products']
-            ),
-            'original' => $order
-        ];
-    }
-
-    /**
-     * Получить необработанные заказы по запросу к api
-     *
-     * @return array
-     */
-    private function _getUnfulfilledOrders(): array
-    {
-        $offset = 0;
-        $loop = true;
-
-        $orders = [];
-        $maxOffset = $counter = $this->getSettings('limit');
-
-        while ($loop && $offset < $maxOffset) {
-            $result = $this->decode(
-                $this->send(
-                    $this->builder()->point('v3/posting/fbs/unfulfilled/list')
-                        ->body([
-                            'dir' => $this->getSettings('dir'),
-                            'offset' => $offset,
-                            'limit' => $counter > 1000 ? 1000 : $counter,
-                            'filter' => [
-                                'cutoff_from' => $this->getSettings('cutoff_from'),
-                                'cutoff_to' => $this->getSettings('cutoff_to'),
-                                'provider_id' => $this->getSettings('provider_id', []),
-                                'status' => $this->getSettings('status'),
-                                'delivery_method_id' => $this->getSettings(
-                                    'delivery_method_id', []
-                                ),
-                                'warehouse_id' => $this->getSettings(
-                                    'warehouse_id', []
-                                )
-                            ],
-                            'with' => [
-                                'barcodes' => $this->getSettings('barcodes'),
-                                'translit' => $this->getSettings('translit'),
-                                'analytics_data' => $this->getSettings(
-                                    'analytics_data'
-                                ),
-                                'financial_data' => $this->getSettings(
-                                    'financial_data'
-                                )
-                            ]
-                        ])
-                        ->build('POST')
-                )
-            )->wait();
-
-            if ($loop = $result['result']['count'] === 1000) {
-                $offset += 1000;
-            }
-
-            $orders = array_merge(
-                $orders, array_map(
-                    fn ($order) => $this->_convertOrder($order),
-                    $result['result']['postings']
-                )
-            );
-        }
-
-        return $orders;
-    }
-
-    /**
-     * Получить заказы по запросу к api
-     *
-     * @return array
-     */
-    private function _getFulfilledOrders(): array
-    {
-        $offset = 0;
-        $loop = true;
-
-        $orders = [];
-        $maxOffset = $counter = $this->getSettings('limit');
-
-        while ($loop && $offset < $maxOffset) {
-            $result = $this->decode(
-                $this->send(
-                    $this->builder()->point('v3/posting/fbs/list')
-                        ->body([
-                            'dir' => $this->getSettings('dir'),
-                            'offset' => $offset,
-                            'limit' => $counter > 1000 ? 1000 : $counter,
-                            'filter' => [
-                                'since' => $this->getSettings('since'),
-                                'to' => $this->getSettings('to'),
-                                'provider_id' => $this->getSettings('provider_id', []),
-                                'status' => $this->getSettings('status'),
-                                'delivery_method_id' => $this->getSettings(
-                                    'delivery_method_id', []
-                                ),
-                                'warehouse_id' => $this->getSettings(
-                                    'warehouse_id', []
-                                )
-                            ],
-                            'with' => [
-                                'barcodes' => $this->getSettings('barcodes'),
-                                'translit' => $this->getSettings('translit'),
-                                'financial_data' => $this->getSettings(
-                                    'financial_data'
-                                ),
-                                'analytics_data' => $this->getSettings(
-                                    'analytics_data'
-                                ),
-                            ]
-                        ])
-                        ->build('POST')
-                )
-            )->wait();
-
-            if ($loop = $result['result']['has_next']) {
-                $offset += 1000;
-            }
-
-            $orders = array_merge(
-                $orders, array_map(
-                    fn ($order) => $this->_convertOrder($order),
-                    $result['result']['postings']
-                )
-            );
-        }
-
-        return $orders;
-    }
-
-    /**
      * Получить заказы
      *
-     * Смотреть `OrdersGetterInterface::getOrders`
+     * @see OrdersGetterInterface
      *
-     * @return array
+     * @return OrderDTO[]
      */
     public function getOrders(): array
     {
@@ -329,53 +166,214 @@ class Orders extends AbstractSource implements OrdersGetterInterface
     /**
      * Получить заказы по идентификаторам
      *
-     * Смотреть `OrdersGetterInterface::getOrdersByIds`
-     *
      * @param array $orderIds Идентификаторы заказов
      *
-     * @return array
+     * @see OrdersGetterInterface
+     * @see SizyaUtils
+     *
+     * @return array<int, OrderDTO|ByErrorDTO>
      */
     public function getOrdersByIds(array $orderIds): array
     {
-        $promises = [];
-        foreach ($orderIds as $orderId) {
-            $promises[] = $this->decode(
-                $this->send(
-                    $this->builder()->point('v3/posting/fbs/get')
-                        ->body([
+        $builder = $this->builder()->point('v3/posting/fbs/get');
+
+        return PromiseUtils::settle(
+            \array_map(
+                function ($orderId) use ($builder) {
+                    return $this->send(
+                        (clone $builder)->body([
                             'posting_number' => $orderId,
-                            'with' => [
-                                'barcodes' => $this->getSettings('barcodes'),
-                                'translit' => $this->getSettings('translit'),
-                                'financial_data' => $this->getSettings(
-                                    'financial_data'
-                                ),
-                                'analytics_data' => $this->getSettings(
-                                    'analytics_data'
-                                ),
+                            'with'           => [
+                                'barcodes'       => $this->getSettings('barcodes'),
+                                'translit'       => $this->getSettings('translit'),
+                                'financial_data' => $this->getSettings('financial_data'),
+                                'analytics_data' => $this->getSettings('analytics_data'),
                             ]
                         ])->build('POST')
-                )
-            );
-        }
-
-        return array_map(
-            fn ($order) => $this->_convertOrder($order['result']),
-            Utils::all($promises)->wait()
-        );
+                    );
+                },
+                $orderIds
+            )
+        )->then(
+            fn ($results) => SizyaUtils::mapResults(
+                \array_map(static fn ($id) => [$id], $orderIds),
+                $results,
+                fn ($response) => [
+                    $this->_convertOrder(
+                        $this->decodeResponse($response)['result']
+                    )
+                ],
+                fn ($order) => $order->id
+            )
+        )->wait();
     }
 
     /**
      * Получить заказ по идентификатору
      *
-     * Смотреть `OrdersGetterInterface::getOrderById`
-     *
      * @param string $orderId Идентификатор заказа
      *
-     * @return array
+     * @see OrdersGetterInterface
+     *
+     * @return OrderDTO|ByErrorDTO
      */
-    public function getOrderById(string $orderId): array
+    public function getOrderById(string $orderId): OrderDTO|ByErrorDTO
     {
         return $this->getOrdersByIds([$orderId])[0];
+    }
+
+    /**
+     * Получить необработанные заказы по запросу к api
+     *
+     * @return OrderDTO[]
+     */
+    private function _getUnfulfilledOrders(): array
+    {
+        $limit = $this->getSettings('limit');
+
+        return $this->_getAll(
+            $this->builder()->point('v3/posting/fbs/unfulfilled/list'),
+            fn ($builder, $offset) => $builder->body([
+                'dir'    => $this->getSettings('dir'),
+                'offset' => $offset,
+                'limit'  => $limit > 1000 ? 1000 : $limit,
+                'filter' => [
+                    'cutoff_from'        => $this->getSettings('cutoff_from'),
+                    'cutoff_to'          => $this->getSettings('cutoff_to'),
+                    'provider_id'        => $this->getSettings('provider_id', []),
+                    'status'             => $this->getSettings('status'),
+                    'delivery_method_id' => $this->getSettings('delivery_method_id', []),
+                    'warehouse_id'       => $this->getSettings('warehouse_id', [])
+                ],
+                'with' => [
+                    'barcodes'       => $this->getSettings('barcodes'),
+                    'translit'       => $this->getSettings('translit'),
+                    'analytics_data' => $this->getSettings('analytics_data'),
+                    'financial_data' => $this->getSettings('financial_data')
+                ]
+            ])->build('POST')
+        );
+    }
+
+    /**
+     * Получить заказы по запросу к api
+     *
+     * @return OrderDTO[]
+     */
+    private function _getFulfilledOrders(): array
+    {
+        $limit = $this->getSettings('limit');
+
+        return $this->_getAll(
+            $this->builder()->point('v3/posting/fbs/list'),
+            fn ($builder, $offset) => $builder->body([
+                'dir'    => $this->getSettings('dir'),
+                'offset' => $offset,
+                'limit'  => $limit > 1000 ? 1000 : $limit,
+                'filter' => [
+                    'since'              => $this->getSettings('since'),
+                    'to'                 => $this->getSettings('to'),
+                    'provider_id'        => $this->getSettings('provider_id', []),
+                    'status'             => $this->getSettings('status'),
+                    'delivery_method_id' => $this->getSettings('delivery_method_id', []),
+                    'warehouse_id'       => $this->getSettings('warehouse_id', [])
+                ],
+                'with' => [
+                    'barcodes'       => $this->getSettings('barcodes'),
+                    'translit'       => $this->getSettings('translit'),
+                    'financial_data' => $this->getSettings('financial_data'),
+                    'analytics_data' => $this->getSettings('analytics_data'),
+                ]
+            ])->build('POST')
+        );
+    }
+
+    /**
+     * Вспомогательный метод с основной логикой получения заказов
+     *
+     * @param RequestBuilder                             $builder      Сборчик заказов
+     * @param callable(RequestBuilder): RequestInterface $buildRequest Собрать запрос
+     *
+     * @return OrderDTO[]
+     */
+    private function _getAll(
+        RequestBuilder $builder,
+        callable       $buildRequest
+    ): array {
+        $offset = 0;
+        $loop = true;
+
+        $orders = [];
+        $maxOffset = $this->getSettings('limit');
+
+        while ($loop && $offset < $maxOffset) {
+            $postings = $this->decode(
+                $this->send(
+                    $buildRequest(
+                        clone $builder,
+                        $offset
+                    )
+                )
+            )->wait()['result']['postings'];
+
+            if ($loop = \count($postings) === 1000) {
+                $offset += 1000;
+            }
+
+            $orders = \array_merge(
+                $orders, \array_map(
+                    fn ($order) => $this->_convertOrder($order),
+                    $postings
+                )
+            );
+        }
+
+        return $orders;
+    }
+
+    /**
+     * Конвертировать заказ
+     *
+     * @param array $order Заказ
+     *
+     * @return OrderDTO
+     */
+    private function _convertOrder(array $order): OrderDTO
+    {
+        return OrderDTO::fromArray([
+            'id'             => $order['posting_number'],
+            'created'        => $order['in_process_at'],
+            'status'         => $order['substatus'],
+            'shipmentDate'   => $order['shipment_date'],
+            'deliveringDate' => $order['delivering_date'],
+            'additionals'    => [],
+            'positions'      => \array_map(
+                fn ($position) => $this->_convertPosition($position),
+                $order['products']
+            ),
+            'original' => $order
+        ]);
+    }
+
+    /**
+     * Конвертировать позицию
+     *
+     * @param array $position Позиция
+     *
+     * @return PositionDTO
+     */
+    private function _convertPosition(array $position): PositionDTO
+    {
+        return PositionDTO::fromArray([
+            'id'       => (string) $position['sku'],
+            'orderId'  => (string) $position['sku'],
+            'article'  => $position['offer_id'],
+            'quantity' => $position['quantity'],
+            'reserve'  => $position['quantity'],
+            'currency' => $position['currency_code'],
+            'price'    => (float) $position['price'],
+            'discount' => 0.0,
+            'original' => $position
+        ]);
     }
 }
