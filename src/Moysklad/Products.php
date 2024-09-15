@@ -124,27 +124,27 @@ class Products extends AbstractSource implements ProductsGetterInterface
      *
      * @see ProductsGetterInterface
      *
-     * @param array $productIds Идентификаторы товаров
+     * @param array $productsIds Идентификаторы товаров
      *
      * @return array<ProductDTO|ByErrorDTO>
      */
-    public function getProductsByIds(array $productIds): array
+    public function getProductsByIds(array $productsIds): array
     {
         [
             $validated,
             $errors
         ] = SizyaUtils::splitByValidationErrors(
-            $productIds,
+            $productsIds,
             $this->getSettings('validator')
                 ->validate(
-                    $productIds, new Assert\All([
+                    $productsIds, new Assert\All([
                         new Assert\Type('string'),
                         new Assert\NotBlank,
                         new Assert\Uuid(strict: false)
                     ])
                 )
         );
-        unset($productIds);
+        unset($productsIds);
 
         $products = $this->_getByFilter('id', $validated)->wait();
         unset($validated);
