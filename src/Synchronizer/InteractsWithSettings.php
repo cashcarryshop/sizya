@@ -13,7 +13,6 @@
 
 namespace CashCarryShop\Sizya\Synchronizer;
 
-use Symfony\Component\Validator\Validation;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use CashCarryShop\Synchronizer\SynchronizerDualRoleInterface;
@@ -31,6 +30,8 @@ use CashCarryShop\Sizya\Exceptions\ValidationException;
  */
 trait InteractsWithSettings
 {
+    use InteractsWithValidator;
+
     /**
      * Настройки
      *
@@ -72,21 +73,21 @@ trait InteractsWithSettings
             return $this->settings;
         }
 
-        if (array_key_exists($key, $this->settings)) {
+        if (\array_key_exists($key, $this->settings)) {
             return $this->settings[$key];
         }
 
-        if (!is_string($key) || strpos($key, '.') === false) {
+        if (!\is_string($key) || \strpos($key, '.') === false) {
             return $default;
         }
 
         $settings = $this->settings;
-        foreach (explode('.', $key) as $segment) {
-            if (!is_array($segment) || !array_key_exists($settings, $segment)) {
+        foreach (\explode('.', $key) as $segment) {
+            if (!\is_array($segment) || !\array_key_exists($settings, $segment)) {
                 return $default;
             }
 
-            $settings = &$settings[$segment];
+            $settings = $settings[$segment];
         }
 
         return $settings;
@@ -100,26 +101,10 @@ trait InteractsWithSettings
      */
     private function _validate(): void
     {
-        $validator = $this->getSettings('validator');
-        if (!is_a($validator, ValidatorInterface::class)) {
-            $validator = Validation::createValidatorBuilder()
-                ->enableAttributeMapping()
-                ->getValidator();
+        $violations = $this->getValidator()
+            ->validate($this->settings, new Assert\Collection($this->rules()));
 
-            $this->settings['validator'] = $validator;
-        }
-
-        $violations = $validator->validate(
-            $this->settings, new Assert\Collection(
-                array_merge(
-                    $this->rules(), [
-                        'validator' => new Assert\Type(ValidatorInterface::class)
-                    ]
-                )
-            )
-        );
-
-        if (count($violations)) {
+        if ($violations->count()) {
             throw new ValidationException(violations: $violations);
         }
     }
