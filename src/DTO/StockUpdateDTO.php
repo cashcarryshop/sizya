@@ -26,7 +26,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @link     https://github.com/cashcarryshop/sizya
  *
  * Поля `id` и `article` взаимозаменяемые,
- * но обязательные
+ * но обязательные.
  *
  * @property ?string $id          Идентификатор позиции
  * @property ?string $article     Артикул товара

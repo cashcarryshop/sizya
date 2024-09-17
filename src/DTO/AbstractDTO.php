@@ -17,8 +17,6 @@ namespace CashCarryShop\Sizya\DTO;
 use InvalidArgumentException;
 use JsonException;
 
-use function json_encode, is_string;
-
 /**
  * Абстрактный класс DTO с реализацией основных методов.
  *
@@ -40,9 +38,9 @@ abstract class AbstractDTO implements DTOInterface
      */
     public static function fromArray(array $data): static
     {
-        count($data) === count(
-            array_filter(
-                array_keys($data),
+        \count($data) === \count(
+            \array_filter(
+                \array_keys($data),
                 'is_string'
             )
         ) || throw new InvalidArgumentException(
@@ -73,7 +71,7 @@ abstract class AbstractDTO implements DTOInterface
     public function fromJson(string $json): static
     {
         return static::fromArray(
-            json_decode(
+            \json_decode(
                 $json,
                 true,
                 512,
@@ -89,6 +87,6 @@ abstract class AbstractDTO implements DTOInterface
      */
     public function toJson(): string
     {
-        return json_encode($this->toArray());
+        return \json_encode($this->toArray());
     }
 }
