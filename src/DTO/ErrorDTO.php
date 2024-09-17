@@ -46,7 +46,8 @@ class ErrorDTO extends AbstractDTO
         'undefined',
         'not_found',
         'internal',
-        'http'
+        'http',
+        'api'
     ];
 
     public const VALIDATION = 'validation';
@@ -54,12 +55,13 @@ class ErrorDTO extends AbstractDTO
     public const NOT_FOUND  = 'not_found';
     public const INTERNAL   = 'internal';
     public const HTTP       = 'http';
+    public const API        = 'api';
 
     /**
      * Создать экземпляр ошибки
      *
      * @param string $type   Тип ошибки (должен быть одним из значений константы TYPES)
-     * @param mixed  $reason Причина ошибка (тип зависит от правил валидации)
+     * @param mixed  $reason Причина ошибки (тип зависит от правил валидации)
      */
     public function __construct(
         #[Asert\Type('string')]
@@ -67,6 +69,7 @@ class ErrorDTO extends AbstractDTO
         #[Assert\Choice(ErrorDTO::TYPES)]
         public $type = null,
 
+        #[Assert\Valid]
         #[Assert\When(
             expression: 'this.type !== "not_found"',
             constraints: [new Assert\NotBlank]
@@ -74,10 +77,7 @@ class ErrorDTO extends AbstractDTO
         #[Assert\When(
             expression: 'this.type === "validation"',
             constraints: [
-                new Assert\Type([
-                    ConstraintViolationListInterface::class,
-                    ViolationContainsDTO::class
-                ]),
+                new Assert\Type(ConstraintViolationListInterface::class),
             ]
         )]
         #[Assert\When(
@@ -87,6 +87,10 @@ class ErrorDTO extends AbstractDTO
         #[Assert\When(
             expression: 'this.type === "http"',
             constraints: [new Assert\Type(BadResponseException::class)]
+        )]
+        #[Assert\When(
+            expression: 'this.type === "api"',
+            constraints: [new Assert\Type(ApiErrorsDTO::classl)]
         )]
         public $reason = null
     ) {}
