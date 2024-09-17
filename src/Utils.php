@@ -15,9 +15,10 @@ namespace CashCarryShop\Sizya;
 
 use CashCarryShop\Sizya\DTO\ErrorDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
-use CashCarryShop\Sizya\DTO\ViolationsContainsDTO;
+use CashCarryShop\Sizya\DTO\DTOInterface;
 use CashCarryShop\Sizya\Exceptions\BadResponseException;
-use Symfony\Component\Validator\ConstraintViolationListInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\Validator\Constraint;
 use GuzzleHttp\Exception\RequestException;
 use Psr\Http\Message\ResponseInterface;
 use Throwable;
@@ -42,22 +43,24 @@ class Utils
      * Учитывает отсутствие ответа по переданному значению,
      * вместо него устанавливает ErrorDTO::NOT_FOUND.
      *
+     * Функия $getData должна возвращать массив:
+     *
+     * - dtos:   (DTOInterface[]) С данными которые будут на выходе
+     * - values: (string[])       Данные по которым значения были найдены
+     *
      * S - generic тип обозначающий "Search"
      * R - generic тип обозначающий "Result"
-     * D - generic тип обозначающий "DTO"
      *
-     * @param S[]             $chunks  Чанки соответственно результатам выполнения
-     * @param R[]             $results Результаты выполнения
-     * @param callable(R):D[] $getDtos Функция для получения dto на выход
-     * @param callable(D):S   $pluck   Получить из dto из функции $getDtos найденное значение
+     * @param S[]               $chunks  Чанки соответственно результатам выполнения
+     * @param R[]               $results Результаты выполнения
+     * @param callable(R):array $getData   Функция для получения необходимых данных
      *
-     * @return array<D|ByErrorDTO>
+     * @return array<DTOInterface|ByErrorDTO>
      */
     public static function mapResults(
         array    $chunks,
         array    $results,
-        callable $getDtos,
-        callable $pluck
+        callable $getData,
     ): array {
         $items = [];
 
@@ -65,7 +68,7 @@ class Utils
             // Объявляем переменные, если их нет. Если есть,
             // то сбрасываем значения чтобы оператинвую память
             // не занимали.
-            $reason = $type = $found = $foundValues = $chunk = null;
+            $reason = $type = $data = $chunk = null;
 
             if ($result['state'] === 'fulfilled') {
                 if ($result['value'] instanceof ResponseInterface
@@ -90,20 +93,19 @@ class Utils
             // Ошибок не найдено
             if (\is_null($reason)) {
                 try {
-                    $found       = $getDtos($result['value']);
-                    $foundValues = \array_map($pluck, $found);
-                    $chunk       = $chunks[$idx];
+                    $chunk = $chunks[$idx];
+                    $data  = $getData($result['value'], $chunk);
 
-                    \asort($foundValues, SORT_STRING);
-                    \asort($chunk,       SORT_STRING);
+                    \asort($data['values'], SORT_REGULAR);
+                    \asort($chunk,          SORT_REGULAR);
 
-                    \reset($foundValues);
+                    \reset($data['values']);
                     foreach ($chunk as $value) {
-                        if (\current($foundValues) === $value) {
+                        if (\current($data['values']) === $value) {
                             do {
-                                $items[] = $found[\key($foundValues)];
-                                \next($foundValues);
-                            } while (\current($foundValues) === $value);
+                                $items[] = $data['dtos'][\key($data['values'])];
+                                \next($data['values']);
+                            } while (\current($data['values']) === $value);
 
                             continue;
                         }
@@ -142,44 +144,32 @@ class Utils
      *
      * Связи с индексами сохраняются.
      *
-     * @param T[]                              $values     Значения
-     * @param ConstraintViolationListInterface $violations Ошибки валидации
+     * @param ValidatorInterface $validator   Валидатор
+     * @param T[]                $values      Которые нужно отвалидировать
+     * @param Constraint[]       $constraints Правила валидации для каждого значения
      *
-     * @return array<T[], ViolationsContainsDTO[]>
+     * @return array<T[], ByErrorDTO[]>
      */
     public static function splitByValidationErrors(
-        array                            $values,
-        ConstraintViolationListInterface $violations
+        ValidatorInterface $validator,
+        array              $values,
+        array              $constraints
     ): array {
-        $validated = [];
-        $errors    = [];
-
-        $position = 0;
-        $last     = $violations->count();
+        $errors = [];
 
         foreach ($values as $idx => $value) {
-            $violation = $last <= $position ? null : $violations->get($position);
+            $violations = $validator->validate($value, $constraints);
 
-            if ($violation
-                && $violation->getInvalidValue() === $value
-            ) {
-                if (isset($errors[$idx])) {
-                    $errors[$idx]->reason->offsets[] = $position;
-                } else {
-                    $errors[$idx] = ViolationsContainsDTO::fromArray([
-                        'value'      => $value,
-                        'offsets'    => [$position],
-                        'violations' => $violations
-                    ]);
-                }
-
-                ++$position;
-                continue;
+            if ($violations->count()) {
+                $errors[$idx] = ByErrorDTO::fromArray([
+                    'type'   => ByErrorDTO::VALIDATION,
+                    'reason' => $violations,
+                    'value'  => $value
+                ]);
+                unset($values[$idx]);
             }
-
-            $validated[$idx] = $value;
         }
 
-        return [$validated, $errors];
+        return [$values, $errors];
     }
 }
