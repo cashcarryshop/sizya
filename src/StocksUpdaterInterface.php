@@ -13,6 +13,10 @@
 
 namespace CashCarryShop\Sizya;
 
+use CashCarryShop\Sizya\DTO\StockUpdateDTO;
+use CashCarryShop\Sizya\DTO\StockDTO;
+use CashCarryShop\Sizya\DTO\ByErrorDTO;
+
 /**
  * Интерфейс с методами для обновления остатков
  *
@@ -27,64 +31,16 @@ interface StocksUpdaterInterface
     /**
      * Обновить остатки товаров по идентификаторам
      *
-     * Массив $stocks должен быть:
+     * Количество возвращаемых элементов должно
+     * соответствовать переданным.
      *
-     * - id:           (string) Идентификатор товара
-     * - warehouse_id: (string) Идентификатор склада
-     * - quantity:     (int)    Количество остатков
+     * @param StockUpdateDTO[] $stocks Остатки
      *
-     * Должен возвращать массив:
+     * @see StockUpdateDTO
+     * @see StockDTO
+     * @see ByErrorDTO
      *
-     * Поля id, warehouse_id и quantity могут быть
-     * не возвращены, если во время обновления возникла
-     * ошибка
-     *
-     * - optional(id):           (string) Идентификатор товара
-     * - optional(warehouse_id): (string) Идентификатор склада
-     * - optional(quantity):     (int)    Количество остатков
-     * - error:                  (bool)   Возникла ли ошибка во время обновления
-     * - optional(reason):       (mixed)  Если возникла ошибка, добавляется это поле
-     * - original:               (mixed)  Оригинальный ответ
-     *
-     * Возвращаемый массив должен быть заполнен ровно
-     * на то количество элементов, которые были
-     * переданы в функцию.
-     *
-     * @param array $stocks Остатки
-     *
-     * @return array
+     * @return array<int, StockDTO|ByErrorDTO>
      */
-    public function updateStocksByIds(array $stocks): array;
-
-    /**
-     * Обновить остатки товаров по артикулам
-     *
-     * Массив $stocks должен быть:
-     *
-     * - article:       (string) Артикул товара
-     * - warehouse_id:  (string) Идентификатор склада
-     * - quantity:      (int)    Количество остатков
-     *
-     * Должен возвращать массив:
-     *
-     * Поля article, warehouse_id и quantity могут быть
-     * не возвращены, если во время обновления возникла
-     * ошибка
-     *
-     * - optional(article):      (string) Артикул товара
-     * - optional(warehouse_id): (string) Идентификатор склада
-     * - optional(quantity):     (int)    Количество остатков
-     * - error:                  (bool)   Возникла ли ошибка во время обновления
-     * - optional(reason):       (mixed)  Если возникла ошибка, добавляется это поле
-     * - original:               (mixed)  Оригинальный ответ
-     *
-     * Возвращаемый массив должен быть заполнен ровно
-     * на то количество элементов, которые были
-     * переданы в функцию.
-     *
-     * @param array $stocks Остатки
-     *
-     * @return array
-     */
-    public function updateStocksByArticles(array $stocks): array;
+    public function updateStocks(array $stocks): array;
 }
