@@ -13,6 +13,7 @@
 
 namespace CashCarryShop\Sizya\Moysklad;
 
+use CashCarryShop\Sizya\DTO\DTOInterface;
 use CashCarryShop\Sizya\Utils as SizyaUtils;
 use GuzzleHttp\Promise\Utils as PromiseUtils;
 use GuzzleHttp\Promise\PromiseInterface;
@@ -172,23 +173,21 @@ class Utils
     /**
      * Получить данные по фильтрам.
      *
-     * @param string          $filter    Название фильтра
-     * @param array           $values    Значения для фильтра
-     * @param RequestBuilder  $builder   Конструктор запросов
-     * @param callable        $send      Функция отправки запросов
-     * @param callable(R):D[] $getDtos   Функция для получения dto на выход
-     * @apram callable(D):S   $pluck     Получить из dto из функции $getDtos найденное значение
-     * @param int             $maxLength Максимальная длинна чанка
+     * @param string            $filter    Название фильтра
+     * @param array             $values    Значения для фильтра
+     * @param RequestBuilder    $builder   Конструктор запросов
+     * @param callable          $send      Функция отправки запросов
+     * @param callable(R):array $getData   Функция для получения необходимых данных
+     * @param int               $maxLength Максимальная длинна чанка
      *
-     * @return PromiseInterface<D|ByErrorDTO>
+     * @return PromiseInterface<DTOInterface|ByErrorDTO>
      */
     public static function getByFilter(
         string         $filter,
         array          $values,
         RequestBuilder $builder,
         callable       $send,
-        callable       $getDtos,
-        callable       $pluck,
+        callable       $getData,
         int            $maxLength = 0
     ): PromiseInterface {
         $promises = [];
@@ -214,14 +213,11 @@ class Utils
         }
 
         return PromiseUtils::settle($promises)->then(
-            static function ($results) use ($chunks, $getDtos, $pluck) {
-                return SizyaUtils::mapResults(
-                    $chunks,
-                    $results,
-                    $getDtos,
-                    $pluck
-                );
-            }
+            static fn ($results) => SizyaUtils::mapResults(
+                $chunks,
+                $results,
+                $getData
+            )
         );
     }
 
