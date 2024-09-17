@@ -209,12 +209,16 @@ class Orders extends AbstractSource implements OrdersGetterInterface
                 fn ($results) => SizyaUtils::mapResults(
                     \array_map(static fn ($id) => [$id], $ordersIds),
                     $results,
-                    fn ($response) => [
-                        $this->_convertOrder(
+                    function ($response) {
+                        $order = $this->_convertOrder(
                             $this->decodeResponse($response)['result']
-                        )
-                    ],
-                    fn ($order) => $order->id
+                        );
+
+                        return [
+                            'dtos'   => [$order],
+                            'values' => [$order->id]
+                        ];
+                    },
                 )
             )->wait()
         );

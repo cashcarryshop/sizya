@@ -85,34 +85,22 @@ class CustomerOrdersSource extends CustomerOrders
             $validated,
             $errors
         ] = SizyaUtils::splitByValidationErrors(
-            $ordersIds,
-            $this->getSettings('validator')
-                ->validate(
-                    $ordersIds, new Assert\All([
-                        new Assert\Type('string'),
-                        new Assert\NotBlank,
-                        new Assert\Uuid(strict: false)
-                    ])
-                )
+            $this->getValidator(), $ordersIds, [
+                new Assert\Type('string'),
+                new Assert\NotBlank,
+                new Assert\Uuid(strict: false)
+            ]
         );
         unset($ordersIds);
 
-        $orders = $this->_getByFilter(
-            'id',
-            $validated,
-            static fn ($order) => $order->id
+        return \array_merge(
+            $this->_getByFilter(
+                'id',
+                $validated,
+                static fn ($order) => $order->id
+            ),
+            $errors
         );
-        unset($validated);
-
-        foreach ($errors as $error) {
-            $orders[]= ByErrorDTO::fromArray([
-                'type'   => ByErrorDTO::VALIDATION,
-                'reason' => $error,
-                'value'  => $error->value
-            ]);
-        }
-
-        return $orders;
     }
 
     /**
@@ -170,7 +158,10 @@ class CustomerOrdersSource extends CustomerOrders
      *
      * @param string   $filter Фильтр
      * @param array    $values Значения для фильтра
-     * @param callable $pluck  Функция для передачи Utils::getByFilter
+     * @param callable $pluck  Функция для того, чтобы вытащить
+     *                         значение из dto по которому
+     *                         была фильтровка
+     *
      *
      * @return array<int, OrderDTO|ByErrorDTO>
      */
@@ -187,13 +178,20 @@ class CustomerOrdersSource extends CustomerOrders
                 ->limit(100)
                 ->expand('positions.assortment'),
             [$this, 'send'],
-            function ($response) {
-                return \array_map(
-                    fn ($order) => $this->_convertOrder($order),
-                    $this->decodeResponse($response)['rows']
-                );
+            function ($response) use ($pluck) {
+                $dtos   = [];
+                $values = [];
+
+                foreach ($this->decodeResponse($response)['rows'] as $item) {
+                    $dtos[] = $dto = $this->_convertOrder($item);
+                    $values[] = $pluck($dto);
+                }
+
+                return [
+                    'dtos'   => $dtos,
+                    'values' => $values
+                ];
             },
-            $pluck,
             100
         )->wait();
     }

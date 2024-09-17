@@ -134,31 +134,18 @@ class Products extends AbstractSource implements ProductsGetterInterface
             $validated,
             $errors
         ] = SizyaUtils::splitByValidationErrors(
-            $productsIds,
-            $this->getSettings('validator')
-                ->validate(
-                    $productsIds, new Assert\All([
-                        new Assert\Type('string'),
-                        new Assert\NotBlank,
-                        new Assert\Uuid(strict: false)
-                    ])
-                )
+            $this->getValidator(), $productsIds, [
+                new Assert\NotBlank,
+                new Assert\Type('string'),
+                new Assert\Uuid(strict: false)
+            ]
         );
         unset($productsIds);
 
-        $products = $this->_getByFilter('id', $validated)->wait();
-        unset($validated);
-
-        foreach ($errors as $error) {
-            $products[] = ByErrorDTO::fromArray([
-                'type'   => ByErrorDTO::VALIDATION,
-                'reason' => $error,
-                'value'  => $error->value
-            ]);
-        }
-        unset($errors);
-
-        return $products;
+        return \array_merge(
+            $this->_getByFilter('id', $validated)->wait(),
+            $errors
+        );
     }
 
     /**
@@ -190,47 +177,41 @@ class Products extends AbstractSource implements ProductsGetterInterface
             $validated,
             $errors
         ] = SizyaUtils::splitByValidationErrors(
-            $articles,
-            $this->getSettings('validator')
-                ->validate($articles, new Assert\All([
-                    new Assert\NotBlank,
-                    new Assert\Length(max: 3072, countUnit: Assert\Length::COUNT_BYTES)
-                ]))
+            $this->getValidator(), $articles, [
+                new Assert\NotBlank,
+                new Assert\Length(
+                    max: 3072,
+                    countUnit: Assert\Length::COUNT_BYTES
+                )
+            ]
         );
         unset($articles);
 
         $byArticles = $this->_getByFilter('article', $validated);
-        $byCodes    = $this->_getByFilter('code',    $validated, field: 'article');
+        $byCodes    = $this->_getByFilter('code',    $validated, 'article');
 
-        $products = PromiseUtils::all([$byArticles, $byCodes])->then(
-            static function ($results) {
-                [$byArticles, $byCodes] = $results;
+        return \array_merge(
+            PromiseUtils::all([$byArticles, $byCodes])->then(
+                static function ($results) {
+                    [$byArticles, $byCodes] = $results;
 
-                $products = [];
-                foreach ($byArticles as $idx => $byArticle) {
-                    if ($byArticle instanceof ByErrorDTO
-                        && !($byCodes[$idx] instanceof ByErrorDTO)
-                    ) {
-                        $products[$idx] = $byCodes[$idx];
-                        continue;
+                    $products = [];
+                    foreach ($byArticles as $idx => $byArticle) {
+                        if ($byArticle instanceof ByErrorDTO
+                            && !($byCodes[$idx] instanceof ByErrorDTO)
+                        ) {
+                            $products[$idx] = $byCodes[$idx];
+                            continue;
+                        }
+
+                        $products[$idx] = $byArticle;
                     }
 
-                    $products[$idx] = $byArticle;
+                    return $products;
                 }
-
-                return $products;
-            }
-        )->wait();
-        unset($validated);
-
-        foreach ($errors as $error) {
-            $products[] = ByErrorDTO::fromArray([
-                'type'   => ByErrorDTO::VALIDATION,
-                'reason' => $error,
-                'value'  => $error->value
-            ]);
-        }
-        unset($errors);
+            )->wait(),
+            $errors
+        );
 
         return $products;
     }
@@ -242,7 +223,6 @@ class Products extends AbstractSource implements ProductsGetterInterface
      *
      * @param string $filter    Название фильтра
      * @param array  $values    Значение
-     * @param int    $chunkSize Размер чанка
      * @param string $field     Название поля в dto по которому производиться поиск
      *
      * @return PromiseInterface<ProductDTO|ByErrorDTO>
@@ -250,8 +230,7 @@ class Products extends AbstractSource implements ProductsGetterInterface
     private function _getByFilter(
         string  $filter,
         array   $values,
-        int     $chunkSize = 3072,
-        string  $field     = null
+        string  $field = null
     ): PromiseInterface {
         $field = $field ? $field : $filter;
 
@@ -260,13 +239,21 @@ class Products extends AbstractSource implements ProductsGetterInterface
             $values,
             $this->builder()->point('entity/assortment'),
             [$this, 'send'],
-            function ($response) {
-                return \array_map(
-                    fn ($item) => $this->_convertProduct($item),
-                    $this->decodeResponse($response)['rows']
-                );
+            function ($response, $chunk) use ($field) {
+                $dtos   = [];
+                $values = [];
+
+                foreach ($this->decodeResponse($response)['rows'] as $item) {
+                    $values[] = (
+                        $dtos[] = $this->_convertProduct($item)
+                    )->$field;
+                }
+
+                return [
+                    'dtos'   => $dtos,
+                    'values' => $values
+                ];
             },
-            static fn ($product) => $product->$field
         );
     }
 
