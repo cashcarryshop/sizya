@@ -14,8 +14,14 @@
 namespace CashCarryShop\Sizya\Ozon;
 
 use CashCarryShop\Sizya\StocksUpdaterInterface;
-use GuzzleHttp\Promise\PromiseInterface;
-use GuzzleHttp\Promise\Utils;
+use CashCarryShop\Sizya\DTO\StockUpdateDTO;
+use CashCarryShop\Sizya\DTO\StockDTO;
+use CashCarryShop\Sizya\DTO\ApiErrorDTO;
+use CashCarryShop\Sizya\DTO\ApiErrorsDTO;
+use CashCarryShop\Sizya\DTO\ByErrorDTO;
+use CashCarryShop\Sizya\Utils as SizyaUtils;
+use GuzzleHttp\Promise\Utils as PromiseUtils;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Элемент для синхронизации остатков Ozon
@@ -31,109 +37,108 @@ class Stocks extends AbstractTarget implements StocksUpdaterInterface
     /**
      * Обновить остатки
      *
-     * @param array $stocks Остатки
+     * @param StockUpdateDTO[] $stocks Остатки
      *
-     * @return array
+     * @return array<int, StockDTO|ByErrorDTO>
      */
-    private function _update(array $stocks): array
+    public function updateStocks(array $stocks): array
     {
+        [
+            $errors,
+            $validated
+        ] = SizyaUtils::splitByValidationErrors(
+            $this->getValidator(), $stocks, [
+                new Assert\NotBlank,
+                new Assert\Type(StockUpdateDTO::class),
+                new Assert\Valid
+            ]
+        );
+        unset($stocks);
+
         $builder = $this->builder()->point('v2/products/stocks');
+
+        $count  = \count($validated);
+
+        $chunk    = [];
+        $chunks   = [];
+
         $promises = [];
+        $data     = [];
+        for ($i = 0; $i < $count; ++$i) {
+            $stock = $validated[$i];
+            $item = [
+                'warehouse_id' => $stock->warehouseId,
+                'stock'        => $stock->quantity
+            ];
 
-        $chunks = array_chunk(
-            array_map(
-                static function ($stock) {
-                    $output = [
-                        'warehouse_id' => $stock['warehouse_id'],
-                        'stock' => $stock['quantity']
-                    ];
+            if (is_null($stock->id)) {
+                $item['offer_id'] = $key = $stock->article;
+            } else {
+                $item['product_id'] = $key = $stock->id;
+            }
 
-                    if (isset($stock['id'])) {
-                        $output['product_id'] = $stock['id'];
-                        return $output;
+            $data[]      = $item;
+            $chunk[$key] = $stock;
+
+            if ($i % 99 === 0) {
+                $promises[] = $this->send(
+                    (clone $builder)
+                        ->body(['stocks' => $data])
+                        ->build('POST')
+                );
+
+                $chunks[] = $chunk;
+                $chunk = $data = [];
+            }
+        }
+        unset($chunk);
+        unset($data);
+
+        $getApiError = static fn ($error) =>
+            ApiErrorDTO::fromArray([
+                'message'  => $error['error'],
+                'original' => $error,
+            ]);
+
+        return \array_merge(
+            SizyaUtils::mapResults(
+                $chunks,
+                PromiseUtils::settle($promises)->wait(),
+                function ($response, &$chunk) use ($getApiError) {
+                    $dtos   = [];
+
+                    foreach ($this->decodeResponse($response)['result'] as $idx => $answer) {
+                        $key = \array_key_exists($chunk, $answer['product_id'])
+                            ? $answer['product_id'] : $answer['offer_id'];
+
+                        $item        = $chunk[$key];
+                        $chunk[$idx] = $item;
+                        unset($chunk[$key]);
+
+                        if ($answer['updated']) {
+                            $dtos[] = StockDTO::fromArray([
+                                'id'          => $answer['product_id'],
+                                'article'     => $answer['offer_id'],
+                                'warehouseId' => $answer['warehouse_id'],
+                                'quantity'    => $item->quantity,
+                                'original'    => $answer
+                            ]);
+                            continue;
+                        }
+
+                        $dtos[] = ByErrorDTO::fromArray([
+                            'type'   => ByErrorDTO::API,
+                            'value'  => $item,
+                            'reason' => new ApiErrorsDTO(
+                                \array_map($getApiError, $answer['errors'])
+                            )
+                        ]);
                     }
 
-                    $output['offer_id'] = $stock['article'];
-                    return $output;
-                },
-                $stocks
+                    return [$dtos, $chunk];
+                }
             ),
-            100
+            $errors
         );
-        foreach ($chunks as $chunk) {
-            $promises[] = $this->decode(
-                $this->send(
-                    (clone $builder)
-                        ->body(['stocks' => $chunk])
-                        ->build('POST')
-                )
-            );
-        }
-
-        $results = Utils::settle($promises)->wait();
-
-        foreach ($results as $idx => $result) {
-            $indexes = array_keys(
-                array_slice(
-                    $stocks,
-                    $offset = $idx * 100,
-                    100,
-                    true
-                )
-            );
-
-            if ($result['state'] === PromiseInterface::REJECTED) {
-                $reason = $result['reason']->getMessage();
-                foreach ($indexes as $index) {
-                    $stocks[$index]['error'] = true;
-                    $stocks[$index]['reason'] = $reason;
-                    $stocks[$index]['original'] = $result['reason'];
-                }
-                continue;
-            }
-
-            foreach ($indexes as $index) {
-                $answer = $result['value']['result'][$index - $offset];
-
-                $stocks[$index]['original'] = $answer;
-                if ($answer['updated']) {
-                    $stocks[$index]['error'] = false;
-                    continue;
-                }
-
-                $stocks[$index]['error'] = true;
-                $stocks[$index]['reason'] = $answer['errors'];
-            }
-        }
-
-        return $stocks;
-    }
-
-    /**
-     * Обновить остатки по идентификаторам
-     *
-     * Смотреть `StocksUpdaterInterface::updateStocksByIds`
-     *
-     * @param array $stocks Остатки
-     *
-     * @return array
-     */
-    public function updateStocksByIds(array $stocks): array
-    {
-        return $this->_update($stocks);
-    }
-
-    /**
-     * Обновить остатки товаров по артикулам
-     *
-     * Смотреть `StocksUpdaterInterface::updateStocksByArticles`
-     *
-     * @param array $stocks Остатки
-     *
-     * @return array
-     */
-    public function updateStocksByArticles(array $stocks): array
-    {
-        return $this->_update($stocks);
     }
 }
