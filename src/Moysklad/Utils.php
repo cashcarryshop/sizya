@@ -127,9 +127,9 @@ class Utils
      */
     public static function chunkBySize(
         array $array,
-        int $size = 6144,
-        int $additional = 0,
-        int $maxLength  = 0,
+        int   $size = 6144,
+        int   $additional = 0,
+        int   $maxLength  = 0,
     ): array {
         $chunks = [];
         $currentChunkSize = 0;

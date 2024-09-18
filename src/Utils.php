@@ -172,4 +172,76 @@ class Utils
 
         return [$values, $errors];
     }
+
+    /**
+     * Разделить массив по чанкам и сразу создать
+     * promise для отправки данных.
+     *
+     * @param array    $items      Элементы
+     * @param callable $getData    Получить данные одного элемента для promise
+     * @param callable $getPromise Получить Promise
+     * @param int      $size       Максимальный размер чанка
+     *
+     * @return array<string, array>
+     */
+    function getByChunks(
+        array    $items,
+        callable $getData,
+        callable $getPromise,
+        callable $shouldPush = static fn ($counter) => $counter === 99
+    ) {
+        $count   = \count($items);
+        $counter = 0;
+
+        $chunk  = [];
+        $chunks = [];
+
+        $promises = [];
+        $data     = [];
+
+        for ($i = 0; $i < $count; ++$i) {
+            $key = $currentCount;
+
+            $data[]      = $getData($items[$i], $key);
+            $chunk[$key] = $items[$i];
+
+            if ($shouldPush($counter, $key, $i)) {
+                $counter    = 0;
+                $promises[] = $getPromise($data);
+                $chunks[]   = $chunk;
+                $chunk      = [];
+                $data       = [];
+            }
+        }
+
+        return [
+            'promises' => $promises,
+            'chunks'   => $chunks
+        ];
+    }
+
+    /**
+     * Установить значение в массив по ключу
+     * если в объекте оно не null.
+     *
+     * @param string $key    Ключ
+     * @param object $object Объект
+     * @param array  $data   Ссылка на данные
+     * @param string $targetKey Целевой ключ (по-умолчанию имеен значение $key)
+     *
+     * @return bool Было ли значение установлено
+     */
+    public static function setIfNotNull(
+        string $key,
+        object $object,
+        array  &$data,
+        string $targetKey = $key
+    ): bool {
+        if (\is_null($object->$key)) {
+            return false;
+        }
+
+        $data[$key] = $object->$targetKey;
+        return true;
+    }
 }

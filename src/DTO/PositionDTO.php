@@ -39,7 +39,6 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 class PositionDTO extends AbstractDTO
 {
-
     /**
      * Создать экземпляр позиции
      *
