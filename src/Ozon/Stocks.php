@@ -57,42 +57,29 @@ class Stocks extends AbstractTarget implements StocksUpdaterInterface
 
         $builder = $this->builder()->point('v2/products/stocks');
 
-        $count  = \count($validated);
+        [
+            'chunks'   => $chunks,
+            'promises' => $promises
+        ] = SizyaUtils::getByChunks(
+            $validated,
+            static function ($stock, &$key) {
+                $item = [
+                    'warehouse_id' => $stock->warehouseId,
+                    'stock'        => $stock->quantity
+                ];
 
-        $chunk    = [];
-        $chunks   = [];
+                if (\is_null($stock->id)) {
+                    $item['offer_id']   = $key = $stock->article;
+                } else {
+                    $item['product_id'] = $key = $stock->id;
+                }
 
-        $promises = [];
-        $data     = [];
-        for ($i = 0; $i < $count; ++$i) {
-            $stock = $validated[$i];
-            $item = [
-                'warehouse_id' => $stock->warehouseId,
-                'stock'        => $stock->quantity
-            ];
-
-            if (is_null($stock->id)) {
-                $item['offer_id'] = $key = $stock->article;
-            } else {
-                $item['product_id'] = $key = $stock->id;
-            }
-
-            $data[]      = $item;
-            $chunk[$key] = $stock;
-
-            if ($i % 99 === 0) {
-                $promises[] = $this->send(
-                    (clone $builder)
-                        ->body(['stocks' => $data])
-                        ->build('POST')
-                );
-
-                $chunks[] = $chunk;
-                $chunk = $data = [];
-            }
-        }
-        unset($chunk);
-        unset($data);
+                return $item;
+            },
+            static fn ($data) => (clone $builder)
+                ->body(['stocks' => $data])
+                ->build('POST')
+        );
 
         $getApiError = static fn ($error) =>
             ApiErrorDTO::fromArray([
