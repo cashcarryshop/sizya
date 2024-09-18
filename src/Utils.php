@@ -177,19 +177,21 @@ class Utils
      * Разделить массив по чанкам и сразу создать
      * promise для отправки данных.
      *
-     * @param array    $items      Элементы
-     * @param callable $getData    Получить данные одного элемента для promise
-     * @param callable $getPromise Получить Promise
-     * @param int      $size       Максимальный размер чанка
+     * @param array                                $items      Элементы
+     * @param callable                             $getData    Получить данные одного элемента для promise
+     * @param callable                             $getPromise Получить Promise
+     * @param ?callable(int, int|string, int):bool $shouldPush Проверка следует ли добавить новый чанк
      *
      * @return array<string, array>
      */
-    function getByChunks(
+    public static function getByChunks(
         array    $items,
         callable $getData,
         callable $getPromise,
-        callable $shouldPush = static fn ($counter) => $counter === 99
+        ?callable $shouldPush = null
     ) {
+        $shouldPush ??= static fn ($counter) => $counter === 99;
+
         $count   = \count($items);
         $counter = 0;
 
@@ -224,10 +226,10 @@ class Utils
      * Установить значение в массив по ключу
      * если в объекте оно не null.
      *
-     * @param string $key    Ключ
-     * @param object $object Объект
-     * @param array  $data   Ссылка на данные
-     * @param string $targetKey Целевой ключ (по-умолчанию имеен значение $key)
+     * @param string  $key       Ключ
+     * @param object  $object    Объект
+     * @param array   $data      Ссылка на данные
+     * @param ?string $targetKey Целевой ключ (по-умолчанию имеен значение $key)
      *
      * @return bool Было ли значение установлено
      */
@@ -235,8 +237,10 @@ class Utils
         string $key,
         object $object,
         array  &$data,
-        string $targetKey = $key
+        ?string $targetKey = null
     ): bool {
+        $targetKey ??= $key;
+
         if (\is_null($object->$key)) {
             return false;
         }
