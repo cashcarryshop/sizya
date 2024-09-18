@@ -16,6 +16,12 @@ namespace CashCarryShop\Sizya\Moysklad;
 use CashCarryShop\Sizya\OrdersCreatorInterface;
 use CashCarryShop\Sizya\OrdersUpdaterInterface;
 use CashCarryShop\Synchronizer\SynchronizerTargetInterface;
+use CashCarryShop\Sizya\DTO\{OrderDTO, OrderCreateDTO, OrderUpdateDTO};
+use CashCarryShop\Sizya\DTO\{PositionDTO, PositionCreateDTO, PositionUpdateDTO};
+use CashCarryShop\Sizya\DTO\{AdditionalDTO, AdditionalCreateDTO, AdditionalUpdateDTO};
+use CashCarryShop\Sizya\DTO\ByErrorDTO;
+
+use CashCarryShop\Sizya\Utils as SizyaUtils;
 use GuzzleHttp\Promise\Utils as PromiseUtils;
 
 /**
@@ -33,29 +39,252 @@ class CustomerOrders extends CustomerOrdersSource
                OrdersUpdaterInterface
 {
     /**
-     * Установить значение если существует
+     * Создать заказ
      *
-     * @param string $key       Ключ
-     * @param array  $order     Заказ
-     * @param array  $data      Данные
-     * @param string $targetKey Целевой ключ
+     * @param OrderCreateDTO $order Заказ
      *
-     * @return bool Было ли значение установлено
+     * @see OrdersCreatorInterface
+     *
+     * @return OrderDTO|ByErrorDTO
      */
-    private function _setIfExist(
-        string $key,
-        array $order,
-        array &$data,
-        string $targetKey = null
-    ): bool {
-        $targetKey ??= $key;
+    public function createOrder(OrderCreateDTO $order): OrderDTO|ByErrorDTO
+    {
+        return $this->_createOrUpdate([$order])[0];
+    }
 
-        if (isset($order[$key])) {
-            $data[$key] = $order[$targetKey];
-            return true;
+    /**
+     * Создать переданные заказы
+     *
+     * @param OrderCreateDTO[] $orders Заказы
+     *
+     * @see OrdersCreatorInterface
+     *
+     * @return array<OrderDTO|ByErrorDTO>
+     */
+    public function massCreateOrders(array $orders): array
+    {
+        return $this->_createOrUpdate($orders);
+    }
+
+    /**
+     * Обновить заказ
+     *
+     * @param OrderUpdateDTO $order Заказ
+     *
+     * @see OrdersUpdaterInterface
+     *
+     * @return OrderDTO|ByErrorDTO
+     */
+    public function updateOrder(OrderUpdateDTO $order): OrderDTO|ByErrorDTO
+    {
+        return $this->_createOrUpdate([$order])[0];
+    }
+
+    /**
+     * Обновить заказы
+     *
+     * @param OrderUpdateDTO[] $orders Заказы
+     *
+     * @see OrdersUpdaterInterface
+     *
+     * @return array<OrderDTO|ByErrorDTO>
+     */
+    public function massUpdateOrders(array $orders): array
+    {
+        return $this->_createOrUpdate($orders);
+    }
+
+    /**
+     * Создать или обновить заказы
+     *
+     * @param array<OrderCreateDTO|OrderUpdateDTO> $orders Заказы
+     *
+     * @return array<OrderDTO|ErrorDTO>
+     */
+    private function _createOrUpdate(array $orders): array
+    {
+        [
+            $validated,
+            $errors
+        ] = SizyaUtils::splitByValidationErrors(
+            $this->getValidator(), $productsIds, [
+                new Assert\NotBlank,
+                new Assert\Type([OrderCreateDTO::class, OrderUpdateDTO::class]),
+                new Assert\Valid
+            ]
+        );
+        unset($orders);
+
+        $this->_prepareOrders($validated, $errors);
+
+        $builder = $this->builder()
+            ->point('entity/customerorder')
+            ->expand('positions.assortment');
+
+        [
+            'chunks'   => $chunks,
+            'promises' => $promises
+        ] = SizyaUtils::getByChunks(
+            $validated,
+            fn ($order) => $this->_convertOrder($order),
+            static fn ($data) => (clone $builder)->body($data)->build('POST')
+        );
+
+        return \array_merge(
+            SizyaUtils::mapResults(
+                $chunks,
+                PromiseUtils::settle($promises)->wait(),
+                static fn ($response, $chunk) => [
+                    'values' => $chunk,
+                    'dtos'   => \array_map(
+                        static fn ($item) => OrderDTO::fromArray([
+                            'id'           => $item['id'],
+                            'article'      => $item['name'],
+                            'created'      => Utils::dateToUtc($item['created']),
+                            'status'       => Utils::guidFromMeta($item['state']['meta']),
+                            'shipmentDate' => Utils::dateToUtc($item['deliveryPlannedMoment']),
+                            'description'  => $item['description'],
+                            'additionals'  => \array_map(
+                                static fn ($additional) => AdditionalDTO::fromArray([
+                                    'id'       => $additional['id'],
+                                    'entityId' => $additional['id'],
+                                    'name'     => $additional['name'],
+                                    'value'    => $additional['value'],
+                                    'original' => $additional
+                                ]),
+                                $item['attributes']
+                            ),
+                            'positions' => \array_map(
+                                static fn ($position) => PositionDTO::fromArray([
+                                    'id'       => $position['id'],
+                                    'orderId'  => $position['assortment']['id'],
+                                    'type'     => $position['assortment']['meta']['type'],
+                                    'quantity' => $position['quantity'],
+                                    'reserve'  => $position['reserve'] ?? 0,
+                                    'price'    => (float) ($position['price'] / 100),
+                                    'discount' => (float) $position['discount'],
+                                    'original' => $position
+                                ]),
+                                $item['positions']['rows']
+                            ),
+                            'original' => $item
+                        ]),
+                        $this->decodeResponse($response)
+                    )
+                ]
+            )
+        );
+    }
+
+    /**
+     * Обработать данные создания/обновления заказов.
+     *
+     * @param array $validated Ссылка на валидированные данные
+     * @param array $errors    Ссылка на ошибки валидации данных
+     *
+     * @return void
+     */
+    private function _prepareOrders(array &$validated, array &$errors): void
+    {
+        // Собираем артикулы товаров для их получения
+        $articles = [];
+        foreach ($validated as $oIdx => $order) {
+            foreach ($order->positions as $pIdx => $position) {
+                if ($position->orderId) {
+                    continue;
+                }
+
+                $data = [
+                    'oIdx'    => $oIdx,
+                    'pIdx'    => $pIdx,
+                    'article' => $position->article
+                ];
+
+                if (isset($articles[$position->article])) {
+                    $articles[$position->article][] = $data;
+                    continue;
+                }
+
+                $articles[$position->article] = [$data];
+            }
         }
 
-        return false;
+        $products = $this->getSettings('products')
+            ->getProductsByArticles(\array_keys($articles));
+
+        foreach ($products as $item) {
+            if ($item instanceof ByErrorDTO) {
+                $errors[] = ByErrorDTO::fromArray([
+                    'type'   => ByErrorDTO::NOT_FOUND,
+                    'value'  => $validated[$articles[$item->value]['oIdx']],
+                    'reason' => $item
+                ]);
+                unset($validated[$articles[$item->value]['oIdx']]);
+                continue;
+            }
+
+            $data = $articles[$item->article];
+            $validated[$data['oIdx']]->positions[$data['pIdx']]->offerId = $item->id;
+        }
+    }
+
+    /**
+     * Конвертировать заказ для создания
+     *
+     * @param OrderCreateDTO|OrderUpdateDTO $order Заказ
+     *
+     * @return array
+     */
+    private function _convertOrder(OrderCreateDTO|OrderUpdateDTO $order): array
+    {
+        $data = [
+            'organization' => $this->getSettings('organization'),
+            'agent'        => $this->getSettings('agent')
+        ];
+
+        $this->_setIfExistInSettings('vatEnabled', $data);
+        $this->_setIfExistInSettings('vatIncluded', $data);
+        $this->_setIfExistInSettings('project', $data)
+            && $data['project'] = $this->meta()->project($data['project']);
+        $this->_setIfExistInSettings('contract', $data)
+            && $data['contract'] = $this->meta()->contract($data['contract']);
+        $this->_setIfExistInSettings('store', $data)
+            && $data['store'] = $this->meta()->store($data['store']);
+        $this->_setIfExistInSettings('salesChannel', $data)
+            && $data['salesChannel'] = $this->meta()->salesChannel($data['salesChannel']);
+
+        SizyaUtils::setIfNotNull('id',          $order, $data);
+        SizyaUtils::setIfNotNull('article',     $order, $data, 'name');
+        SizyaUtils::setIfNotNull('description', $order, $data);
+        SizyaUtils::setIfNotNull('created',     $order, $data)
+            && $data['created'] = Utils::dateToMoysklad($data['created']);
+
+        SizyaUtils::setIfNotNull('status', $order, $data, 'state')
+            && $data['state'] = [
+                'meta' => $this->meta()->create(
+                    "entity/customerorder/metadata/states/{$data['state']}",
+                    'state'
+                )
+            ];
+
+        SizyaUtils::setIfNotNull('shipment_date', $order, $data, 'deliveryPlannedMoment')
+            && $data['deliveryPlannedMoment'] = Utils::dateToMoysklad(
+                $data['deliveryPlannedMoment']
+            );
+
+        SizyaUtils::setIfNotNull('additional', $order, $data, 'attributes')
+            && $data['attributes'] = \array_map(
+                fn ($additional) => $this->_convertAdditional($additional),
+                $data['attributes']
+            );
+
+        SizyaUtils::setIfNotNull('positions', $order, $data)
+            && $data['positions'] = \array_map(
+                fn ($position) => $this->_convertPosition($position),
+                $data['positions']
+            );
+
+        return $data;
     }
 
     /**
@@ -76,281 +305,57 @@ class CustomerOrders extends CustomerOrdersSource
         return false;
     }
 
-
     /**
      * Конвертировать доп. поле для создания/обновления
      *
-     * @param array $additional Доп поле
+     * @param AdditionalCreateDTO|AdditionalUpdateDTO $additional Доп поле
      *
      * @return array
      */
-    private function _convertAdditional(array $additional): array
+    private function _convertAdditional(AdditionalCreateDTO|AdditionalUpdateDTO $additional): array
     {
         return [
-            'meta' => $this->meta()->create(
-                "entity/customerorder/metadata/attributes/{$additional['entityId']}",
+            'name'  => $additional['name'],
+            'value' => $additional['value'],
+            'meta'  => $this->meta()->create(
+                "entity/customerorder/metadata/attributes/{$additional->entityId}",
                 'attributemetadata'
-            ),
-            'name' => $additional['name'],
-            'value' => $additional['value']
+            )
         ];
     }
 
     /**
      * Конвертировать позицию для создания/обновления
      *
-     * @param array $position Позиция
+     * @param PositionCreateDTO|PositionUpdateDTO $position Позиция
      *
      * @return array
      */
-    private function _convertPosition(array $position): array
+    private function _convertPosition(PositionCreateDTO|PositionUpdateDTO $position): array
     {
-        $output = [];
+        $data = [];
 
-        $this->_setIfExist('id', $position, $output);
-        $this->_setIfExist('quantity', $position, $output);
-        $this->_setIfExist('discount', $position, $output);
-        $this->_setIfExist('price', $position, $output)
-            && $output['price'] = $output['price'] * 100;
+        SizyaUtils::setIfNotNull('id',       $position, $data);
+        SizyaUtils::setIfNotNull('quantity', $position, $data);
+        SizyaUtils::setIfNotNull('discount', $position, $data);
+        SizyaUtils::setIfNotNull('price',    $position, $data)
+            && $data['price'] = $data['price'] * 100;
 
-        if (isset($position['orderId'])) {
-            if (is_null($position['orderId'])) {
-                $output['assortment'] = null;
-            } else {
-                $type = 'product';
-                if (isset($position['type'])) {
-                    $type = $position['type'];
-                }
-
-                $output['assortment'] = [
-                    'meta' => $this->meta()->$type($position['orderId'])
-                ];
+        if ($position['orderId']->orderId) {
+            $type = 'product';
+            if ($position->type) {
+                $type = $position->type;
             }
-        }
 
-        return $output;
-    }
-
-    /**
-     * Конвертировать заказ для создания
-     *
-     * @param array $order Заказ
-     *
-     * @return array
-     */
-    private function _convertOrder(array $order): array
-    {
-        $output = [
-            'organization' => $this->getSettings('organization'),
-            'agent' => $this->getSettings('agent')
-        ];
-
-        $this->_setIfExistInSettings('vatEnabled', $output);
-        $this->_setIfExistInSettings('vatIncluded', $output);
-        $this->_setIfExistInSettings('project', $output)
-            && $output['project'] = $this->meta()->project($output['project']);
-        $this->_setIfExistInSettings('contract', $output)
-            && $output['contract'] = $this->meta()->contract($output['contract']);
-        $this->_setIfExistInSettings('store', $output)
-            && $output['store'] = $this->meta()->store($output['store']);
-        $this->_setIfExistInSettings('salesChannel', $output)
-            && $output['salesChannel'] = $this->meta()
-            ->salesChannel($output['salesChannel']);
-
-        $this->_setIfExist('id', $order, $output);
-        $this->_setIfExist('article', $order, $output, 'name');
-        $this->_setIfExist('description', $order, $output);
-        $this->_setIfExist('created', $order, $output)
-            && $output['created'] = Utils::dateToMoysklad($output['created']);
-
-        $this->_setIfExist('status', $order, $output, 'state')
-            && $output['state'] = [
-                'meta' => $this->meta()->create(
-                    "entity/customerorder/metadata/states/{$output['state']}",
-                    'state'
-                )
+            $data['assortment'] = [
+                'meta' => $this->meta()->$type($position->orderId)
             ];
 
-        $this->_setIfExist('shipment_date', $order, $output, 'deliveryPlannedMoment')
-            && $output['deliveryPlannedMoment'] = Utils::dateToMoysklad(
-                $output['deliveryPlannedMoment']
-            );
-
-        $this->_setIfExist('additional', $order, $output, 'attributes')
-            && $output['attributes'] = array_map(
-                fn ($additional) => $this->_convertAdditional($additional),
-                $output['attributes']
-            );
-
-        $this->_setIfExist('positions', $order, $output)
-            && $output['positions'] = array_map(
-                fn ($position) => $this->_convertPosition($position),
-                $output['positions']
-            );
-
-        return $output;
-    }
-
-    /**
-     * Создать или обновить заказы
-     *
-     * @param array $orders Заказы
-     *
-     * @return array<array>
-     */
-    private function _createOrUpdate(array $orders): array
-    {
-        // Собираем артикулы товаров для их получения
-        $articles = [];
-        foreach ($orders as $oIdx => $order) {
-            foreach ($order['positions'] ?? [] as $pIdx => $position) {
-                if (isset($position['orderId'])) {
-                    continue;
-                }
-
-                $articles[] = [
-                    'oIdx' => $oIdx,
-                    'pIdx' => $pIdx,
-                    'article' => $position['article']
-                ];
-            }
+            return $data;
         }
 
-        // Если есть товары, которые нужно найти по артикулам,
-        // получаем их, а при отсутствии этого товара отмечаем
-        // заказ в целом как "не выполнено"
-        $notFoundPositions = [];
-        if ($articles) {
-            $products = $this->products->getByArticles(
-                array_unique(
-                    array_column($articles, 'article')
-                )
-            );
+        $data['assortment'] = null;
 
-            foreach ($articles as $item) {
-                foreach ($products as $product) {
-                    if ($product['article'] === $item['article']) {
-                        $positions = &$orders[$item['oIdx']]['positions'];
-                        $positions[$item['pIdx']]['orderId'] = $product['id'];
-                        $positions[$item['pIdx']]['type'] = $product['meta']['type'];
-                        continue 2;
-                    }
-                }
-
-                $notFoundPositions[] = $item['oIdx'];
-                unset($orders[$item['oIdx']]);
-            }
-
-        }
-        unset($articles);
-
-        $builder = $this->builder()
-            ->point('entity/customerorder')
-            ->expand('positions.assortment');
-
-        $promises = [];
-        $chunks = array_chunk($orders, 100);
-        foreach ($chunks as $chunk) {
-            $promises[] = $this->decode(
-                $this->send(
-                    (clone $builder)
-                        ->body(
-                            array_map(
-                                fn ($order) => $this->_convertOrder($order),
-                                $chunk
-                            )
-                        )->build('POST')
-                )
-            );
-        }
-
-        $output = [];
-        foreach (PromiseUtils::settle($promises)->wait() as $index => $result) {
-            if ($result['state'] === PromiseInterface::REJECTED) {
-                $chunk = $chunks[$index];
-                while (current($chunk)) {
-                    $output[] = [
-                        'error' => true,
-                        'reason' => $result['reason']->getMessage()
-                    ];
-
-                    next($chunk);
-                }
-                continue;
-            }
-
-            foreach ($result['value'] as $idx => $order) {
-                if (in_array(($index * 100) + $idx, $notFoundPositions)) {
-                    $output[] = [
-                        'error' => true,
-                        'reason' => 'Product not found',
-                        'original' => null
-                    ];
-                }
-
-                $order = $this->_convertOrder($order);
-                $order['error'] = false;
-                $output[] = $order;
-            }
-        }
-
-        return $output;
-    }
-
-
-    /**
-     * Создать переданные заказы
-     *
-     * Смотреть `OrdersCreatorInterface::massCreateOrders`
-     *
-     * @param array $orders Заказы
-     *
-     * @return array<array>
-     */
-    public function massCreateOrders(array $orders): array
-    {
-        return $this->_createOrUpdate($orders);
-    }
-
-    /**
-     * Создать заказ
-     *
-     * Смотреть `OrdersCreatorInterface::createOrder`
-     *
-     * @param array $order Заказ
-     *
-     * @return array
-     */
-    public function createOrder(array $order): array
-    {
-        return $this->_createOrUpdate([$order])[0];
-    }
-
-    /**
-     * Обновить заказы
-     *
-     * Смотреть `OrdersUpdaterInterface::massUpdateOrders`
-     *
-     * @param array $orders Заказы
-     *
-     * @return array<array>
-     */
-    public function massUpdateOrders(array $orders): array
-    {
-        return $this->_createOrUpdate($orders);
-    }
-
-    /**
-     * Обновить заказ
-     *
-     * Смотреть `OrdersUpdaterInterface::updateOrder`
-     *
-     * @param array $order Заказ
-     *
-     * @return array
-     */
-    public function updateOrder(array $order): array
-    {
-        return $this->_createOrUpdate([$order])[0];
+        return $data;
     }
 }
