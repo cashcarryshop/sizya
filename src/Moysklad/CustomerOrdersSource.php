@@ -1,6 +1,6 @@
 <?php
 /**
- * Этот файл является частью пакета sizya
+ * Этот файл является частью пакета sizya.
  *
  * PHP version 8
  *
@@ -183,7 +183,7 @@ class CustomerOrdersSource extends CustomerOrders
                 $values = [];
 
                 foreach ($this->decodeResponse($response)['rows'] as $item) {
-                    $dtos[] = $dto = $this->_convertOrder($item);
+                    $dtos[]   = $dto = $this->_convertOrder($item);
                     $values[] = $pluck($dto);
                 }
 
@@ -262,8 +262,8 @@ class CustomerOrdersSource extends CustomerOrders
             'id'       => $position['id'],
             'orderId'  => $position['assortment']['id'],
             'type'     => $position['assortment']['meta']['type'],
-            'quantity' => $position['quantity'],
-            'reserve'  => $position['reserve'] ?? 0,
+            'quantity' => (int) $position['quantity'],
+            'reserve'  => (int) ($position['reserve'] ?? 0),
             'price'    => (float) ($position['price'] / 100),
             'discount' => (float) $position['discount'],
             'original' => $position

@@ -90,7 +90,7 @@ class ErrorDTO extends AbstractDTO
         )]
         #[Assert\When(
             expression: 'this.type === "api"',
-            constraints: [new Assert\Type(ApiErrorsDTO::classl)]
+            constraints: [new Assert\Type(ApiErrorsDTO::class)]
         )]
         public $reason = null
     ) {}

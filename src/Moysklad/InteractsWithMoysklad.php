@@ -57,8 +57,10 @@ trait InteractsWithMoysklad
         return array_merge(
             $this->_httpRules(), [
                 'credentials' => [
-                    new Assert\Type('array'),
-                    new Assert\All(new Assert\Type('string'))
+                    new Assert\All([
+                        new Assert\Type('string'),
+                        new Assert\NotBlank
+                    ]),
                 ]
             ]
         );
@@ -111,7 +113,7 @@ trait InteractsWithMoysklad
      */
     public function decodeResponse(ResponseInterface $response): array
     {
-        return json_decode(
+        return \json_decode(
             $response->getBody()->getContents(),
             true,
             512,

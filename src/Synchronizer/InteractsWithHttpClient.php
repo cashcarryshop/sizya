@@ -46,6 +46,7 @@ trait InteractsWithHttpClient
         if (!isset($settings['client']) || is_null($settings['client'])) {
             $settings['client'] = new Client;
         }
+
         $this->_settingsConstruct($settings);
     }
 
