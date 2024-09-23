@@ -59,7 +59,7 @@ class StocksSourceTest extends TestCase
         static::$entity->getStocks();
     }
 
-    protected function createStocksGetter(): ?ShortStocks
+    protected function createStocksGetter(): ?StocksSource
     {
         return static::$entity;
     }
