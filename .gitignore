@@ -1,6 +1,5 @@
 /vendor/
-/tests/
 *#
 test.php
-composer.lock
 /src/Synchronizer/RelationRepository.php
+.env
