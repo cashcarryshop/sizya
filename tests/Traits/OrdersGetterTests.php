@@ -84,7 +84,6 @@ trait OrdersGetterTests
 
                 $violations = $validator->validate($order);
                 $this->assertCount(0, $violations);
-                break;
             }
         }
     }

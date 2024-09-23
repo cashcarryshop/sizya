@@ -45,27 +45,16 @@ trait OrdersGetterByAdditionalTests
 
             $validator = $this->createValidator();
             foreach ($orders as $order) {
-                if (!$order instanceof OrderDTO
-                    || !$order instanceof ByErrorDTO
-                ) {
-                    $this->assertThat(
-                        $order,
-                        $this->logicalOr(
-                            $this->isInstanceOf(OrderDTO::class),
-                            $this->isInstanceOf(ByErrorDTO::class)
-                        )
-                    );
-                    break;
-                }
+                $this->assertThat(
+                    $order,
+                    $this->logicalOr(
+                        $this->isInstanceOf(OrderDTO::class),
+                        $this->isInstanceOf(ByErrorDTO::class)
+                    )
+                );
 
                 $violations = $validator->validate($order);
-
-                if ($violations->count() === 0) {
-                    continue;
-                }
-
                 $this->assertCount(0, $violations);
-                break;
             }
         }
     }

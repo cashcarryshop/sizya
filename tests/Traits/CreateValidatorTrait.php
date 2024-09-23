@@ -18,7 +18,7 @@ use Symfony\Component\Validator\Validation;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
- * Трейт с методом для настройки данных для Ozon.
+ * Трейт с методом для создания валидатора.
  *
  * @category TestTraits
  * @package  Sizya

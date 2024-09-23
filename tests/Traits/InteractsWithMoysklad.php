@@ -14,14 +14,10 @@ declare(strict_types=1);
 
 namespace Tests\Traits;
 
-use CashCarryShop\Sizya\OrdersGetterByAdditionalInterface;
-use CashCarryShop\Sizya\DTO\OrderDTO;
-use CashCarryShop\Sizya\DTO\ByErrorDTO;
 use GuzzleHttp\Exception\RequestException;
-use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
- * Трейт с тестами получения заказов по доп. полям.
+ * Трейт с методами для работы с МойСклад классами.
  *
  * @category TestTraits
  * @package  Sizya
