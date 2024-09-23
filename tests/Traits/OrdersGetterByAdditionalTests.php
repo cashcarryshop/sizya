@@ -36,10 +36,10 @@ trait OrdersGetterByAdditionalTests
     #[DataProvider('ordersAdditionalProvider')]
     public function testGetOrdersByAdditional(string $entityId, array $values): void
     {
-        $ordersGetter = $this->createOrdersGetterByAdditional();
+        $getter = $this->createOrdersGetterByAdditional();
 
-        if ($ordersGetter) {
-            $orders = $ordersGetter->getOrdersByAdditional($entityId, $values);
+        if ($getter) {
+            $orders = $getter->getOrdersByAdditional($entityId, $values);
 
             $this->assertGreaterThanOrEqual(
                 \count($values),

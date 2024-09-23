@@ -33,10 +33,10 @@ trait StocksGetterTests
 
     public function testGetStocks(): void
     {
-        $stocksGetter = $this->createStocksGetter();
+        $getter = $this->createStocksGetter();
 
-        if ($stocksGetter) {
-            $stocks = $stocksGetter->getStocks();
+        if ($getter) {
+            $stocks = $getter->getStocks();
 
             $this->assertContainsOnlyInstancesOf(StockDTO::class, $stocks);
 

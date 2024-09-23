@@ -1,5 +1,4 @@
-<?php
-declare(strict_types=1);
+<?php declare(strict_types=1);
 /**
  * Этот файл является частью пакета sizya.
  *
@@ -18,7 +17,6 @@ use CashCarryShop\Sizya\OrdersGetterInterface;
 use CashCarryShop\Sizya\DTO\OrderDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\Depends;
 
 /**
  * Трейт с тестами получения заказов.
@@ -29,7 +27,7 @@ use PHPUnit\Framework\Attributes\Depends;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  *
- * @see OrdersGetterByAdditionalInterface
+ * @see OrdersGetterInterface
  */
 trait OrdersGetterTests
 {
@@ -37,15 +35,15 @@ trait OrdersGetterTests
 
     public function testGetOrders(): void
     {
-        $ordersGetter = $this->createOrdersGetter();
+        $getter = $this->createOrdersGetter();
 
-        if ($ordersGetter) {
-            $orders = $ordersGetter->getOrders();
+        if ($getter) {
+            $orders = $getter->getOrders();
 
             if (\count($orders) === 0) {
                 $this->markTestIncomplete(
                     'No orders were found for '
-                        . \get_class($ordersGetter)
+                        . \get_class($getter)
                 );
             }
 
@@ -59,14 +57,13 @@ trait OrdersGetterTests
         }
     }
 
-    #[Depends('testGetOrders')]
     #[DataProvider('ordersIdsProvider')]
     public function testGetOrdersByIds(array $ids): void
     {
-        $ordersGetter = $this->createOrdersGetter();
+        $getter = $this->createOrdersGetter();
 
-        if ($ordersGetter) {
-            $orders = $ordersGetter->getOrdersByIds($ids);
+        if ($getter) {
+            $orders = $getter->getOrdersByIds($ids);
 
             $this->assertSameSize($ids, $orders);
 
