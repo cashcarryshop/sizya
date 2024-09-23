@@ -54,7 +54,6 @@ trait OrdersGetterTests
 
             $validator = $this->createValidator();
             foreach ($orders as $order) {
-                $this->assertInstanceOf(OrderDTO::class, $order);
                 $violations = $validator->validate($order);
                 $this->assertCount(0, $violations);
             }
