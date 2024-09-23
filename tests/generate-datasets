@@ -1,11 +1,12 @@
 #!/usr/bin/env php
 <?php declare(strict_types=1);
 /**
- * Этот файл является частью пакета sizya.
+ * Исполняемый файл с генерацией установленных
+ * dataset-ов.
  *
  * PHP version 8
  *
- * @category TestTraits
+ * @category GenerateDatasets
  * @package  Sizya
  * @author   TheWhatis <anton-gogo@mail.ru>
  * @license  Unlicense <https://unlicense.org>
