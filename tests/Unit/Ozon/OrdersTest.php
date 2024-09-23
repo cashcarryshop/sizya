@@ -18,7 +18,7 @@ use Tests\Traits\InteractsWithOzon;
 use Tests\Traits\OrdersGetterTests;
 use Tests\Traits\GetFromDatasetTrait;
 use PHPUnit\Framework\TestCase;
-use PHPUnit\Framework\Attributes\Covers;
+use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
  * Тестирования класса для получения заказов Ozon..
@@ -37,7 +37,7 @@ class OrdersTest extends TestCase
     use OrdersGetterTests;
 
     /**
-     * Используемыая сущность
+     * Используемыая сущность.
      *
      * @var ?Orders
      */

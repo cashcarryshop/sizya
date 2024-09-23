@@ -20,7 +20,7 @@ use Tests\Traits\InteractsWithMoysklad;
 use Tests\Traits\GetFromDatasetTrait;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\Covers;
+use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
  * Тестирования класса для получения заказов МойСклад.
@@ -37,12 +37,10 @@ class CustomerOrdersSourceTest extends TestCase
     use InteractsWithMoysklad;
     use GetFromDatasetTrait;
     use OrdersGetterTests;
-    use OrdersGetterByAdditionalTests {
-        testGetOrdersByAdditional as private _traitTestGetOrdersByAdditional;
-    }
+    use OrdersGetterByAdditionalTests;
 
     /**
-     * Сущность
+     * Сущность.
      *
      * @var ?CustomerOrdersSource
      */
@@ -80,13 +78,6 @@ class CustomerOrdersSourceTest extends TestCase
         return static::$entity;
     }
 
-    #[DataProvider('ordersAdditionalProvider')]
-    public function testGetOrdersByAdditional(string $entityId, array $values): void
-    {
-        $this->_traitTestGetOrdersByAdditional($entityId, $values);
-    }
-
-    #[Depends('testGetOrders')]
     public static function ordersIdsProvider(): array
     {
         return static::generateIds(
@@ -104,7 +95,6 @@ class CustomerOrdersSourceTest extends TestCase
         );
     }
 
-    #[Depends('testGetOrders')]
     public static function ordersAdditionalProvider(): array
     {
         return static::generateAdditionals(

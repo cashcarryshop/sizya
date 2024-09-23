@@ -112,17 +112,16 @@ if ($token && $clientId) {
 
 // Generate datasets only json
 $generators = [
+    // Orders
     CustomerOrdersSource::class => static function () use ($mCredentials) {
         if ($mCredentials) {
             $ordersGetter = new CustomerOrdersSource(['credentials' => $mCredentials]);
-
             return $ordersGetter->getOrders();
         }
     },
     OzonOrders::class => static function () use ($zCredentials) {
         if ($zCredentials) {
             $ordersGetter = new OzonOrders($zCredentials);
-
             return $ordersGetter->getOrders();
         }
     }
