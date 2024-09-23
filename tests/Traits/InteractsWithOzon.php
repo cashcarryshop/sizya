@@ -34,26 +34,64 @@ trait InteractsWithOzon
      *
      * @var array
      */
-    protected array $credentials = [];
+    protected static array $credentials = [];
 
     /**
      * Настройка тестов МойСклад.
      *
      * @return void
      */
-    public function setUp(): void
+    public static function setUpBeforeClass(): void
     {
-        if (!$this->credentials) {
-            $token    = getenv('OZON_TOKEN');
-            $clientId = getenv('OZON_CLIENT_ID');
+        $token    = getenv('OZON_TOKEN');
+        $clientId = getenv('OZON_CLIENT_ID');
 
-            if ($token && $clientId) {
-                $this->credentials = [
-                    'token'    => $token,
-                    'clientId' => (int) $clientId
-                ];
-            }
+        if ($token && $clientId) {
+            static::$credentials = [
+                'token'    => $token,
+                'clientId' => (int) $clientId
+            ];
+        } else {
+            $this->markTestSkipped('No credentials provided. Skipping tests');
         }
+
+        static::markSkippedIfBadResponse(
+            fn () => static::setUpBeforeClassByOzon(static::$credentials)
+        );
+    }
+
+    /**
+     * Настройка тестов МойСклад с перехватом
+     * ошибки от api.
+     *
+     * @param array $credentials Данные авторизации
+     *
+     * @return void
+     */
+    protected static function setUpBeforeClassByOzon(array $credentials): void
+    {
+        // ...
+    }
+
+    /**
+     * Сбросить данные
+     *
+     * @return void
+     */
+    public static function tearDownAfterClass(): void
+    {
+        static::$credentials = [];
+        static::tearDownAfterClassByOzon();
+    }
+
+    /**
+     * Сбросить данные Ozon
+     *
+     * @return void
+     */
+    protected static function tearDownAfterClassByOzon(): void
+    {
+        // ...
     }
 
     /**
@@ -66,33 +104,59 @@ trait InteractsWithOzon
      */
     protected function getEntity(callable $resolve): ?object
     {
-        if ($this->credentials) {
+        return static::markSkippedIfBadResponse(
+            $resolve,
+            fn ($message) => $this->markTestSkipped($message)
+        );
+    }
+
+    /**
+     * Проверить стоит ли запускать тест, проверая response от МойСклад.
+     *
+     * @param callable          $resolve Функция для вызова и возвращения значения
+     * @param ?callable(string) $catch   Перехватить ошибку
+     *
+     *
+     * @return mixed Результат из
+     */
+    protected static function markSkippedIfBadResponse(callable $resolve, ?callable $catch = null): mixed
+    {
+        $catch ??= fn ($message) => static::markTestSkipped($message);
+
+        if (static::$credentials) {
             try {
-                return $resolve($this->credentials);
+                return $resolve(static::$credentials);
             } catch (RequestException $exception) {
                 $response = $exception->getResponse();
 
-                if ($response->getStatusCode() === 403) {
-                    $this->markTestSkipped('Invalid credentials. cannot complete test');
+                if (\in_array($response->getStatusCode(), [401, 403])) {
+                    $catch(
+                        \sprintf(
+                            'Invalid credentials. cannot complete test. Code: [%d], Body: [%s]',
+                            $response->getStatusCode(),
+                            $response->getBody()->getContents()
+                        )
+                    );
+
                     return null;
                 }
 
-                $this->markTestSkipped(
-                    sprintf(
+
+                $catch(
+                    \sprintf(
                         'Moysklad request error. Code [%d], Body [%s]',
                         $response->getStatusCode(),
                         $response->getBody()->getContents()
                     )
                 );
-
                 return null;
             }
         }
 
-        $this->markTestSkipped(
+        $catch(
             'Credentials not set. Cannot complete test. '
-                . 'Env variables OZON_TOKEN and MOYSKLAD_CLIENT_ID is required'
+                . 'Env variables MOYSKLAD_LOGIN, MOYSKLAD_PASSWORD '
+                . 'or MOYSKLAD_TOKEN is required'
         );
-        return null;
     }
 }

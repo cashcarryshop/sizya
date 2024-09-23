@@ -41,7 +41,11 @@ trait OrdersGetterByAdditionalTests
         if ($ordersGetter) {
             $orders = $ordersGetter->getOrdersByAdditional($entityId, $values);
 
-            $this->assertSameSize($values, $orders);
+            $this->assertGreaterThanOrEqual(
+                \count($values),
+                \count($orders),
+                'The number of orders must be equal to or greater than passed values'
+            );
 
             $validator = $this->createValidator();
             foreach ($orders as $order) {

@@ -34,36 +34,64 @@ trait InteractsWithMoysklad
      *
      * @var array
      */
-    protected array $credentials = [];
+    protected static array $credentials = [];
 
     /**
      * Настройка тестов МойСклад.
      *
      * @return void
      */
-    protected function setUp(): void
+    public static function setUpBeforeClass(): void
     {
-        if (!$this->credentials) {
-            $login    = getenv('MOYSKLAD_LOGIN');
-            $password = getenv('MOYSKLAD_PASSWORD');
-            $token    = getenv('MOYSKLAD_TOKEN');
+        $login    = getenv('MOYSKLAD_LOGIN');
+        $password = getenv('MOYSKLAD_PASSWORD');
+        $token    = getenv('MOYSKLAD_TOKEN');
 
-            if ($login && $password) {
-                $this->credentials = [$login, $password];
-            } else if ($token) {
-                $this->credentials = [$token];
-            }
+        if ($login && $password) {
+            static::$credentials = [$login, $password];
+        } else if ($token) {
+            static::$credentials = [$token];
+        } else {
+            $this->markTestSkipped('No credentials provided. Skipping tests');
         }
+
+        static::markSkippedIfBadResponse(
+            fn () => static::setUpBeforeClassByMoysklad(static::$credentials)
+        );
     }
 
     /**
-     * Очистка тестов
+     * Настройка тестов МойСклад с перехватом
+     * ошибки от api.
+     *
+     * @param array $credentials Данные авторизации
      *
      * @return void
      */
-    protected function tearDown(): void
+    protected static function setUpBeforeClassByMoysklad(array $credentials): void
     {
-        $this->credentials = [];
+        // ...
+    }
+
+    /**
+     * Сбросить данные
+     *
+     * @return void
+     */
+    public static function tearDownAfterClass(): void
+    {
+        static::$credentials = [];
+        static::tearDownAfterClassByMoysklad();
+    }
+
+    /**
+     * Сбросить данные Ozon
+     *
+     * @return void
+     */
+    protected static function tearDownAfterClassByMoysklad(): void
+    {
+        // ...
     }
 
     /**
@@ -76,34 +104,59 @@ trait InteractsWithMoysklad
      */
     protected function getEntity(callable $resolve): ?object
     {
-        if ($this->credentials) {
+        return static::markSkippedIfBadResponse(
+            $resolve,
+            fn ($message) => $this->markTestSkipped($message)
+        );
+    }
+
+    /**
+     * Проверить стоит ли запускать тест, проверая response от МойСклад.
+     *
+     * @param callable          $resolve Функция для вызова и возвращения значения
+     * @param ?callable(string) $catch   Перехватить ошибку
+     *
+     *
+     * @return mixed Результат из
+     */
+    protected static function markSkippedIfBadResponse(callable $resolve, ?callable $catch = null): mixed
+    {
+        $catch ??= fn ($message) => static::markTestSkipped($message);
+
+        if (static::$credentials) {
             try {
-                return $resolve($this->credentials);
+                return $resolve(static::$credentials);
             } catch (RequestException $exception) {
                 $response = $exception->getResponse();
 
-                if ($response->getStatusCode() === 403) {
-                    $this->markTestSkipped('Invalid credentials. cannot complete test');
+                if (\in_array($response->getStatusCode(), [401, 403])) {
+                    $catch(
+                        \sprintf(
+                            'Invalid credentials. cannot complete test. Code: [%d], Body: [%s]',
+                            $response->getStatusCode(),
+                            $response->getBody()->getContents()
+                        )
+                    );
+
                     return null;
                 }
 
-                $this->markTestSkipped(
-                    sprintf(
+
+                $catch(
+                    \sprintf(
                         'Moysklad request error. Code [%d], Body [%s]',
                         $response->getStatusCode(),
                         $response->getBody()->getContents()
                     )
                 );
-
                 return null;
             }
         }
 
-        $this->markTestSkipped(
+        $catch(
             'Credentials not set. Cannot complete test. '
                 . 'Env variables MOYSKLAD_LOGIN, MOYSKLAD_PASSWORD '
                 . 'or MOYSKLAD_TOKEN is required'
         );
-        return null;
     }
 }
