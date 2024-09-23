@@ -29,7 +29,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
  *
  * @see ProductsGetterInterface
  */
-trait OrdersGetterTests
+trait ProductsGetterTests
 {
     use CreateValidatorTrait;
 
@@ -42,12 +42,12 @@ trait OrdersGetterTests
 
             if (\count($products) === 0) {
                 $this->markTestIncomplete(
-                    'No orders were found for '
+                    'No products were found for '
                         . \get_class($getter)
                 );
             }
 
-            $this->assertContainsOnlyInstancesOf(ProudctDTO::class, $products);
+            $this->assertContainsOnlyInstancesOf(ProductDTO::class, $products);
 
             $validator = $this->createValidator();
             foreach ($products as $product) {
@@ -72,7 +72,7 @@ trait OrdersGetterTests
                 $this->assertThat(
                     $product,
                     $this->logicalOr(
-                        $this->isInstanceOf(OrderDTO::class),
+                        $this->isInstanceOf(ProductDTO::class),
                         $this->isInstanceOf(ByErrorDTO::class)
                     )
                 );
@@ -98,7 +98,7 @@ trait OrdersGetterTests
                 $this->assertThat(
                     $product,
                     $this->logicalOr(
-                        $this->isInstanceOf(OrderDTO::class),
+                        $this->isInstanceOf(ProductDTO::class),
                         $this->isInstanceOf(ByErrorDTO::class)
                     )
                 );
