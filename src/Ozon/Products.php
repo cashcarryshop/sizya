@@ -201,50 +201,7 @@ class Products extends AbstractSource implements ProductsGetterInterface
      */
     public function getProductsByIds(array $productsIds): array
     {
-        [
-            $validated,
-            $errors
-        ] = SizyaUtils::splitByValidationErrors(
-            $this->getValidator(), $productsIds, [
-                new Assert\NotBlank,
-                new Assert\Type('string')
-            ]
-        );
-
-        $builder = $this->builder()->point('v2/product/info');
-
-        $chunks   = [];
-        $promises = [];
-
-        foreach ($validated as $productId) {
-            $chunks[] = [$productId];
-            $promises[] = $this->send(
-                (clone $builder)
-                    ->body(['product_id' => $productId])
-            );
-        }
-
-        return \array_merge(
-            SizyaUtils::mapResults(
-                $chunks,
-                PromiseUtils::settle($promises)->wait(),
-                function ($response, $chunk) {
-                    $result = $this->decodeResponse($response)['result'];
-
-                    return [
-                        'dtos' => [ProductDTO::fromArray([
-                            'id'       => $result['id'],
-                            'article'  => $result['offer_id'],
-                            'created'  => $result['created_at'],
-                            'price'    => (float) $result['price'],
-                            'original' => $result
-                        ])],
-                        'values' => [$result['id']]
-                    ];
-                }
-            ),
-            $errors
-        );
+        return $this->_getByFilter('product_id', $productsIds);
     }
 
     /**
@@ -274,6 +231,19 @@ class Products extends AbstractSource implements ProductsGetterInterface
      */
     public function getProductsByArticles(array $articles): array
     {
+        return $this->_getByFilter('offer_id', $articles);
+    }
+
+    /**
+     * Получить товары по фильтру.
+     *
+     * @param string $filter Фильтр
+     * @param array  $values Значения
+     *
+     * @return array
+     */
+    private function _getByFilter(string $filter, array $values): array
+    {
         [
             $validated,
             $errors
@@ -284,16 +254,14 @@ class Products extends AbstractSource implements ProductsGetterInterface
             ]
         );
 
-        $builder = $this->builder()->point('v2/product/info');
+        $builder = $this->builder()->point('v2/product/info/list');
 
-        $chunks   = [];
+        $chunks   = array_chunk($values, 1000);
         $promises = [];
-
-        foreach ($validated as $article) {
-            $chunks[] = [$article];
+        foreach ($chunks as $chunk) {
             $promises[] = $this->send(
                 (clone $builder)
-                    ->body(['offer_id' => $article])
+                    ->body([$filter => $chunk])
             );
         }
 
@@ -301,18 +269,24 @@ class Products extends AbstractSource implements ProductsGetterInterface
             SizyaUtils::mapResults(
                 $chunks,
                 PromiseUtils::settle($promises)->wait(),
-                function ($response, $chunk) {
-                    $result = $this->decodeResponse($response)['result'];
+                function ($response, $chunk)  use ($filter) {
+                    $dtos   = [];
+                    $values = [];
+
+                    foreach ($this->decodeResponse($response)['result']['items'] as $item) {
+                        $values[] = $item[$filter];
+                        $dtos[]   = ProductDTO::fromArray([
+                            'id'       => $item['id'],
+                            'article'  => $item['offer_id'],
+                            'created'  => $item['created_at'],
+                            'price'    => (float) $item['price'],
+                            'original' => $item
+                        ]);
+                    }
 
                     return [
-                        'dtos' => [ProductDTO::fromArray([
-                            'id'       => $result['id'],
-                            'article'  => $result['offer_id'],
-                            'created'  => $result['created_at'],
-                            'price'    => (float) $result['price'],
-                            'original' => $result
-                        ])],
-                        'values' => [$result['offer_id']]
+                        'dtos'   => $dtos
+                        'values' => $values
                     ];
                 }
             ),
