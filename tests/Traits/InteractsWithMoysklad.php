@@ -43,16 +43,16 @@ trait InteractsWithMoysklad
      */
     public static function setUpBeforeClass(): void
     {
-        $login    = getenv('MOYSKLAD_LOGIN');
-        $password = getenv('MOYSKLAD_PASSWORD');
-        $token    = getenv('MOYSKLAD_TOKEN');
+        $login    = \getenv('MOYSKLAD_LOGIN');
+        $password = \getenv('MOYSKLAD_PASSWORD');
+        $token    = \getenv('MOYSKLAD_TOKEN');
 
         if ($login && $password) {
             static::$credentials = [$login, $password];
         } else if ($token) {
             static::$credentials = [$token];
         } else {
-            $this->markTestSkipped('No credentials provided. Skipping tests');
+            static::markTestSkipped('No credentials provided. Skipping tests');
         }
 
         static::markSkippedIfBadResponse(

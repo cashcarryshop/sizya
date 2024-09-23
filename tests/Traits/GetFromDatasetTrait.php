@@ -41,7 +41,7 @@ trait GetFromDatasetTrait
             );
 
             if (isset($datasets[$key])) {
-                return \unserialize($datasets[$key]);
+                return \unserialize($datasets[$key]) ?? $default;
             }
         }
 

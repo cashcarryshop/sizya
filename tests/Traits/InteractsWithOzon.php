@@ -43,8 +43,8 @@ trait InteractsWithOzon
      */
     public static function setUpBeforeClass(): void
     {
-        $token    = getenv('OZON_TOKEN');
-        $clientId = getenv('OZON_CLIENT_ID');
+        $token    = \getenv('OZON_TOKEN');
+        $clientId = \getenv('OZON_CLIENT_ID');
 
         if ($token && $clientId) {
             static::$credentials = [
@@ -52,7 +52,7 @@ trait InteractsWithOzon
                 'clientId' => (int) $clientId
             ];
         } else {
-            $this->markTestSkipped('No credentials provided. Skipping tests');
+            static::markTestSkipped('No credentials provided. Skipping tests');
         }
 
         static::markSkippedIfBadResponse(

@@ -81,7 +81,7 @@ class CustomerOrdersSourceTest extends TestCase
     public static function ordersIdsProvider(): array
     {
         return static::generateIds(
-            static::getFromDataset(CustomerOrdersSource::class),
+            static::getFromDataset(CustomerOrdersSource::class, []),
             \array_merge(
                 \array_map(
                     fn () => self::_guidv4(),
@@ -98,7 +98,7 @@ class CustomerOrdersSourceTest extends TestCase
     public static function ordersAdditionalProvider(): array
     {
         return static::generateAdditionals(
-            static::getFromDataset(CustomerOrdersSource::class),
+            static::getFromDataset(CustomerOrdersSource::class, []),
             \array_map(
                 static fn () => 'invalidValue',
                 \array_fill(0, 10, null)

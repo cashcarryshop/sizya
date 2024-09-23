@@ -84,8 +84,10 @@ trait OrdersGetterByAdditionalTests
             }
         }
 
-        while ($value = array_pop($invalidValues)) {
-            $data[\array_rand($data)][] = $value;
+        if ($data) {
+            while ($value = array_pop($invalidValues)) {
+                $data[\array_rand($data)][] = $value;
+            }
         }
 
         return \array_values(

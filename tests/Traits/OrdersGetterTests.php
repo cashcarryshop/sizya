@@ -47,7 +47,6 @@ trait OrdersGetterTests
                     'No orders were found for '
                         . \get_class($ordersGetter)
                 );
-                return;
             }
 
             $this->assertContainsOnlyInstancesOf(OrderDTO::class, $orders);
