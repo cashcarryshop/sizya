@@ -84,7 +84,9 @@ $dotenv = Dotenv\Dotenv::create($repository, __DIR__);
 $dotenv->load();
 
 use CashCarryShop\Sizya\Moysklad\CustomerOrdersSource;
+use CashCarryShop\Sizya\Moysklad\Products as MoyskladProducts;
 use CashCarryShop\Sizya\Ozon\Orders as OzonOrders;
+use CashCarryShop\Sizya\Ozon\Products as OzonProducts;
 
 $login    = getenv('MOYSKLAD_LOGIN');
 $password = getenv('MOYSKLAD_PASSWORD');
@@ -115,27 +117,81 @@ $generators = [
     // Orders
     CustomerOrdersSource::class => static function () use ($mCredentials) {
         if ($mCredentials) {
-            $ordersGetter = new CustomerOrdersSource(['credentials' => $mCredentials]);
-            return $ordersGetter->getOrders();
+            $getter = new CustomerOrdersSource(['credentials' => $mCredentials]);
+            return $getter->getOrders();
         }
     },
     OzonOrders::class => static function () use ($zCredentials) {
         if ($zCredentials) {
-            $ordersGetter = new OzonOrders($zCredentials);
-            return $ordersGetter->getOrders();
+            $getter = new OzonOrders($zCredentials);
+            return $getter->getOrders();
+        }
+    },
+
+    // Products
+    MoyskladProducts::class => static function () use ($mCredentials) {
+        if ($mCredentials) {
+            $getter = new MoyskladProducts(['credentials' => $mCredentials]);
+            return $getter->getProducts();
+        }
+    },
+    OzonProducts::class => static function () use ($zCredentials) {
+        if ($zCredentials) {
+            $getter = new OzonProducts($zCredentials);
+            return $getter->getProducts();
         }
     }
 ];
 
-echo 'Generate data' . PHP_EOL;
+$file = ROOT . '/datasets.json';
+
+$selected = $generators;
+if (isset($_SERVER['argv'][1])) {
+    if ($_SERVER['argv'][1] === '-h') {
+        echo "Example usage: generate-datasets 'all/search/keys'" . PHP_EOL;
+        exit(0);
+    }
+
+    echo 'Choose generators' . PHP_EOL;
+    $keys = explode('/', $_SERVER['argv'][1]);
+
+    $selected = [];
+    foreach ($generators as $name => $generator) {
+        $add = true;
+
+        foreach ($keys as $key) {
+            if (strpos($name, $key)) {
+                continue;
+            }
+
+            $add = false;
+        }
+
+        if ($add) {
+            $selected[$name] = $generator;
+        }
+    }
+}
+
+echo 'Get data' . PHP_EOL;
 $data = [];
-foreach ($generators as $name => $generate) {
+if (file_exists($file)) {
+    $data = json_decode(
+        file_get_contents($file),
+        true,
+        512,
+        JSON_THROW_ON_ERROR
+    );
+}
+
+echo 'Generate data' . PHP_EOL;
+foreach ($selected as $name => $generate) {
     $data[$name] = serialize($generate());
 }
 
 echo 'Write data to datasets' . PHP_EOL;
 file_put_contents(
-    ROOT . '/datasets.json',
+    $file,
     json_encode(
         $data,
         JSON_THROW_ON_ERROR,
