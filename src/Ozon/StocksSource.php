@@ -102,10 +102,10 @@ class StocksSource extends AbstractStocks implements StocksGetterInterface
                 continue;
             }
 
-            $stocks[] = ByErrorDTO::fromArray([
-                'type'  => ByErrorDTO::NOT_FOUND,
-                'value' => ['product' => $products[$idx]]
-            ]);
+            // $stocks[] = ByErrorDTO::fromArray([
+                // 'type'  => ByErrorDTO::NOT_FOUND,
+                // 'value' => ['product' => $products[$idx]]
+            // ]);
         }
 
         return $stocks;
