@@ -3,3 +3,4 @@
 test.php
 /src/Synchronizer/RelationRepository.php
 .env
+.phpunit.result.cache
