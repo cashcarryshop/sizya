@@ -150,14 +150,14 @@ class Products extends AbstractSource implements ProductsGetterInterface
                             'filter'  => [
                                 'visibility' => $this->getSettings('visibility')
                             ]
-                        ])
+                        ])->build('POST')
                 )
-            );
+            )->wait();
 
             $ids = \array_merge(
                 $ids,
                 $chunk = \array_map(
-                    static fn ($item) => $item['product_id'],
+                    static fn ($item) => (string) $item['product_id'],
                     $data['result']['items']
                 )
             );
@@ -201,7 +201,7 @@ class Products extends AbstractSource implements ProductsGetterInterface
      */
     public function getProductsByIds(array $productsIds): array
     {
-        return $this->_getByFilter('product_id', $productsIds);
+        return $this->_getByFilter('product_id', $productsIds, 'id');
     }
 
     /**
@@ -242,13 +242,15 @@ class Products extends AbstractSource implements ProductsGetterInterface
      *
      * @return array
      */
-    private function _getByFilter(string $filter, array $values): array
+    private function _getByFilter(string $filter, array $values, ?string $key = null): array
     {
+        $key ??= $filter;
+
         [
             $validated,
             $errors
         ] = SizyaUtils::splitByValidationErrors(
-            $this->getValidator(), $articles, [
+            $this->getValidator(), $values, [
                 new Assert\NotBlank,
                 new Assert\Type('string')
             ]
@@ -256,12 +258,13 @@ class Products extends AbstractSource implements ProductsGetterInterface
 
         $builder = $this->builder()->point('v2/product/info/list');
 
-        $chunks   = array_chunk($values, 1000);
+        $chunks   = array_chunk($validated, 1000);
         $promises = [];
         foreach ($chunks as $chunk) {
             $promises[] = $this->send(
                 (clone $builder)
                     ->body([$filter => $chunk])
+                    ->build('POST')
             );
         }
 
@@ -269,23 +272,30 @@ class Products extends AbstractSource implements ProductsGetterInterface
             SizyaUtils::mapResults(
                 $chunks,
                 PromiseUtils::settle($promises)->wait(),
-                function ($response, $chunk)  use ($filter) {
+                function ($response, $chunk)  use ($key) {
                     $dtos   = [];
                     $values = [];
 
                     foreach ($this->decodeResponse($response)['result']['items'] as $item) {
-                        $values[] = $item[$filter];
+                        $values[] = (string) $item[$key];
+
+                        $datetime = date_create_from_format(
+                            'Y-m-d\TH:i:s.up', $item['created_at']
+                        );
+
                         $dtos[]   = ProductDTO::fromArray([
-                            'id'       => $item['id'],
+                            'id'       => (string) $item['id'],
                             'article'  => $item['offer_id'],
-                            'created'  => $item['created_at'],
                             'price'    => (float) $item['price'],
-                            'original' => $item
+                            'original' => $item,
+                            'created'  => $datetime
+                                ? $datetime->format(ProductDTO::DATE_FORMAT)
+                                : $item['cretted_at'],
                         ]);
                     }
 
                     return [
-                        'dtos'   => $dtos
+                        'dtos'   => $dtos,
                         'values' => $values
                     ];
                 }
