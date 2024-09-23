@@ -258,7 +258,7 @@ class Products extends AbstractSource implements ProductsGetterInterface
 
         $builder = $this->builder()->point('v2/product/info/list');
 
-        $chunks   = array_chunk($validated, 1000);
+        $chunks   = \array_chunk($validated, 1000);
         $promises = [];
         foreach ($chunks as $chunk) {
             $promises[] = $this->send(

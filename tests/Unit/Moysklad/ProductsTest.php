@@ -39,7 +39,7 @@ class ProductsTest extends TestCase
     /**
      * Используемыая сущность.
      *
-     * @var ?Orders
+     * @var ?Products
      */
     protected static ?Products $entity = null;
 

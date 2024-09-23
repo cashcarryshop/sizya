@@ -55,12 +55,12 @@ abstract class CustomerOrders extends AbstractSource
 
         parent::__construct(\array_replace($defaults, $settings));
 
-        $this->settings['products'] = $this->getSettings(
-            'products', new Products([
+        if (is_null($this->getSettings('products'))) {
+            $this->settings['products'] = new Products([
                 'credentials' => $this->getSettings('credentials'),
                 'client'      => $this->getSettings('client')
-            ])
-        );;
+            ]);
+        }
     }
 
     /**
