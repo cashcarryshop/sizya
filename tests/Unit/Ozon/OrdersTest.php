@@ -11,7 +11,7 @@
  * @link     https://github.com/cashcarryshop/sizya
  */
 
-namespace Tests\Unit;
+namespace Tests\Unit\Ozon;
 
 use CashCarryShop\Sizya\Ozon\Orders;
 use Tests\Traits\InteractsWithOzon;

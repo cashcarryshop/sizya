@@ -11,7 +11,7 @@
  * @link     https://github.com/cashcarryshop/sizya
  */
 
-namespace Tests\Unit;
+namespace Tests\Unit\Ozon;
 
 use CashCarryShop\Sizya\Ozon\Products;
 use Tests\Traits\InteractsWithOzon;
@@ -30,7 +30,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @link     https://github.com/cashcarryshop/sizya
  */
 #[CoversClass(Products::class)]
-class ProductsTests extends TestCase
+class ProductsTest extends TestCase
 {
     use InteractsWithOzon;
     use GetFromDatasetTrait;
@@ -41,7 +41,7 @@ class ProductsTests extends TestCase
      *
      * @var ?Orders
      */
-    protected static ?Orders $entity = null;
+    protected static ?Products $entity = null;
 
     protected static function setUpBeforeClassByOzon(array $credentials): void
     {

@@ -11,7 +11,7 @@
  * @link     https://github.com/cashcarryshop/sizya
  */
 
-namespace Tests\Unit;
+namespace Tests\Unit\Moysklad;
 
 use CashCarryShop\Sizya\Moysklad\ShortStocks;
 use Tests\Traits\StocksGetterTests;
