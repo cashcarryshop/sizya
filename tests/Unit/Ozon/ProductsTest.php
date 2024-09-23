@@ -45,7 +45,7 @@ class ProductsTests extends TestCase
 
     protected static function setUpBeforeClassByOzon(array $credentials): void
     {
-        if (is_null(static::getFromDataset(Orders::class))) {
+        if (is_null(static::getFromDataset(Products::class))) {
             static::markTestSkipped('Dataset for Ozon products not found');
         }
 
