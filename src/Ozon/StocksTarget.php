@@ -32,7 +32,9 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-class Stocks extends AbstractTarget implements StocksUpdaterInterface
+class StocksTarget extends StocksSource
+    implements StocksUpdaterInterface,
+    SynchronizerTargetInterface
 {
     /**
      * Обновить остатки
