@@ -145,9 +145,9 @@ class ShortStocks extends AbstractSource implements StocksGetterInterface
 
                     $stocks[] = StockDTO::fromArray([
                         'id'          => $productId,
-                        'article'     => $products[$idx],
+                        'article'     => $products[$idx]?->article,
                         'warehouseId' => $item['storeId'],
-                        'quantity'    => $item[$stockType],
+                        'quantity'    => $item[$stockType] < 0 ? 0 : $item[$stockType],
                         'original'    => [
                             'stock'   => $item,
                             'product' => $products[$idx]
