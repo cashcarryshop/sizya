@@ -1,6 +1,6 @@
 <?php
 /**
- * Класс для работы с заказами Ozon
+ * Этот файл является частью пакета sizya.
  *
  * @category Ozon
  * @package  Sizya

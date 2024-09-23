@@ -25,7 +25,7 @@ use CashCarryShop\Sizya\DTO\StockDTO;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  *
- * @see OrdersGetterByAdditionalInterface
+ * @see StocksGetterInterface
  */
 trait StocksGetterTests
 {

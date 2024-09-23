@@ -1,7 +1,6 @@
 <?php
 /**
- * Трейт с методами для взаимодействия с
- * Ozon Seller Api
+ * Этот файл является частью пакета sizya.
  *
  * @category Ozon
  * @package  Sizya

@@ -80,7 +80,7 @@ class Products extends AbstractSource implements ProductsGetterInterface
      *
      * @see ProductsGetterInterface
      *
-     * @return array<ProductDTO>
+     * @return array<int, ProductDTO>
      */
     public function getProducts(): array
     {
@@ -126,7 +126,7 @@ class Products extends AbstractSource implements ProductsGetterInterface
      *
      * @param array $productsIds Идентификаторы товаров
      *
-     * @return array<ProductDTO|ByErrorDTO>
+     * @return array<int, ProductDTO|ByErrorDTO>
      */
     public function getProductsByIds(array $productsIds): array
     {
@@ -169,7 +169,7 @@ class Products extends AbstractSource implements ProductsGetterInterface
      *
      * @param array $articles Артикулы
      *
-     * @return array<ProductDTO|ByErrorDTO>
+     * @return array<int, ProductDTO|ByErrorDTO>
      */
     public function getProductsByArticles(array $articles): array
     {
