@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * Этот файл является частью пакета sizya.
  *
@@ -13,7 +13,6 @@
 
 namespace CashCarryShop\Sizya;
 
-use CashCarryShop\Sizya\DTO\ErrorDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
 use CashCarryShop\Sizya\DTO\DTOInterface;
 use CashCarryShop\Sizya\Exceptions\BadResponseException;
@@ -91,7 +90,7 @@ class Utils
             }
 
             // Ошибок не найдено
-            if (\is_null($reason)) {
+            if ($reason === null) {
                 try {
                     $chunk = $chunks[$idx];
                     $data  = $getData($result['value'], $chunk);
@@ -241,7 +240,7 @@ class Utils
     ): bool {
         $targetKey ??= $key;
 
-        if (\is_null($object->$key)) {
+        if ($object->$key === null) {
             return false;
         }
 

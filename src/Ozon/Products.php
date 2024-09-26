@@ -43,7 +43,7 @@ class Products extends AbstractSource implements ProductsGetterInterface
     {
         $defaults = [
             'limit'      => 100,
-            'visibility' => 'VISIBLE',
+            'visibility' => 'ALL',
         ];
 
         parent::__construct(\array_replace($defaults, $settings));
@@ -272,14 +272,14 @@ class Products extends AbstractSource implements ProductsGetterInterface
             SizyaUtils::mapResults(
                 $chunks,
                 PromiseUtils::settle($promises)->wait(),
-                function ($response, $chunk)  use ($key) {
+                function ($response) use ($key) {
                     $dtos   = [];
                     $values = [];
 
                     foreach ($this->decodeResponse($response)['result']['items'] as $item) {
                         $values[] = (string) $item[$key];
 
-                        $datetime = date_create_from_format(
+                        $datetime = \date_create_from_format(
                             'Y-m-d\TH:i:s.up', $item['created_at']
                         );
 

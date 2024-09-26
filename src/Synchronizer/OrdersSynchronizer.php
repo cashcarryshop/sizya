@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * Этот файл является частью пакета sizya
  *
@@ -175,7 +175,7 @@ class OrdersSynchronizer extends AbstractSynchronizer
 
         $result = [];
         foreach ($ids as $index => $value) {
-            if (is_null($value) || isset($diff[$index])) {
+            if ($value === null || isset($diff[$index])) {
                 $result[$index] = null;
                 continue;
             }
@@ -383,7 +383,7 @@ class OrdersSynchronizer extends AbstractSynchronizer
         ?callable $middleware,
         array $additional
     ): void {
-        if (is_null($middleware)) {
+        if ($middleware === null) {
             $array[$index] = $data;
             return;
         }

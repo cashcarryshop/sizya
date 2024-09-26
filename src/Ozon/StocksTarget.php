@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * Элемент для синхронизации остатков Ozon
  *
@@ -70,7 +70,7 @@ class StocksTarget extends StocksSource
                     'stock'        => $stock->quantity
                 ];
 
-                if (\is_null($stock->id)) {
+                if ($stock->id === null) {
                     $item['offer_id']   = $key = $stock->article;
                 } else {
                     $item['product_id'] = $key = $stock->id;

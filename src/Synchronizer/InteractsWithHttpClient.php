@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * Этот файл является частью пакета sizya
  *
@@ -43,7 +43,7 @@ trait InteractsWithHttpClient
      */
     public function __construct(array $settings)
     {
-        if (!isset($settings['client']) || is_null($settings['client'])) {
+        if (!isset($settings['client']) || $settings['client'] === null) {
             $settings['client'] = new Client;
         }
 
