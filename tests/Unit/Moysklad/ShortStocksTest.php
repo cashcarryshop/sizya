@@ -11,12 +11,12 @@
  * @link     https://github.com/cashcarryshop/sizya
  */
 
-namespace Tests\Unit\Moysklad;
+namespace CashCarryShop\Sizya\Tests\Unit\Moysklad;
 
 use CashCarryShop\Sizya\Moysklad\ShortStocks;
-use Tests\Traits\StocksGetterTests;
-use Tests\Traits\InteractsWithMoysklad;
-use PHPUnit\Framework\TestCase;
+use CashCarryShop\Sizya\Tests\Traits\StocksGetterTests;
+use CashCarryShop\Sizya\Tests\Traits\InteractsWithMoysklad;
+use CashCarryShop\Sizya\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
@@ -41,22 +41,14 @@ class ShortStocksTest extends TestCase
      */
     protected static ?ShortStocks $entity = null;
 
-    /**
-     * Настройка тестов МойСклад с перехватом
-     * ошибки от api.
-     *
-     * @param array $credentials Данные авторизации
-     *
-     * @return void
-     */
-    protected static function setUpBeforeClassByMoysklad(array $credentials): void
-    {
-        static::$entity = new ShortStocks(['credentials' => $credentials]);
 
-        // Проверка что данные авторизации верные
-        // и что есть права на писпользование
-        // метода api.
-        static::$entity->getStocks();
+    public static function setUpBeforeClass(): void
+    {
+        static::$entity = new ShortStocks([
+            'credentials' => ['login', 'password'],
+            'client'      => static::createHttpClient(static::$handler),
+            'stockType'   => 'quantity'
+        ]);
     }
 
     protected function createStocksGetter(): ?ShortStocks
@@ -64,7 +56,36 @@ class ShortStocksTest extends TestCase
         return static::$entity;
     }
 
-    protected static function tearDownAfterClassByMoysklad(): void
+    protected function setUpBeforeTestGetStocks(): void
+    {
+        $ids = \array_map(
+            fn () => static::guidv4(),
+            \array_fill(0, 100, null)
+        );
+
+        $storeId = static::guidv4();
+
+        $template = static::getResponseData(
+            'api.moysklad.ru/api/remap/1.2/report/stock/bystore/current'
+        )['body'][0];
+
+        static::$handler->append(
+            static::createJsonResponse(
+                body: \array_map(
+                    fn ($id) => static::createShortStock([
+                        'id'       => $id,
+                        'storeId'  => \random_int(0, 30) === 30 ? static::guidv4() : $storeId,
+                        'template' => $template
+                    ]),
+                    $ids
+                )
+            )
+        );
+
+        static::$handler->append(...static::makeProductsGetByIdsResponses([$ids], []));
+    }
+
+    public static function tearDownAfterClass(): void
     {
         static::$entity = null;
     }
