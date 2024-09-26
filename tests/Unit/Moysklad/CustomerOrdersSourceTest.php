@@ -11,15 +11,13 @@
  * @link     https://github.com/cashcarryshop/sizya
  */
 
-namespace Tests\Unit\Moysklad;
+namespace CashCarryShop\Sizya\Tests\Unit\Moysklad;
 
 use CashCarryShop\Sizya\Moysklad\CustomerOrdersSource;
-use Tests\Traits\OrdersGetterTests;
-use Tests\Traits\OrdersGetterByAdditionalTests;
-use Tests\Traits\InteractsWithMoysklad;
-use Tests\Traits\GetFromDatasetTrait;
-use PHPUnit\Framework\TestCase;
-use PHPUnit\Framework\Attributes\DataProvider;
+use CashCarryShop\Sizya\Tests\Traits\OrdersGetterTests;
+use CashCarryShop\Sizya\Tests\Traits\OrdersGetterByAdditionalTests;
+use CashCarryShop\Sizya\Tests\Traits\InteractsWithMoysklad;
+use CashCarryShop\Sizya\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
@@ -34,10 +32,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 #[CoversClass(CustomerOrdersSource::class)]
 class CustomerOrdersSourceTest extends TestCase
 {
-    use InteractsWithMoysklad;
-    use GetFromDatasetTrait;
     use OrdersGetterTests;
     use OrdersGetterByAdditionalTests;
+    use InteractsWithMoysklad;
 
     /**
      * Сущность.
@@ -46,26 +43,13 @@ class CustomerOrdersSourceTest extends TestCase
      */
     protected static ?CustomerOrdersSource $entity = null;
 
-    /**
-     * Настройка тестов МойСклад с перехватом
-     * ошибки от api.
-     *
-     * @param array $credentials Данные авторизации
-     *
-     * @return void
-     */
-    protected static function setUpBeforeClassByMoysklad(array $credentials): void
+    public static function setUpBeforeClass(): void
     {
-        if (is_null(static::getFromDataset(CustomerOrdersSource::class))) {
-            static::markTestSkipped('Dataset for Moysklad customer orders source not found');
-        }
-
-        static::$entity = new CustomerOrdersSource(['credentials' => $credentials]);
-
-        // Проверка что данные авторизации верные
-        // и что есть права на писпользование
-        // метода api.
-        static::$entity->getOrders();
+        static::$entity  = new CustomerOrdersSource([
+            'credentials' => ['login', 'password'],
+            'client'      => static::createHttpClient(static::$handler),
+            'limit'       => 100
+        ]);
     }
 
     protected function createOrdersGetter(): ?CustomerOrdersSource
@@ -78,49 +62,177 @@ class CustomerOrdersSourceTest extends TestCase
         return static::$entity;
     }
 
-    public static function ordersIdsProvider(): array
+    protected function setUpBeforeTestGetOrders(): void
     {
-        return static::generateIds(
-            static::getFromDataset(CustomerOrdersSource::class, []),
-            \array_merge(
+        $template    = static::getResponseData("api.moysklad.ru/api/remap/1.2/entity/customerorder")['body'];
+        $templateRow = $template['rows'][0];
+        $templateAssortment = static::getResponseData(
+            'api.moysklad.ru/api/remap/1.2/entity/assortment'
+        )['body']['rows'][0];
+
+        $templatePosition = static::getResponseData(
+            'api.moysklad.ru/api/remap/1.2/entity/$category/$entityId/positions/$id'
+        )['body'];
+
+        static::$handler->append(function ($request) use (
+            $template,
+            $templateRow,
+            $templatePosition,
+            $templateAssortment,
+        ) {
+            $template['rows'] = \array_map(
+                function () use (
+                    $templateRow,
+                    $templatePosition,
+                    $templateAssortment
+                ) {
+                    return static::makeCustomerOrder([
+                        'template'           => $templateRow,
+                        'positionTemplate'   => $templatePosition,
+                        'assortmentTemplate' => $templateAssortment
+                    ]);
+                },
+                \array_fill(0, 100, null)
+            );
+
+            $template['meta']['href'] = (string) $request->getUri();
+            $template["meta"]['size'] = \count($template['rows']);
+
+            return static::createJsonResponse(body: $template);
+        });
+    }
+
+    protected function ordersIdsProvider(): array
+    {
+        [
+            'provides' => $ids,
+            'invalid'  => $invalidIds
+        ] = static::generateProvideData([
+            'additionalInvalid' => \array_map(
+                static fn () => 'validationErrorId',
+                \array_fill(0, \random_int(5, 10), null)
+            )
+        ]);
+
+        // Получение шаблонов.
+        $template = static::getResponseData("api.moysklad.ru/api/remap/1.2/entity/customerorder")['body'];
+
+        $templateRow = $template['rows'][0];
+
+        $templateAssortment = static::getResponseData(
+            'api.moysklad.ru/api/remap/1.2/entity/assortment'
+        )['body']['rows'][0];
+
+        $templatePosition = static::getResponseData(
+            'api.moysklad.ru/api/remap/1.2/entity/$category/$entityId/positions/$id'
+        )['body'];
+
+        // Создание ответов.
+        $makeRow = function ($id) use (
+            $templateRow,
+            $templatePosition,
+            $templateAssortment,
+            $invalidIds
+        ) {
+            if (\in_array($id, $invalidIds)) {
+                return null;
+            }
+
+            return static::makeCustomerOrder([
+                'id'                 => $id,
+                'template'           => $templateRow,
+                'positionTemplate'   => $templatePosition,
+                'assortmentTemplate' => $templateAssortment
+            ]);
+        };
+
+        $makeResponse = function ($ids) use ($template, $makeRow) {
+            $template['rows'] = \array_filter(
+                \array_map($makeRow, $ids),
+                'is_array'
+            );
+
+            $template["meta"]['size'] = \count($template['rows']);
+
+            return function ($request) use ($template) {
+                $template['meta']['href'] = (string) $request->getUri();
+                return static::createJsonResponse(body: $template);
+            };
+        };
+
+        static::$handler->append(...\array_map($makeResponse, $ids));
+
+        return $ids;
+    }
+
+    protected function ordersAdditionalProvider(): array
+    {
+        [
+            'values' => $values,
+            'valid'  => $validValues
+        ] = static::generateProvideData();
+
+        $entityId = static::guidv4();
+
+        // Получение необходимых шаблонов для ответа.
+        $template = static::getResponseData('api.moysklad.ru/api/remap/1.2/entity/customerorder')['body'];
+        $templateRow        = $template['rows'][0];
+        $templateAttribute  = $template['rows'][0]['attributes'][0];
+        $templateAssortment = static::getResponseData(
+            'api.moysklad.ru/api/remap/1.2/entity/assortment'
+        )['body']['rows'][0];
+        $templatePosition = static::getResponseData(
+            'api.moysklad.ru/api/remap/1.2/entity/$category/$entityId/positions/$id'
+        )['body'];
+
+        // Создание Response
+        static::$handler->append(
+            static::createResponse(404),
+            function ($request) use (
+                $entityId,
+                $template,
+                $templateRow,
+                $templateAttribute,
+                $templateAssortment,
+                $templatePosition,
+                $validValues,
+            ) {
+                $template['rows'] = \array_map(
+                    fn ($value) => static::makeCustomerOrder([
+                        'id'                 => static::guidv4(),
+                        'attributeId'        => $entityId,
+                        'attributeValue'     => $value,
+                        'template'           => $templateRow,
+                        'attributeTemplate'  => $templateAttribute,
+                        'positionTemplate'   => $templatePosition,
+                        'assortmentTemplate' => $templateAssortment
+                    ]),
+                    $validValues
+                );
+
+                $template["meta"]['size'] = \count($template['rows']);
+                $template['meta']['href'] = (string) $request->getUri();
+
+                return static::createJsonResponse(body: $template);
+            }
+        );
+
+        return [
+            [
+                static::guidv4(),
                 \array_map(
-                    fn () => self::_guidv4(),
-                    \array_fill(0, 10, null)
-                ),
-                \array_map(
-                    static fn () => 'validationErrorId',
-                    \array_fill(0, 10, null)
+                    fn () => static::fakeString(),
+                    \array_fill(0, 30, null)
                 )
-            )
-        );
+            ],
+            [
+                $entityId,
+                $values
+            ]
+        ];
     }
 
-    public static function ordersAdditionalProvider(): array
-    {
-        return static::generateAdditionals(
-            static::getFromDataset(CustomerOrdersSource::class, []),
-            \array_map(
-                static fn () => 'invalidValue',
-                \array_fill(0, 10, null)
-            )
-        );
-    }
-
-    private static function _guidv4($data = null) {
-        // Generate 16 bytes (128 bits) of random data or use the data passed into the function.
-        $data = $data ?? \random_bytes(16);
-        assert(\strlen($data) == 16);
-
-        // Set version to 0100
-        $data[6] = \chr(\ord($data[6]) & 0x0f | 0x40);
-        // Set bits 6-7 to 10
-        $data[8] = \chr(\ord($data[8]) & 0x3f | 0x80);
-
-        // Output the 36 character UUID.
-        return \vsprintf('%s%s-%s-%s-%s-%s%s%s', \str_split(\bin2hex($data), 4));
-    }
-
-    protected static function tearDownAfterClassByMoysklad(): void
+    public static function tearDownAfterClass(): void
     {
         static::$entity = null;
     }
