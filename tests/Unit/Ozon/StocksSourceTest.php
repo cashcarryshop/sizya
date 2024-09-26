@@ -11,12 +11,12 @@
  * @link     https://github.com/cashcarryshop/sizya
  */
 
-namespace Tests\Unit\Ozon;
+namespace CashCarryShop\Sizya\Tests\Unit\Ozon;
 
 use CashCarryShop\Sizya\Ozon\StocksSource;
-use Tests\Traits\StocksGetterTests;
-use Tests\Traits\InteractsWithOzon;
-use PHPUnit\Framework\TestCase;
+use CashCarryShop\Sizya\Tests\Traits\StocksGetterTests;
+use CashCarryShop\Sizya\Tests\Traits\InteractsWithOzon;
+use CashCarryShop\Sizya\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
@@ -41,22 +41,47 @@ class StocksSourceTest extends TestCase
      */
     protected static ?StocksSource $entity = null;
 
-    /**
-     * Настройка тестов Ozon с перехватом
-     * ошибки от api.
-     *
-     * @param array $credentials Данные авторизации
-     *
-     * @return void
-     */
-    protected static function setUpBeforeClassByOzon(array $credentials): void
+    public static function setUpBeforeClass(): void
     {
-        static::$entity = new StocksSource($credentials);
+        static::$entity = new StocksSource([
+            'token'    => 'token',
+            'clientId' => 123321,
+            'limit'    => 100,
+            'client'   => static::createHttpClient(static::$handler)
+        ]);
+    }
 
-        // Проверка что данные авторизации верные
-        // и что есть права на писпользование
-        // метода api.
-        static::$entity->getStocks();
+    protected function setUpBeforeTestGetStocks(): void
+    {
+        $ids = \array_map(
+            fn () => \random_int(100000000, 999999999),
+            \array_fill(0, 100, null)
+        );
+
+        $skus = \array_map(
+            static fn () => \random_int(100000000, 999999999),
+            $ids
+        );
+
+        static::$handler->append(...static::makeProductsGetResponses($ids, $skus));
+
+        $template = static::getResponseData(
+            'api-seller.ozon.ru/v1/product/info/stocks-by-warehouse/fbs'
+        )['body'];
+
+        $templateRow = $template['result'][0];
+
+        $template['result'] = \array_map(
+            static fn ($id, $sku) => static::makeByWarehouseStock([
+                'id'       => $id,
+                'sku'      => $sku,
+                'template' => $templateRow
+            ]),
+            $ids,
+            $skus
+        );
+
+        static::$handler->append(static::createJsonResponse(body: $template));
     }
 
     protected function createStocksGetter(): ?StocksSource
@@ -64,7 +89,7 @@ class StocksSourceTest extends TestCase
         return static::$entity;
     }
 
-    protected static function tearDownAfterClassByOzon(): void
+    public static function tearDownAfterClass(): void
     {
         static::$entity = null;
     }
