@@ -11,7 +11,7 @@
  * @link     https://github.com/cashcarryshop/sizya
  */
 
-namespace Tests\Traits;
+namespace CashCarryShop\Sizya\Tests\Traits;
 
 use CashCarryShop\Sizya\StocksGetterInterface;
 use CashCarryShop\Sizya\DTO\StockDTO;
@@ -36,6 +36,7 @@ trait StocksGetterTests
         $getter = $this->createStocksGetter();
 
         if ($getter) {
+            $this->setUpBeforeTestGetStocks();
             $stocks = $getter->getStocks();
 
             $this->assertContainsOnlyInstancesOf(StockDTO::class, $stocks);
@@ -49,4 +50,9 @@ trait StocksGetterTests
     }
 
     abstract protected function createStocksGetter(): ?StocksGetterInterface;
+
+    protected function setUpBeforeTestGetStocks(): void
+    {
+        // ...
+    }
 }
