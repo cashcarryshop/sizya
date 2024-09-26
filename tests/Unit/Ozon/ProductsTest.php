@@ -11,13 +11,12 @@
  * @link     https://github.com/cashcarryshop/sizya
  */
 
-namespace Tests\Unit\Ozon;
+namespace CashCarryShop\Sizya\Tests\Unit\Ozon;
 
 use CashCarryShop\Sizya\Ozon\Products;
-use Tests\Traits\InteractsWithOzon;
-use Tests\Traits\ProductsGetterTests;
-use Tests\Traits\GetFromDatasetTrait;
-use PHPUnit\Framework\TestCase;
+use CashCarryShop\Sizya\Tests\Traits\InteractsWithOzon;
+use CashCarryShop\Sizya\Tests\Traits\ProductsGetterTests;
+use CashCarryShop\Sizya\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
@@ -33,7 +32,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 class ProductsTest extends TestCase
 {
     use InteractsWithOzon;
-    use GetFromDatasetTrait;
     use ProductsGetterTests;
 
     /**
@@ -43,18 +41,14 @@ class ProductsTest extends TestCase
      */
     protected static ?Products $entity = null;
 
-    protected static function setUpBeforeClassByOzon(array $credentials): void
+    public static function setupBeforeClass(): void
     {
-        if (is_null(static::getFromDataset(Products::class))) {
-            static::markTestSkipped('Dataset for Ozon products not found');
-        }
-
-        static::$entity = new Products($credentials);
-
-        // Проверка что данные авторизации верные
-        // и что есть права на писпользование
-        // метода api.
-        static::$entity->getProducts();
+        static::$entity = new Products([
+            'token'    => 'token',
+            'clientId' => 123321,
+            'limit'    => 100,
+            'client'   => static::createHttpClient(static::$handler)
+        ]);
     }
 
     protected function createProductsGetter(): ?Products
@@ -62,29 +56,70 @@ class ProductsTest extends TestCase
         return static::$entity;
     }
 
-    public static function productsIdsProvider(): array
+    protected function setUpBeforeTestGetProducts(): void
     {
-        return static::generateIds(
-            static::getFromDataset(Products::class),
-            \array_map(
-                static fn () => 'invalidId',
-                array_fill(0, 10, null)
+        static::$handler->append(
+            ...static::makeProductsGetResponses(
+                \array_map(
+                    fn () => static::guidv4(),
+                    \array_fill(0, 100, null)
+                )
             )
         );
     }
 
-    public static function productsArticlesProvider(): array
+    protected function productsIdsProvider(): array
     {
-        return static::generateArticles(
-            static::getFromDataset(Products::class),
-            \array_map(
-                static fn () => 'invalidArticle',
-                array_fill(0, 10, null)
-            )
-        );
+        [
+            'provides' => $ids,
+            'invalid'  => $invalidIds
+        ] = static::generateProvideData();
+
+        static::$handler->append(...static::makeProductsGetByIdsResponses($ids, $invalidIds));
+
+        return $ids;
     }
 
-    protected static function tearDownAfterClassByOzon(): void
+    protected function productsArticlesProvider(): array
+    {
+        [
+            'provides' => $articles,
+            'invalid'  => $invalidArticles
+        ] = static::generateProvideData([
+            'validGenerator' => fn () => static::fakeArticle()
+        ]);
+
+        // Получение шабллонов
+        $template    = static::getResponseData("api-seller.ozon.ru/v2/product/info/list")['body'];
+        $templateRow = $template['result']['items'][0];
+
+        $makeRow = function ($article) use ($templateRow, $invalidArticles) {
+            if (\in_array($article, $invalidArticles)) {
+                return null;
+            }
+
+            return static::makeProduct([
+                'article'  => $article,
+                'template' => $templateRow
+            ]);
+        };
+
+        static::$handler->append(...\array_map(
+            function ($articles) use ($template, $makeRow) {
+                $template['result']['items'] = \array_filter(
+                    \array_map($makeRow, $articles),
+                    'is_array'
+                );
+
+                return static::createJsonResponse(body: $template);
+            },
+            $articles
+        ));
+
+        return $articles;
+    }
+
+    public static function tearDownAfterClass(): void
     {
         static::$entity = null;
     }
