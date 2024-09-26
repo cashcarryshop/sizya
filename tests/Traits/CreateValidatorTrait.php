@@ -11,7 +11,7 @@
  * @link     https://github.com/cashcarryshop/sizya
  */
 
-namespace Tests\Traits;
+namespace CashCarryShop\Sizya\Tests\Traits;
 
 use Symfony\Component\Validator\Validation;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
