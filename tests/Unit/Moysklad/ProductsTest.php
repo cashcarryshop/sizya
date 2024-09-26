@@ -11,13 +11,12 @@
  * @link     https://github.com/cashcarryshop/sizya
  */
 
-namespace Tests\Unit\Moysklad;
+namespace CashCarryShop\Sizya\Tests\Unit\Moysklad;
 
 use CashCarryShop\Sizya\Moysklad\Products;
-use Tests\Traits\InteractsWithMoysklad;
-use Tests\Traits\ProductsGetterTests;
-use Tests\Traits\GetFromDatasetTrait;
-use PHPUnit\Framework\TestCase;
+use CashCarryShop\Sizya\Tests\Traits\InteractsWithMoysklad;
+use CashCarryShop\Sizya\Tests\Traits\ProductsGetterTests;
+use CashCarryShop\Sizya\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
@@ -33,7 +32,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 class ProductsTest extends TestCase
 {
     use InteractsWithMoysklad;
-    use GetFromDatasetTrait;
     use ProductsGetterTests;
 
     /**
@@ -43,18 +41,12 @@ class ProductsTest extends TestCase
      */
     protected static ?Products $entity = null;
 
-    protected static function setUpBeforeClassByMoysklad(array $credentials): void
+    public static function setUpBeforeclass(): void
     {
-        if (is_null(static::getFromDataset(Products::class))) {
-            static::markTestSkipped('Dataset for Moysklad products not found');
-        }
-
-        static::$entity = new Products(['credentials' => $credentials]);
-
-        // Проверка что данные авторизации верные
-        // и что есть права на писпользование
-        // метода api.
-        static::$entity->getProducts();
+        static::$entity = new Products([
+            'credentials' => ['login', 'password'],
+            'client'      => static::createHttpClient(static::$handler)
+        ]);
     }
 
     protected function createProductsGetter(): ?Products
@@ -62,29 +54,95 @@ class ProductsTest extends TestCase
         return static::$entity;
     }
 
-    public static function productsIdsProvider(): array
+    protected function setUpBeforeTestGetProducts(): void
     {
-        return static::generateIds(
-            static::getFromDataset(Products::class),
-            \array_map(
-                static fn () => 'invalidId',
-                array_fill(0, 10, null)
-            )
+        $ids = \array_map(
+            fn () => static::guidv4(),
+            \array_fill(0, 100, null)
         );
+
+        $template    = static::getResponseData("api.moysklad.ru/api/remap/1.2/entity/assortment")['body'];
+        $templateRow = $template['rows'][0];
+
+        $makeRow = fn ($id) => static::makeAssortmentItem([
+            'id'       => $id,
+            'type'     => \random_int(1, 3) === 2 ? 'variant' : 'product',
+            'template' => $templateRow
+        ]);
+
+        static::$handler->append(function ($request) use ($template, $makeRow, $ids) {
+            $template['rows'] = \array_map($makeRow, $ids);
+
+            $template['meta']['href'] = (string) $request->getUri();
+            $template["meta"]['size'] = \count($template['rows']);
+
+            return static::createJsonResponse(body: $template);
+        });
     }
 
-    public static function productsArticlesProvider(): array
+    protected function productsIdsProvider(): array
     {
-        return static::generateArticles(
-            static::getFromDataset(Products::class),
-            \array_map(
-                static fn () => 'invalidArticle',
-                array_fill(0, 10, null)
+        [
+            'provides' => $ids,
+            'invalid'  => $invalidIds
+        ] = static::generateProvideData([
+            'additionalInvalid' => \array_map(
+                static fn () => 'validationErrorId',
+                \array_fill(0, \random_int(5, 10), null)
             )
-        );
+        ]);
+
+        static::$handler->append(...static::makeProductsGetByIdsResponses($ids, $invalidIds));
+
+        return $ids;
     }
 
-    protected static function tearDownAfterClassByMoysklad(): void
+    protected function productsArticlesProvider(): array
+    {
+        [
+            'provides' => $articles,
+            'invalid'  => $invalidArticles
+        ] = static::generateProvideData([
+            'validGenerator' => fn () => static::fakeArticle()
+        ]);
+
+        // Получение шабллонов
+        $template    = static::getResponseData("api.moysklad.ru/api/remap/1.2/entity/assortment")['body'];
+        $templateRow = $template['rows'][0];
+
+        $makeRow = function ($article) use ($templateRow, $invalidArticles) {
+            if (\in_array($article, $invalidArticles)) {
+                return null;
+            }
+
+            return static::makeAssortmentItem([
+                'article'  => $article,
+                'code'     => $article,
+                'type'     => \random_int(1, 3) === 2 ? 'variant' : 'product',
+                'template' => $templateRow
+            ]);
+        };
+
+        $makeResponse = function ($articles) use ($template, $makeRow) {
+            $template['rows'] = \array_filter(
+                \array_map($makeRow, $articles),
+                'is_array'
+            );
+
+            $template['meta']['size'] = \count($template['rows']);
+
+            return function ($request) use ($template) {
+                $template['meta']['href'] = (string) $request->getUri();
+                return static::createJsonResponse(body: $template);
+            };
+        };
+
+        static::$handler->append(...\array_map($makeResponse, $articles));
+
+        return $articles;
+    }
+
+    public static function tearDownAfterClass(): void
     {
         static::$entity = null;
     }
