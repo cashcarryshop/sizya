@@ -1,0 +1,910 @@
+{
+  "api.moysklad.ru/api/remap/1.2/entity/$category/$entityId/positions/$id": {
+    "headers": {},
+    "body": {
+      "meta": {
+        "href": "https://api.moysklad.ru/api/remap/1.2/entity/$category/$entityId/positions/$id",
+        "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/$category/metadata",
+        "type": "$categoryposition",
+        "mediaType": "application/json"
+      },
+      "id": "34f6344f-015e-11e6-9464-e4de0000006c",
+      "accountId": "84e60e93-f504-11e5-8a84-bae500000008",
+      "quantity": 1,
+      "price": 123050.0,
+      "discount": 0,
+      "vat": 18,
+      "vatEnabled": true,
+      "assortment": {
+        "meta": {
+          "href": "https://api.moysklad.ru/api/remap/1.2/entity/$type/$id",
+          "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/$type/metadata",
+          "type": "product",
+          "mediaType": "application/json",
+          "uuidHref": "https://online.moysklad.ru/app/#good/edit?id=392c045c-2842-11e9-ac12-000a00000002"
+        }
+      },
+      "reserve": 1
+    }
+  },
+  "api.moysklad.ru/api/remap/1.2/entity/$category/$id/positions": {
+    "headers": {},
+    "body": {
+      "context": {
+        "employee": {
+          "meta": {
+            "href": "https://api.moysklad.ru/api/remap/1.2/context/employee",
+            "type": "employee",
+            "mediaType": "application/json"
+          }
+        }
+      },
+      "meta": {
+        "href": "https://api.moysklad.ru/api/remap/1.2/entity/$category/$id/positions",
+        "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/$category/metadata",
+        "type": "$categoryposition",
+        "mediaType": "application/json",
+        "size": 1,
+        "limit": 1000,
+        "offset": 0
+      },
+      "rows": [
+        {
+          "meta": {
+            "href": "https://api.moysklad.ru/api/remap/1.2/entity/$category/$id/positions/34f6344f-015e-11e6-9464-e4de0000006c",
+            "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/customerorder/metadata",
+            "type": "customerorderposition",
+            "mediaType": "application/json"
+          },
+          "id": "34f6344f-015e-11e6-9464-e4de0000006c",
+          "accountId": "84e60e93-f504-11e5-8a84-bae500000008",
+          "quantity": 1,
+          "price": 123050.0,
+          "discount": 0,
+          "vat": 18,
+          "vatEnabled": true,
+          "assortment": {
+            "meta": {
+              "href": "https://api.moysklad.ru/api/remap/1.2/entity/product/66ccbc9f-f7d2-11e5-8a84-bae500000076",
+              "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/product/metadata",
+              "type": "product",
+              "mediaType": "application/json",
+              "uuidHref": "https://online.moysklad.ru/app/#good/edit?id=e639e90c-2a99-11e9-ac12-000c0000003e"
+            }
+          },
+          "reserve": 1
+        }
+      ]
+    }
+  },
+  "api.moysklad.ru/api/remap/1.2/entity/$category/metadata/attributes/$id": {
+    "headers": {},
+    "body": {
+      "meta": {
+        "href": "https://api.moysklad.ru/api/remap/1.2/entity/$category/metadata/attributes/$id",
+        "type": "attributemetadata",
+        "mediaType": "application/json"
+      },
+      "id": "57ab884e-558b-11e6-8a84-bae500000078",
+      "name": "AttributeName1",
+      "type": "boolean",
+      "required": false
+    }
+  },
+  "api.moysklad.ru/api/remap/1.2/entity/$category/metadata/attributes": {
+    "headers": {},
+    "body": {
+      "meta": {
+        "href": "https://api.moysklad.ru/api/remap/1.2/$category/metadata/attributes",
+        "mediaType": "application/json"
+      },
+      "rows": [
+        {
+          "meta": {
+            "href": "https://api.moysklad.ru/api/remap/1.2/entity/$category/attributes/9862d46e-6500-11e8-9464-e4de00000045",
+            "type": "attributemetadata",
+            "mediaType": "application/json"
+          },
+          "id": "9862d46e-6500-11e8-9464-e4de00000045",
+          "name": "Строковое",
+          "type": "string",
+          "required": false,
+          "show": true,
+          "description": "Поле-строка"
+        }
+      ]
+    }
+  },
+  "api.moysklad.ru/api/remap/1.2/entity/assortment": {
+    "headers": {},
+    "body": {
+      "context": {
+        "employee": {
+          "meta": {
+            "href": "https://api.moysklad.ru/api/remap/1.2/context/employee",
+            "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/employee/metadata",
+            "type": "employee",
+            "mediaType": "application/json"
+          }
+        }
+      },
+      "meta": {
+        "href": "https://api.moysklad.ru/api/remap/1.2/entity/assortment",
+        "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/assortment/metadata",
+        "type": "assortment",
+        "mediaType": "application/json",
+        "size": 1,
+        "limit": 1000,
+        "offset": 0
+      },
+      "rows": [
+        {
+          "meta": {
+            "href": "https://api.moysklad.ru/api/remap/1.2/entity/$type/$id",
+            "metadataHref": "https://api.moysklad.ru/api/remap/1.2/$type/$id/metadata",
+            "type": "product",
+            "mediaType": "application/json"
+          },
+          "id": "35427052-36e7-11e7-8a7f-40d0000000d7",
+          "accountId": "103bff1b-36e7-11e7-8a7f-40d000000004",
+          "owner": {
+            "meta": {
+              "href": "https://api.moysklad.ru/api/remap/1.2/entity/employee/105a788e-36e7-11e7-8a7f-40d000000069",
+              "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/employee/metadata",
+              "type": "employee",
+              "mediaType": "application/json"
+            }
+          },
+          "shared": true,
+          "group": {
+            "meta": {
+              "href": "https://api.moysklad.ru/api/remap/1.2/entity/group/103cca6f-36e7-11e7-8a7f-40d000000005",
+              "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/group/metadata",
+              "type": "group",
+              "mediaType": "application/json"
+            }
+          },
+          "updated": "2017-05-12 10:47:11",
+          "name": "product",
+          "code": "00001",
+          "externalCode": "LsAGeHdbgyQ3oSlTzZUvH0",
+          "archived": false,
+          "pathName": "",
+          "useParentVat": false,
+          "vat": 18,
+          "vatEnabled": true,
+          "effectiveVat": 18,
+          "effectiveVatEnabled": true,
+          "uom": {
+            "meta": {
+              "href": "https://api.moysklad.ru/api/remap/1.2/entity/uom/19f1edc0-fc42-4001-94cb-c9ec9c62ec10",
+              "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/uom/metadata",
+              "type": "uom",
+              "mediaType": "application/json"
+            }
+          },
+          "images": {
+            "meta": {
+              "href": "https://api.moysklad.ru/api/remap/1.2/entity/$type/$id/images",
+              "type": "image",
+              "mediaType": "application/json",
+              "size": 0,
+              "limit": 1000,
+              "offset": 0
+            }
+          },
+          "minPrice": {
+            "value": 500.0,
+            "currency": {
+              "meta": {
+                "href": "https://api.moysklad.ru/api/remap/1.2/entity/currency/10772c12-36e7-11e7-8a7f-40d000000097",
+                "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/currency/metadata",
+                "type": "currency",
+                "mediaType": "application/json"
+              }
+            }
+          },
+          "salePrices": [
+            {
+              "value": 1500.0,
+              "currency": {
+                "meta": {
+                  "href": "https://api.moysklad.ru/api/remap/1.2/entity/currency/10772c12-36e7-11e7-8a7f-40d000000097",
+                  "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/currency/metadata",
+                  "type": "currency",
+                  "mediaType": "application/json"
+                }
+              },
+              "priceType": {
+                "meta": {
+                  "href": "https://api.moysklad.ru/api/remap/1.2/context/companysettings/pricetype/672559f1-cbf3-11e1-9eb9-889ffa6f49fd",
+                  "type": "pricetype",
+                  "mediaType": "application/json"
+                },
+                "id": "672559f1-cbf3-11e1-9eb9-889ffa6f49fd",
+                "name": "Цена продажи",
+                "externalCode": "cbcf493b-55bc-11d9-848a-00112f43529a"
+              }
+            }
+          ],
+          "supplier": {
+            "meta": {
+              "href": "https://api.moysklad.ru/api/remap/1.2/entity/counterparty/1076cf8b-36e7-11e7-8a7f-40d000000093",
+              "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/counterparty/metadata",
+              "type": "counterparty",
+              "mediaType": "application/json"
+            }
+          },
+          "buyPrice": {
+            "value": 500.0,
+            "currency": {
+              "meta": {
+                "href": "https://api.moysklad.ru/api/remap/1.2/entity/currency/10772c12-36e7-11e7-8a7f-40d000000097",
+                "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/currency/metadata",
+                "type": "currency",
+                "mediaType": "application/json"
+              }
+            }
+          },
+          "article": "100000000",
+          "weight": 0,
+          "volume": 0,
+          "barcodes": [
+            {
+              "ean13": "2000000000015"
+            }
+          ],
+          "variantsCount": 0,
+          "isSerialTrackable": false,
+          "stock": 0,
+          "reserve": 0,
+          "inTransit": 0,
+          "quantity": 0
+        }
+      ]
+    }
+  },
+  "api.moysklad.ru/api/remap/1.2/entity/customerorder": {
+    "headers": {},
+    "body": {
+      "context": {
+        "employee": {
+          "meta": {
+            "href": "https://api.moysklad.ru/api/remap/1.2/context/employee",
+            "type": "employee",
+            "mediaType": "application/json"
+          }
+        }
+      },
+      "meta": {
+        "href": "https://api.moysklad.ru/api/remap/1.2/entity/customerOrder",
+        "type": "customerorder",
+        "mediaType": "application/json",
+        "size": 1,
+        "limit": 1000,
+        "offset": 0
+      },
+      "rows": [
+        {
+          "meta": {
+            "href": "https://api.moysklad.ru/api/remap/1.2/entity/customerorder/$id",
+            "type": "customerorder",
+            "mediaType": "application/json"
+          },
+          "id": "34efe2ee-015e-11e6-9464-e4de0000006b",
+          "accountId": "84e60e93-f504-11e5-8a84-bae500000008",
+          "syncId": "734a9e26-45a2-4ead-849c-e144daeb854d",
+          "updated": "2016-04-14 12:03:05",
+          "name": "00001",
+          "description": "Это комментарий к заказу покупателя!",
+          "externalCode": "CntjFix4hoyZOIhZiULjv2",
+          "owner": {
+            "meta": {
+              "href": "https://api.moysklad.ru/api/remap/1.2/entity/employee/faba7f37-2e58-11e6-8a84-bae500000028",
+              "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/employee/metadata",
+              "type": "employee",
+              "mediaType": "application/json"
+            }
+          },
+          "shared": false,
+          "group": {
+            "meta": {
+              "href": "https://api.moysklad.ru/api/remap/1.2/entity/group/f97aa1fb-2e58-11e6-8a84-bae500000002",
+              "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/group/metadata",
+              "type": "group",
+              "mediaType": "application/json"
+            }
+          },
+          "moment": "2016-04-13 12:57:00",
+          "applicable": true,
+          "created": "2007-02-07 17:16:41",
+          "printed": true,
+          "published": true,
+          "vatEnabled": true,
+          "vatIncluded": true,
+          "sum": 346453701206,
+          "rate": {
+            "currency": {
+              "meta": {
+                "href": "https://api.moysklad.ru/api/remap/1.2/entity/currency/bc1b4fde-019a-11e6-9464-e4de00000073",
+                "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/currency/metadata",
+                "type": "currency",
+                "mediaType": "application/json"
+              }
+            },
+            "value": 214
+          },
+          "organization": {
+            "meta": {
+              "href": "https://api.moysklad.ru/api/remap/1.2/entity/organization/850c8195-f504-11e5-8a84-bae50000015e",
+              "type": "organization",
+              "mediaType": "application/json"
+            }
+          },
+          "store": {
+            "meta": {
+              "href": "https://api.moysklad.ru/api/remap/1.2/entity/store/850ee995-f504-11e5-8a84-bae500000160",
+              "type": "store",
+              "mediaType": "application/json"
+            }
+          },
+          "contract": {
+            "meta": {
+              "href": "https://api.moysklad.ru/api/remap/1.2/entity/contract/8ce3c179-015e-11e6-9464-e4de0000007a",
+              "type": "contract",
+              "mediaType": "application/json"
+            }
+          },
+          "agent": {
+            "meta": {
+              "href": "https://api.moysklad.ru/api/remap/1.2/entity/counterparty/9794d400-f689-11e5-8a84-bae500000078",
+              "type": "counterparty",
+              "mediaType": "application/json"
+            }
+          },
+          "state": {
+            "meta": {
+              "href": "https://api.moysklad.ru/api/remap/1.2/entity/customerorder/metadata/states/fb56c504-2e58-11e6-8a84-bae500000069",
+              "type": "state",
+              "mediaType": "application/json"
+            }
+          },
+          "organizationAccount": {
+            "meta": {
+              "href": "https://api.moysklad.ru/api/remap/1.2/entity/organization/850c8195-f504-11e5-8a84-bae50000015e/accounts/850c8af2-f504-11e5-8a84-bae50000015f",
+              "type": "account",
+              "mediaType": "application/json"
+            }
+          },
+          "agentAccount": {
+            "meta": {
+              "href": "https://api.moysklad.ru/api/remap/1.2/entity/counterparty/9794d400-f689-11e5-8a84-bae500000078/accounts/9794f7a0-f689-11e5-8a84-bae500000079",
+              "type": "account",
+              "mediaType": "application/json"
+            }
+          },
+          "salesChannel": {
+            "meta": {
+              "href": "https://api.moysklad.ru/api/remap/1.2/entity/saleschannel/56446e7f-3633-11ec-ac13-000d00000000",
+              "type": "saleschannel",
+              "mediaType": "application/json"
+            }
+          },
+          "attributes": [
+            {
+              "meta": {
+                "href": "https://api.moysklad.ru/api/remap/1.2/entity/customerorder/metadata/attributes/0cd74e1e-2e59-11e6-8a84-bae50000008a",
+                "type": "attributemetadata",
+                "mediaType": "application/json"
+              },
+              "id": "c2ecd338-015e-11e6-9464-e4de0000008f",
+              "name": "AttributeName1",
+              "type": "string",
+              "value": "1251252"
+            }
+          ],
+          "positions": {
+            "meta": {
+              "href": "https://api.moysklad.ru/api/remap/1.2/entity/customerorder/$id/positions",
+              "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/customerorder/metadata",
+              "type": "customerorderposition",
+              "mediaType": "application/json",
+              "size": 4,
+              "limit": 1000,
+              "offset": 0
+            }
+          },
+          "reservedSum": 346389501206,
+          "deliveryPlannedMoment": "2016-04-15 12:58:00",
+          "payedSum": 365939611804,
+          "shippedSum": 408739611676,
+          "invoicedSum": 408739611676,
+          "taxSystem": "GENERAL_TAX_SYSTEM",
+          "shipmentAddress":"125009, Россия, г Москва, Москва, ул Тверская, 1, 123, addInfo",
+          "shipmentAddressFull":{
+            "postalCode":"125009",
+            "country":{
+              "meta":{
+                "href":"https://api.moysklad.ru/api/remap/1.2/entity/country/9df7c2c3-7782-4c5c-a8ed-1102af611608",
+                "metadataHref":"https://api.moysklad.ru/api/remap/1.2/entity/country/metadata",
+                "type":"country",
+                "mediaType":"application/json"
+              }
+            },
+            "region":{
+              "meta":{
+                "href":"https://api.moysklad.ru/api/remap/1.2/entity/region/00000000-0000-0000-0000-000000000077",
+                "metadataHref":"https://api.moysklad.ru/api/remap/1.2/entity/region/metadata",
+                "type":"region",
+                "mediaType":"application/json"
+              }
+            },
+            "city":"Москва",
+            "street":"ул Тверская",
+            "house":"1",
+            "apartment":"123",
+            "addInfo":"addinfo",
+            "comment":"some words about address"
+          }
+        }
+      ]
+    }
+  },
+  "api.moysklad.ru/api/remap/1.2/entity/customerorder/$orderId/positions": {
+    "headers": {},
+    "body": {
+      "context": {
+        "employee": {
+          "meta": {
+            "href": "https://api.moysklad.ru/api/remap/1.2/context/employee",
+            "type": "employee",
+            "mediaType": "application/json"
+          }
+        }
+      },
+      "meta": {
+        "href": "https://api.moysklad.ru/api/remap/1.2/entity/customerorder/$orderId/positions",
+        "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/customerorder/metadata",
+        "type": "customerorderposition",
+        "mediaType": "application/json",
+        "size": 1,
+        "limit": 1000,
+        "offset": 0
+      },
+      "rows": [
+        {
+          "meta": {
+            "href": "https://api.moysklad.ru/api/remap/1.2/entity/customerorder/$orderId/positions/34f6344f-015e-11e6-9464-e4de0000006c",
+            "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/customerorder/metadata",
+            "type": "customerorderposition",
+            "mediaType": "application/json"
+          },
+          "id": "34f6344f-015e-11e6-9464-e4de0000006c",
+          "accountId": "84e60e93-f504-11e5-8a84-bae500000008",
+          "quantity": 1,
+          "price": 123050.0,
+          "discount": 0,
+          "vat": 18,
+          "vatEnabled": true,
+          "assortment": {
+            "meta": {
+              "href": "https://api.moysklad.ru/api/remap/1.2/entity/$type/66ccbc9f-f7d2-11e5-8a84-bae500000076",
+              "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/$type/metadata",
+              "type": "$type",
+              "mediaType": "application/json",
+              "uuidHref": "https://online.moysklad.ru/app/#good/edit?id=e639e90c-2a99-11e9-ac12-000c0000003e"
+            }
+          },
+          "reserve": 1
+        }
+      ]
+    }
+  },
+  "api.moysklad.ru/api/remap/1.2/report/stock/bystore/current": {
+    "headers": {},
+    "body": [
+      {
+        "assortmentId":"12345678-5838-aaeb-0a80-003a003ef439",
+        "storeId": "12345678-b123-aaee-0a80-012b0001bb10"
+      }
+    ]
+  },
+  "api-seller.ozon.ru/v2/product/list": {
+    "headers": {},
+    "body": {
+      "result": {
+        "items": [
+          {
+            "product_id": 223681945,
+            "offer_id": "136748"
+          }
+        ],
+        "total": 1,
+        "last_id": ""
+      }
+    }
+  },
+  "api-seller.ozon.ru/v2/product/info/list": {
+    "headers": {},
+    "body": {
+      "result": {
+        "items": [
+          {
+            "id": 78712196,
+            "name": "Как выбрать детские музыкальные инструменты. Ксилофон, бубен, маракасы и другие инструменты для детей до 6 лет. Мастер-класс о раннем музыкальном развитии от Монтессори-педагога",
+            "offer_id": "010",
+            "is_archived": false,
+            "is_autoarchived": false,
+            "barcode": "",
+            "barcodes": [
+              "2335900005",
+              "7533900005"
+            ],
+            "buybox_price": "",
+            "description_category_id": 93726157,
+            "type_id": 0,
+            "created_at": "2021-06-03T03:40:05.871465Z",
+            "images": [ ],
+            "currency_code": "RUB",
+            "marketing_price": "",
+            "min_price": "",
+            "old_price": "1000.0000",
+            "price": "690.0000",
+            "sku": 269628393,
+            "recommended_price": "",
+            "sources": [
+              {
+                "is_enabled": true,
+                "sku": 269628393,
+                "source": "fbo"
+              },
+              {
+                "is_enabled": true,
+                "sku": 269628396,
+                "source": "fbs"
+              }
+            ],
+            "has_discounted_item": true,
+            "is_discounted": true,
+            "discounted_stocks": {
+              "coming": 0,
+              "present": 0,
+              "reserved": 0
+            },
+            "state": "",
+            "stocks": {
+              "coming": 0,
+              "present": 13,
+              "reserved": 0
+            },
+            "errors": [ ],
+            "updated_at": "2023-02-09T06:46:44.152Z",
+            "vat": "0.0",
+            "visible": true,
+            "visibility_details": {
+              "has_price": false,
+              "has_stock": true,
+              "active_product": false,
+              "reasons": { }
+            },
+            "price_indexes": {
+              "external_index_data": {
+                "minimal_price": "string",
+                "minimal_price_currency": "string",
+                "price_index_value": 0
+              },
+              "ozon_index_data": {
+                "minimal_price": "string",
+                "minimal_price_currency": "string",
+                "price_index_value": 0
+              },
+              "price_index": "WITHOUT_INDEX",
+              "self_marketplaces_index_data": {
+                "minimal_price": "string",
+                "minimal_price_currency": "string",
+                "price_index_value": 0
+              }
+            },
+            "images360": [ ],
+            "is_kgt": false,
+            "color_image": "",
+            "primary_image": "https://cdn1.ozone.ru/s3/multimedia-y/6077810038.jpg",
+            "status": {
+              "state": "price_sent",
+              "state_failed": "",
+              "moderate_status": "approved",
+              "decline_reasons": [ ],
+              "validation_state": "success",
+              "state_name": "Продается",
+              "state_description": "",
+              "is_failed": false,
+              "is_created": true,
+              "state_tooltip": "",
+              "item_errors": [ ],
+              "state_updated_at": "2021-07-26T04:50:08.486697Z"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "api-seller.ozon.ru/v1/product/info/stocks-by-warehouse/fbs": {
+    "headers": {},
+    "body": {
+      "result": [
+        {
+          "sku": 0,
+          "fbs_sku": 0,
+          "present": 0,
+          "product_id": 0,
+          "reserved": 0,
+          "warehouse_id": 0,
+          "warehouse_name": "string"
+        }
+      ]
+    }
+  },
+  "api-seller.ozon.ru/v2/products/stocks": {
+    "headers": {},
+    "body": {
+      "result": [
+        {
+          "warehouse_id": 22142605386000,
+          "product_id": 118597312,
+          "offer_id": "PH11042",
+          "updated": true,
+          "errors": [ ]
+        }
+      ]
+    }
+  },
+  "api-seller.ozon.ru/v3/posting/fbs/unfulfilled/list": {
+    "headers": {},
+    "body": {
+      "result": {
+        "postings": [
+          {
+            "posting_number": "23713478-0018-3",
+            "order_id": 559293114,
+            "order_number": "33713378-0051",
+            "status": "awaiting_deliver",
+            "substatus": "posting_awaiting_passport_data",
+            "delivery_method": {
+              "id": 15110442724000,
+              "name": "Ozon Логистика курьеру, Москва",
+              "warehouse_id": 15110442724000,
+              "warehouse": "Склад на Ленина",
+              "tpl_provider_id": 24,
+              "tpl_provider": "Ozon Логистика"
+            },
+            "tracking_number": "",
+            "tpl_integration_type": "ozon",
+            "in_process_at": "2021-08-25T10:48:38Z",
+            "shipment_date": "2021-08-26T10:00:00Z",
+            "delivering_date": null,
+            "cancellation": {
+              "cancel_reason_id": 0,
+              "cancel_reason": "",
+              "cancellation_type": "",
+              "cancelled_after_ship": false,
+              "affect_cancellation_rating": false,
+              "cancellation_initiator": ""
+            },
+            "customer": null,
+            "products": [
+              {
+                "price": "1259",
+                "currency_code": "RUB",
+                "offer_id": "УТ-0001365",
+                "name": "Мяч, цвет: черный, 5 кг",
+                "sku": 140048123,
+                "quantity": 1,
+                "products_requiring_jw_uin": "0",
+                "mandatory_mark": [ ]
+              }
+            ],
+            "addressee": null,
+            "barcodes": {
+              "upper_barcode": "%101%806044518",
+              "lower_barcode": "23024930500000"
+            },
+            "analytics_data": {
+              "region": "Санкт-Петербург",
+              "city": "Санкт-Петербург",
+              "delivery_type": "PVZ",
+              "is_premium": false,
+              "payment_type_group_name": "Карты оплаты",
+              "warehouse_id": 15110442724000,
+              "warehouse": "Склад на Ленина",
+              "tpl_provider_id": 24,
+              "tpl_provider": "Ozon Логистика",
+              "delivery_date_begin": "2022-08-28T14:00:00Z",
+              "delivery_date_end": "2022-08-28T18:00:00Z",
+              "is_legal": false
+            },
+            "financial_data": {
+              "products": [
+                {
+                  "commission_amount": 0,
+                  "commission_percent": 0,
+                  "payout": 0,
+                  "product_id": 140048123,
+                  "old_price": 1888,
+                  "price": 1259,
+                  "total_discount_value": 629,
+                  "total_discount_percent": 33.32,
+                  "actions": [
+                    "Системная виртуальная скидка селлера"
+                  ],
+                  "picking": null,
+                  "quantity": 1,
+                  "client_price": "",
+                  "item_services": {
+                    "marketplace_service_item_fulfillment": 0,
+                    "marketplace_service_item_pickup": 0,
+                    "marketplace_service_item_dropoff_pvz": 0,
+                    "marketplace_service_item_dropoff_sc": 0,
+                    "marketplace_service_item_dropoff_ff": 0,
+                    "marketplace_service_item_direct_flow_trans": 0,
+                    "marketplace_service_item_return_flow_trans": 0,
+                    "marketplace_service_item_deliv_to_customer": 0,
+                    "marketplace_service_item_return_not_deliv_to_customer": 0,
+                    "marketplace_service_item_return_part_goods_customer": 0,
+                    "marketplace_service_item_return_after_deliv_to_customer": 0
+                  }
+                }
+              ],
+              "posting_services": {
+                "marketplace_service_item_fulfillment": 0,
+                "marketplace_service_item_pickup": 0,
+                "marketplace_service_item_dropoff_pvz": 0,
+                "marketplace_service_item_dropoff_sc": 0,
+                "marketplace_service_item_dropoff_ff": 0,
+                "marketplace_service_item_direct_flow_trans": 0,
+                "marketplace_service_item_return_flow_trans": 0,
+                "marketplace_service_item_deliv_to_customer": 0,
+                "marketplace_service_item_return_not_deliv_to_customer": 0,
+                "marketplace_service_item_return_part_goods_customer": 0,
+                "marketplace_service_item_return_after_deliv_to_customer": 0
+              }
+            },
+            "is_express": false,
+            "requirements": {
+              "products_requiring_gtd": [ ],
+              "products_requiring_country": [ ],
+              "products_requiring_jwn": [ ]
+            }
+          }
+        ],
+        "count": 1
+      }
+    }
+  },
+  "api-seller.ozon.ru/v3/posting/fbs/list": {
+    "headers": {},
+    "body": {
+      "result": {
+        "postings": [
+          {
+            "posting_number": "05708065-0029-1",
+            "order_id": 680420041,
+            "order_number": "05708065-0029",
+            "status": "awaiting_deliver",
+            "substatus": "posting_awaiting_passport_data",
+            "delivery_method": {
+              "id": 21321684811000,
+              "name": "Ozon Логистика самостоятельно, Красногорск",
+              "warehouse_id": 21321684811000,
+              "warehouse": "Стим Тойс Нахабино",
+              "tpl_provider_id": 24,
+              "tpl_provider": "Ozon Логистика"
+            },
+            "tracking_number": "",
+            "tpl_integration_type": "ozon",
+            "in_process_at": "2022-05-13T07:07:32Z",
+            "shipment_date": "2022-05-13T10:00:00Z",
+            "delivering_date": null,
+            "cancellation": {
+              "cancel_reason_id": 0,
+              "cancel_reason": "",
+              "cancellation_type": "",
+              "cancelled_after_ship": false,
+              "affect_cancellation_rating": false,
+              "cancellation_initiator": ""
+            },
+            "customer": null,
+            "products": [
+              {
+                "price": "1390.000000",
+                "currency_code": "RUB",
+                "offer_id": "205953",
+                "name": " Электронный конструктор PinLab Позитроник",
+                "sku": 358924380,
+                "quantity": 1,
+                "mandatory_mark": [ ]
+              }
+            ],
+            "addressee": null,
+            "barcodes": null,
+            "analytics_data": null,
+            "financial_data": null,
+            "is_express": false,
+            "requirements": {
+              "products_requiring_gtd": [ ],
+              "products_requiring_country": [ ],
+              "products_requiring_mandatory_mark": [ ],
+              "products_requiring_jwn": [ ]
+            }
+          }
+        ],
+        "has_next": false
+      }
+    }
+  },
+  "api-seller.ozon.ru/v3/posting/fbs/get": {
+    "headers": {},
+    "body": {
+      "result": {
+        "posting_number": "57195475-0050-3",
+        "order_id": 438764970,
+        "order_number": "57195475-0050",
+        "status": "awaiting_packaging",
+        "substatus": "posting_awaiting_passport_data",
+        "delivery_method": {
+          "id": 18114520187000,
+          "name": "Ozon Логистика самостоятельно, Москва",
+          "warehouse_id": 18114520187000,
+          "warehouse": "Москва основной",
+          "tpl_provider_id": 24,
+          "tpl_provider": "Ozon Логистика"
+        },
+        "tracking_number": "",
+        "tpl_integration_type": "ozon",
+        "in_process_at": "2021-11-20T09:14:16Z",
+        "shipment_date": "2021-11-23T10:00:00Z",
+        "delivering_date": null,
+        "provider_status": "",
+        "delivery_price": "",
+        "cancellation": {
+          "cancel_reason_id": 0,
+          "cancel_reason": "",
+          "cancellation_type": "",
+          "cancelled_after_ship": false,
+          "affect_cancellation_rating": false,
+          "cancellation_initiator": ""
+        },
+        "customer": null,
+        "addressee": null,
+        "products": [
+          {
+            "currency_code": "RUB",
+            "price": "279.0000",
+            "offer_id": "250-7898-1",
+            "name": "Кофе ароматизированный \"Шоколадный апельсин\" 250 гр",
+            "sku": 180550365,
+            "quantity": 1,
+            "jw_uin": [ ],
+            "mandatory_mark": [ ],
+            "dimensions": {
+              "height": "40.00",
+              "length": "240.00",
+              "weight": "260",
+              "width": "140.00"
+            }
+          }
+        ],
+        "barcodes": null,
+        "analytics_data": null,
+        "financial_data": null,
+        "additional_data": [ ],
+        "is_express": false,
+        "requirements": {
+          "products_requiring_gtd": [ ],
+          "products_requiring_country": [ ],
+          "products_requiring_jwn": [ ]
+        },
+        "product_exemplars": null
+      }
+    }
+  }
+}
