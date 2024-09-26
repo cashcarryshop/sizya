@@ -11,12 +11,11 @@
  * @link     https://github.com/cashcarryshop/sizya
  */
 
-namespace Tests\Traits;
+namespace CashCarryShop\Sizya\Tests\Traits;
 
 use CashCarryShop\Sizya\OrdersGetterInterface;
 use CashCarryShop\Sizya\DTO\OrderDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
-use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * Трейт с тестами получения заказов.
@@ -38,6 +37,8 @@ trait OrdersGetterTests
         $getter = $this->createOrdersGetter();
 
         if ($getter) {
+            $this->setUpBeforeTestGetOrders();
+
             $orders = $getter->getOrders();
 
             if (\count($orders) === 0) {
@@ -57,42 +58,35 @@ trait OrdersGetterTests
         }
     }
 
-    #[DataProvider('ordersIdsProvider')]
-    public function testGetOrdersByIds(array $ids): void
+    public function testGetOrdersByIds(): void
     {
         $getter = $this->createOrdersGetter();
 
         if ($getter) {
-            $orders = $getter->getOrdersByIds($ids);
+            foreach ($this->ordersIdsProvider() as $ids) {
+                $orders = $getter->getOrdersByIds($ids);
 
-            $this->assertSameSize($ids, $orders);
+                $this->assertSameSize($ids, $orders);
 
-            $validator = $this->createValidator();
-            foreach ($orders as $order) {
-                $this->assertThat(
-                    $order,
-                    $this->logicalOr(
-                        $this->isInstanceOf(OrderDTO::class),
-                        $this->isInstanceOf(ByErrorDTO::class)
-                    )
-                );
+                $validator = $this->createValidator();
+                foreach ($orders as $order) {
+                    $this->assertThat(
+                        $order,
+                        $this->logicalOr(
+                            $this->isInstanceOf(OrderDTO::class),
+                            $this->isInstanceOf(ByErrorDTO::class)
+                        )
+                    );
 
-                $violations = $validator->validate($order);
-                $this->assertCount(0, $violations);
+                    $violations = $validator->validate($order);
+                    $this->assertCount(0, $violations);
+                }
             }
         }
     }
 
-    protected static function generateIds(array $orders, array $invalidIds): array
+    protected static function generateIds(array $ids): array
     {
-        $ids = \array_merge(
-            \array_map(
-                static fn ($order) => $order->id,
-                $orders
-            ),
-            $invalidIds
-        );
-
         \shuffle($ids);
 
         return \array_map(
@@ -103,5 +97,10 @@ trait OrdersGetterTests
 
     abstract protected function createOrdersGetter(): ?OrdersGetterInterface;
 
-    abstract public static function ordersIdsProvider(): array;
+    abstract protected function ordersIdsProvider(): array;
+
+    protected function setUpBeforeTestGetOrders(): void
+    {
+        // ...
+    }
 }
