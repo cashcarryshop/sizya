@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * Этот файл является частью пакета sizya
  *
@@ -55,7 +55,7 @@ abstract class CustomerOrders extends AbstractSource
 
         parent::__construct(\array_replace($defaults, $settings));
 
-        if (is_null($this->getSettings('products'))) {
+        if ($this->getSettings('products') === null) {
             $this->settings['products'] = new Products([
                 'credentials' => $this->getSettings('credentials'),
                 'client'      => $this->getSettings('client')

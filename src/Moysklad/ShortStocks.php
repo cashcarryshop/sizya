@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * Этот файл является частью пакета sizya
  *
@@ -41,18 +41,15 @@ class ShortStocks extends AbstractSource implements StocksGetterInterface
     {
         $defaults = [
             'changedSince' => null,
-            'stockType'    => 'quantity',
-            'products'     => null
+            'stockType'    => 'quantity'
         ];
 
         parent::__construct(\array_replace($defaults, $settings));
 
-        if (\is_null($this->getSettings('products'))) {
-            $this->settings['products'] = new Products([
-                'credentials' => $this->getSettings('credentials'),
-                'client'      => $this->getSettings('client')
-            ]);
-        }
+        $this->settings['products'] = new Products([
+            'credentials' => $this->getSettings('credentials'),
+            'client'      => $this->getSettings('client')
+        ]);
     }
 
     /**
@@ -80,8 +77,7 @@ class ShortStocks extends AbstractSource implements StocksGetterInterface
                         'inTransit',
                         'stock',
                     ]),
-                ],
-                'products' => new Assert\Type(['null', Products::class]),
+                ]
             ]
         );
     }

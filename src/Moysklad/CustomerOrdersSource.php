@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * Этот файл является частью пакета sizya.
  *
@@ -61,7 +61,7 @@ class CustomerOrdersSource extends CustomerOrders
         return Utils::getAll(
             $builder,
             $this->getSettings('limit'),
-            min($this->getSettings('limit'), 100),
+            \min($this->getSettings('limit'), 100),
             [$this, 'send'],
             fn ($response) => \array_map(
                 fn ($order) => $this->_convertOrder($order),
@@ -137,7 +137,7 @@ class CustomerOrdersSource extends CustomerOrders
             ),
             $values,
             static function ($order) use ($entityId, &$additionalKey) {
-                if (\is_null($additionalKey)) {
+                if ($additionalKey === null) {
                     foreach ($order->additionals as $key => $additional) {
                         if ($additional->entityId === $entityId) {
                             $additionalKey = $key;
@@ -207,7 +207,7 @@ class CustomerOrdersSource extends CustomerOrders
     private function _setFilterIfExist(string $key, object &$builder): bool
     {
         $value = $this->getSettings($key);
-        if (\is_null($value)) {
+        if ($value === null) {
             return false;
         }
 
@@ -259,14 +259,14 @@ class CustomerOrdersSource extends CustomerOrders
     private function _convertPosition(array $position): PositionDTO
     {
         $data = [
-            'id'       => $position['id'],
-            'orderId'  => $position['assortment']['id'],
-            'type'     => $position['assortment']['meta']['type'],
-            'quantity' => (int) $position['quantity'],
-            'reserve'  => (int) ($position['reserve'] ?? 0),
-            'price'    => (float) ($position['price'] / 100),
-            'discount' => (float) $position['discount'],
-            'original' => $position
+            'id'        => $position['id'],
+            'productId' => $position['assortment']['id'],
+            'type'      => $position['assortment']['meta']['type'],
+            'quantity'  => (int) $position['quantity'],
+            'reserve'   => (int) ($position['reserve'] ?? 0),
+            'price'     => (float) ($position['price'] / 100),
+            'discount'  => (float) $position['discount'],
+            'original'  => $position
         ];
 
         $article = $position['assortment']['article'] ?? null;
@@ -302,7 +302,7 @@ class CustomerOrdersSource extends CustomerOrders
     {
         return AdditionalDTO::fromArray([
             'id'        => $additional['id'],
-            'entityId'  => Utils::guidFromMeta($additional['meta']),
+            'entityId'  => $additional['id'],
             'name'      => $additional['name'],
             'value'     => $additional['value'],
             'original'  => $additional

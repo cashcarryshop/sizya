@@ -1,5 +1,4 @@
-<?php
-declare(strict_types=1);
+<?php declare(strict_types=1);
 /**
  * Этот файл является частью пакета sizya.
  *
@@ -25,34 +24,34 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  *
- * @property string  $id       Идентификатор позиции
- * @property string  $orderId  Идентификатор товара
- * @property string  $article  Артикул товара
- * @property int     $quantity Количество товаров
- * @property int     $reserve  Количество зарезервированных товаров
- * @property float   $price    Цена товара
- * @property float   $discount Скидка
- * @property mixed   $original Оригинальный ответ
- * @property ?string $type     Тип товара
- * @property ?string $currency Валюта
- * @property ?bool   $vat      Учитывать ли НДС
+ * @property string  $id         Идентификатор позиции
+ * @property string  $productId  Идентификатор товара
+ * @property string  $article    Артикул товара
+ * @property int     $quantity   Количество товаров
+ * @property int     $reserve    Количество зарезервированных товаров
+ * @property float   $price      Цена товара
+ * @property float   $discount   Скидка
+ * @property mixed   $original   Оригинальный ответ
+ * @property ?string $type       Тип товара
+ * @property ?string $currency   Валюта
+ * @property ?bool   $vat        Учитывать ли НДС
  */
 class PositionDTO extends AbstractDTO
 {
     /**
      * Создать экземпляр позиции
      *
-     * @param string  $id       Идентификатор позиции
-     * @param string  $orderId  Идентификатор товара
-     * @param string  $article  Артикул товара
-     * @param ?string $type     Тип товара
-     * @param int     $quantity Количество товаров
-     * @param int     $reserve  Количество зарезервированных товаров
-     * @param float   $price    Цена товара
-     * @param float   $discount Скидка
-     * @param ?string $currency Валюта
-     * @param bool    $vat      Учитывать ли НДС
-     * @param mixed   $original Оригинальный ответ
+     * @param string  $id         Идентификатор позиции
+     * @param string  $productId  Идентификатор товара
+     * @param string  $article    Артикул товара
+     * @param ?string $type       Тип товара
+     * @param int     $quantity   Количество товаров
+     * @param int     $reserve    Количество зарезервированных товаров
+     * @param float   $price      Цена товара
+     * @param float   $discount   Скидка
+     * @param ?string $currency   Валюта
+     * @param bool    $vat        Учитывать ли НДС
+     * @param mixed   $original   Оригинальный ответ
      */
     public function __construct(
         #[Assert\Type('string')]
@@ -61,7 +60,7 @@ class PositionDTO extends AbstractDTO
 
         #[Assert\Type('string')]
         #[Assert\NotBlank]
-        public $orderId = null,
+        public $productId = null,
 
         #[Assert\Type('string')]
         #[Assert\NotBlank]

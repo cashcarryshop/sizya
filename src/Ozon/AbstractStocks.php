@@ -40,20 +40,18 @@ abstract class AbstractStocks extends AbstractSource
     public function __construct(array $settings)
     {
         $defaults = [
-            'limit'    => 100,
-            'products' => null
+            'limit' => 100
         ];
 
         parent::__construct(\array_replace($defaults, $settings));
 
-        if (is_null($this->getSettings('products'))) {
-            $this->settings['products'] = new Products([
-                'limit'    => $this->getSettings('limit'),
-                'token'    => $this->getSettings('token'),
-                'clientId' => $this->getSettings('clientId'),
-                'client'   => $this->getSettings('client')
-            ]);
-        }
+        $this->settings['products'] = new Products([
+            'limit'      => $this->getSettings('limit'),
+            'token'      => $this->getSettings('token'),
+            'clientId'   => $this->getSettings('clientId'),
+            'client'     => $this->getSettings('client'),
+            'visibility' => $this->getSettings('visibility')
+        ]);
     }
 
     /**
@@ -68,8 +66,7 @@ abstract class AbstractStocks extends AbstractSource
                 'limit' => [
                     new Assert\Type('int'),
                     new Assert\Range(min: 100)
-                ],
-                'products' => [new Assert\Type([null, Products::class])],
+                ]
             ]
         );
     }
