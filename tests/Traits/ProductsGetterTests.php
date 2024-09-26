@@ -11,12 +11,11 @@
  * @link     https://github.com/cashcarryshop/sizya
  */
 
-namespace Tests\Traits;
+namespace CashCarryShop\Sizya\Tests\Traits;
 
 use CashCarryShop\Sizya\ProductsGetterInterface;
 use CashCarryShop\Sizya\DTO\ProductDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
-use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * Трейт с тестами получения товаров.
@@ -38,6 +37,7 @@ trait ProductsGetterTests
         $getter = $this->createProductsGetter();
 
         if ($getter) {
+            $this->setUpBeforeTestGetProducts();
             $products = $getter->getProducts();
 
             if (\count($products) === 0) {
@@ -57,55 +57,64 @@ trait ProductsGetterTests
         }
     }
 
-    #[DataProvider('productsIdsProvider')]
-    public function testGetProductsByIds(array $ids): void
+    public function testGetProductsByIds(): void
     {
         $getter = $this->createProductsGetter();
 
         if ($getter) {
-            $products = $getter->getProductsByIds($ids);
+            foreach ($this->productsIdsProvider() as $ids) {
+                $products = $getter->getProductsByIds($ids);
 
-            $this->assertSameSize($ids, $products);
+                $this->assertSameSize($ids, $products);
 
-            $validator = $this->createValidator();
-            foreach ($products as $product) {
-                $this->assertThat(
-                    $product,
-                    $this->logicalOr(
-                        $this->isInstanceOf(ProductDTO::class),
-                        $this->isInstanceOf(ByErrorDTO::class)
-                    )
-                );
+                $validator = $this->createValidator();
+                foreach ($products as $product) {
+                    $this->assertThat(
+                        $product,
+                        $this->logicalOr(
+                            $this->isInstanceOf(ProductDTO::class),
+                            $this->isInstanceOf(ByErrorDTO::class)
+                        )
+                    );
 
-                $violations = $validator->validate($product);
-                $this->assertCount(0, $violations);
+                    $violations = $validator->validate($product);
+
+                    if ($violations->count()) {
+                        echo $product->created . PHP_EOL;
+                        echo $violations;
+                    }
+
+                    $this->assertCount(0, $violations);
+                }
             }
         }
     }
 
-    #[DataProvider('productsArticlesProvider')]
-    public function testGetProductsByArticles(array $articles): void
+    public function testGetProductsByArticles(): void
     {
         $getter = $this->createProductsGetter();
 
         if ($getter) {
-            $products = $getter->getProductsByArticles($articles);
+            foreach ($this->productsArticlesProvider() as $articles) {
+                $products = $getter->getProductsByArticles($articles);
 
-            $this->assertSameSize($articles, $products);
+                $this->assertSameSize($articles, $products);
 
-            $validator = $this->createValidator();
-            foreach ($products as $product) {
-                $this->assertThat(
-                    $product,
-                    $this->logicalOr(
-                        $this->isInstanceOf(ProductDTO::class),
-                        $this->isInstanceOf(ByErrorDTO::class)
-                    )
-                );
+                $validator = $this->createValidator();
+                foreach ($products as $product) {
+                    $this->assertThat(
+                        $product,
+                        $this->logicalOr(
+                            $this->isInstanceOf(ProductDTO::class),
+                            $this->isInstanceOf(ByErrorDTO::class)
+                        )
+                    );
 
-                $violations = $validator->validate($product);
-                $this->assertCount(0, $violations);
+                    $violations = $validator->validate($product);
+                    $this->assertCount(0, $violations);
+                }
             }
+
         }
     }
 
@@ -148,6 +157,11 @@ trait ProductsGetterTests
 
     abstract protected function createProductsGetter(): ?ProductsGetterInterface;
 
-    abstract public static function productsIdsProvider(): array;
-    abstract public static function productsArticlesProvider(): array;
+    abstract protected function productsIdsProvider(): array;
+    abstract protected function productsArticlesProvider(): array;
+
+    protected function setUpBeforeTestGetProducts(): void
+    {
+        // ...
+    }
 }
