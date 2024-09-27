@@ -52,7 +52,7 @@ trait ProductsGetterTests
             $validator = $this->createValidator();
             foreach ($products as $product) {
                 $violations = $validator->validate($product);
-                $this->assertCount(0, $violations);
+                $this->assertCount(0, $violations, (string) $violations);
             }
         }
     }
@@ -78,13 +78,7 @@ trait ProductsGetterTests
                     );
 
                     $violations = $validator->validate($product);
-
-                    if ($violations->count()) {
-                        echo $product->created . PHP_EOL;
-                        echo $violations;
-                    }
-
-                    $this->assertCount(0, $violations);
+                    $this->assertCount(0, $violations, (string) $violations);
                 }
             }
         }
@@ -111,7 +105,12 @@ trait ProductsGetterTests
                     );
 
                     $violations = $validator->validate($product);
-                    $this->assertCount(0, $violations);
+
+                    if ($violations->count()) {
+                        var_dump($product);
+                    }
+
+                    $this->assertCount(0, $violations, (string) $violations);
                 }
             }
 

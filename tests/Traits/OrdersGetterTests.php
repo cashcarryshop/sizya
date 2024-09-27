@@ -53,7 +53,7 @@ trait OrdersGetterTests
             $validator = $this->createValidator();
             foreach ($orders as $order) {
                 $violations = $validator->validate($order);
-                $this->assertCount(0, $violations);
+                $this->assertCount(0, $violations, (string) $violations);
             }
         }
     }
@@ -79,7 +79,7 @@ trait OrdersGetterTests
                     );
 
                     $violations = $validator->validate($order);
-                    $this->assertCount(0, $violations);
+                    $this->assertCount(0, $violations, (string) $violations);
                 }
             }
         }

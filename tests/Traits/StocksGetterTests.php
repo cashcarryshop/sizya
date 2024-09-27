@@ -44,7 +44,7 @@ trait StocksGetterTests
             $validator = $this->createValidator();
             foreach ($stocks as $stock) {
                 $violations = $validator->validate($stock);
-                $this->assertCount(0, $violations);
+                $this->assertCount(0, $violations, (string) $violations);
             }
         }
     }

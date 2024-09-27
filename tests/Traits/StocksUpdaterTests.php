@@ -11,13 +11,13 @@
  * @link     https://github.com/cashcarryshop/sizya
  */
 
-namespace Tests\Traits;
+namespace CashCarryShop\Sizya\Tests\Traits;
 
 use CashCarryShop\Sizya\StocksUpdaterInterface;
 use CashCarryShop\Sizya\DTO\StockDTO;
-use CashCarryShop\Sizya\DTO\UpdateStockDTO;
+use CashCarryShop\Sizya\DTO\StockUpdateDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
-use PHPUnit\Framework\Attributes\DataProvider;
+use Throwable;
 
 /**
  * Трейт с тестами для получения остатков.
@@ -30,43 +30,50 @@ use PHPUnit\Framework\Attributes\DataProvider;
  *
  * @see StocksUpdaterInterface
  */
-trait StocksUpdaterTrait
+trait StocksUpdaterTests
 {
     use CreateValidatorTrait;
 
-    #[DataProvider('updateStocksProvider')]
-    public function testUpdateStocks(array $updateStocks): void
+    public function testUpdateStocks(): void
     {
         $updater = $this->createStocksUpdater();
 
         if ($updater) {
-            $results = $updater->updateStocks($updateStocks);
+            try {
+                foreach ($this->updateStocksProvider() as $updateStocks) {
+                    $results = $updater->updateStocks($updateStocks);
 
-            $this->assertSameSize($updateStocks, $results);
+                    $this->assertSameSize($updateStocks, $results);
 
-            foreach ($results as $result) {
-                $this->assertThat(
-                    $result,
-                    $this->logicalOr(
-                        $this->isInstanceOf(StockDTO::class),
-                        $this->isInstanceOf(ByErrorDTO::class)
-                    )
-                );
+                    foreach ($results as $result) {
+                        $this->assertThat(
+                            $result,
+                            $this->logicalOr(
+                                $this->isInstanceOf(StockDTO::class),
+                                $this->isInstanceOf(ByErrorDTO::class)
+                            )
+                        );
+                    }
+
+                    $validator = $this->createValidator();
+                    foreach ($stocks as $stock) {
+                        $violations = $validator->validate($stock);
+                        $this->assertCount(0, $violations);
+                    }
+
+                    $this->resetStocks($updater, $updateStocks);
+                }
+            } catch (Throwable $exception) {
+                $this->resetStocks($updater, $updateStocks);
+
+                throw $exception;
             }
-
-            $validator = $this->createValidator();
-            foreach ($stocks as $stock) {
-                $violations = $validator->validate($stock);
-                $this->assertCount(0, $violations);
-            }
-
-            $this->resetStocks($updater, $updateStocks);
         }
     }
 
     abstract protected function createStocksUpdater(): ?StocksUpdaterInterface;
 
-    abstract public static function updateStocksProvider(): array;
+    abstract protected function updateStocksProvider(): array;
 
-    abstract protected function resetStocks(StocksUpdaterInterface $updater, array $updateStocks);
+    abstract protected function resetStocks(StocksUpdaterInterface $updater, array $updateStocks): void;
 }
