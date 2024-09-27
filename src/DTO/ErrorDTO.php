@@ -16,7 +16,6 @@ namespace CashCarryShop\Sizya\DTO;
 use CashCarryShop\Sizya\Exceptions\BadResponseException;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
-use Symfony\Component\Validator\ConstraintViolationInterface;
 use Throwable;
 
 /**
@@ -29,13 +28,13 @@ use Throwable;
  * @link     https://github.com/cashcarryshop/sizya
  *
  * @const TYPES      Типы ошибок
- * @const VALIDATION Тип ошибки `validation`
- * @const UNDEFINED  Тип ошибки `undefined`
- * @const NOT_FOUND  Тип ошибки `not_found`
- * @const INTERNAL   Тип ошибки `internal`
- * @const HTTP       Тип ошибки `internal`
+ * @const VALIDATION Тип ошибки `validation`. Ошибка валидации данных
+ * @const UNDEFINED  Тип ошибки `undefined`.  Неизвестная ошибка
+ * @const NOT_FOUND  Тип ошибки `not_found`.  Элемент не найден
+ * @const INTERNAL   Тип ошибки `internal`.   Ошибка в коде
+ * @const HTTP       Тип ошибки `http`.       Ошибка при запросе по протоколу http
  *
- * @property string $type   Тип ошибки (должен быть одним из значений константы TYPES)
+ * @property string $type   Тип ошибки (см. выше)
  * @property mixed  $reason Причина ошибки (тип зависит от правил валидации)
  */
 class ErrorDTO extends AbstractDTO
@@ -70,7 +69,7 @@ class ErrorDTO extends AbstractDTO
 
         #[Assert\Valid]
         #[Assert\When(
-            expression: 'this.type !== "not_found"',
+            expression: 'this.type not in ["not_found"]',
             constraints: [new Assert\NotBlank]
         )]
         #[Assert\When(
