@@ -107,7 +107,7 @@ class ProductsTest extends TestCase
         static::$handler->append(...\array_map(
             function ($articles) use ($template, $makeRow) {
                 $template['result']['items'] = \array_filter(
-                    \array_map($makeRow, $articles),
+                    \array_map($makeRow, \array_unique($articles)),
                     'is_array'
                 );
 

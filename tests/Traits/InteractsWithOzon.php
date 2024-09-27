@@ -97,7 +97,7 @@ trait InteractsWithOzon
 
         $makeResponse = function ($ids) use ($template, $makeRow) {
             $template['result']['items'] = \array_filter(
-                \array_map($makeRow, $ids),
+                \array_map($makeRow, \array_unique($ids)),
                 'is_array'
             );
 

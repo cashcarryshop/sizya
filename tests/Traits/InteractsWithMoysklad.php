@@ -76,7 +76,7 @@ trait InteractsWithMoysklad
 
         $makeResponse = function ($ids) use ($template, $makeRow) {
             $template['rows'] = \array_filter(
-                \array_map($makeRow, $ids),
+                \array_map($makeRow, \array_unique($ids)),
                 'is_array'
             );
 

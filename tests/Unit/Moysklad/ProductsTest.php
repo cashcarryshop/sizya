@@ -125,7 +125,7 @@ class ProductsTest extends TestCase
 
         $makeResponse = function ($articles) use ($template, $makeRow) {
             $template['rows'] = \array_filter(
-                \array_map($makeRow, $articles),
+                \array_map($makeRow, \array_unique($articles)),
                 'is_array'
             );
 
