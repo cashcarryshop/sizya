@@ -63,25 +63,33 @@ class StocksSourceTest extends TestCase
             $ids
         );
 
-        static::$handler->append(...static::makeProductsGetResponses($ids, $skus));
+        static::$handler->append(
+            static::createMethodResponse('v2/product/list', [
+                'items' => \array_map(
+                    fn ($id) => [
+                        'id'      => $id,
+                        'article' => static::fakeArticle()
+                    ],
+                    $ids
+                )
 
-        $template = static::getResponseData(
-            'api-seller.ozon.ru/v1/product/info/stocks-by-warehouse/fbs'
-        )['body'];
-
-        $templateRow = $template['result'][0];
-
-        $template['result'] = \array_map(
-            static fn ($id, $sku) => static::makeByWarehouseStock([
-                'id'       => $id,
-                'sku'      => $sku,
-                'template' => $templateRow
             ]),
-            $ids,
-            $skus
-        );
+            static::createMethodResponse('v2/product/info/list', [
+                'captureItems' => function (&$items) use ($ids, $skus) {
+                    $itemsIds = \array_column($items, 'id');
 
-        static::$handler->append(static::createJsonResponse(body: $template));
+                    \asort($itemsIds, SORT_NUMERIC);
+                    \asort($ids,      SORT_NUMERIC);
+
+                    \reset($ids);
+                    foreach (\array_keys($itemsIds) as $idx) {
+                        $items[$idx]['sku'] = $skus[\key($ids)];
+                        \next($ids);
+                    }
+                }
+            ]),
+            static::createMethodResponse('v1/product/info/stocks-by-warehouse/fbs')
+        );
     }
 
     protected function createStocksGetter(): ?StocksSource

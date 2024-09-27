@@ -59,12 +59,8 @@ class ProductsTest extends TestCase
     protected function setUpBeforeTestGetProducts(): void
     {
         static::$handler->append(
-            ...static::makeProductsGetResponses(
-                \array_map(
-                    fn () => static::guidv4(),
-                    \array_fill(0, 100, null)
-                )
-            )
+            static::createMethodResponse('v2/product/list', ['limit' => 100]),
+            static::createMethodResponse('v2/product/info/list')
         );
     }
 
@@ -75,7 +71,16 @@ class ProductsTest extends TestCase
             'invalid'  => $invalidIds
         ] = static::generateProvideData();
 
-        static::$handler->append(...static::makeProductsGetByIdsResponses($ids, $invalidIds));
+        static::$handler->append(
+            ...\array_map(
+                static fn () => static::createMethodResponse(
+                    'v2/product/info/list', [
+                        'notFound' => $invalidIds
+                    ]
+                ),
+                $ids
+            )
+        );
 
         return $ids;
     }
@@ -89,32 +94,16 @@ class ProductsTest extends TestCase
             'validGenerator' => fn () => static::fakeArticle()
         ]);
 
-        // Получение шабллонов
-        $template    = static::getResponseData("api-seller.ozon.ru/v2/product/info/list")['body'];
-        $templateRow = $template['result']['items'][0];
-
-        $makeRow = function ($article) use ($templateRow, $invalidArticles) {
-            if (\in_array($article, $invalidArticles)) {
-                return null;
-            }
-
-            return static::makeProduct([
-                'article'  => $article,
-                'template' => $templateRow
-            ]);
-        };
-
-        static::$handler->append(...\array_map(
-            function ($articles) use ($template, $makeRow) {
-                $template['result']['items'] = \array_filter(
-                    \array_map($makeRow, \array_unique($articles)),
-                    'is_array'
-                );
-
-                return static::createJsonResponse(body: $template);
-            },
-            $articles
-        ));
+        static::$handler->append(
+            ...\array_map(
+                 static fn () => static::createMethodResponse(
+                    'v2/product/info/list', [
+                        'invalid' => $invalidArticles
+                    ]
+                ),
+                $articles
+            )
+        );
 
         return $articles;
     }

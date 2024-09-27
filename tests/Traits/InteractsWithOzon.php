@@ -14,6 +14,7 @@
 namespace CashCarryShop\Sizya\Tests\Traits;
 
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\RequestInterface;
 use GuzzleHttp\Exception\RequestException;
 
 /**
@@ -30,271 +31,224 @@ use GuzzleHttp\Exception\RequestException;
 trait InteractsWithOzon
 {
     use InteractsWithHttp;
+    use GetResponseDataTrait;
 
     /**
-     * Создать Response для получения товаров.
+     * Создать response для метода.
      *
-     * @param array  $ids  Идентификаторы товаров
-     * @param ?array $skus SKU Товаров
+     * @param string $method  Метод
+     * @param array  $options Опции
      *
-     * @return ResponseInterface[]
+     * @return callable(RequestInterface): ResponseInterface
      */
-    protected static function makeProductsGetResponses(array $ids, ?array $skus = null): array
+    protected static function createMethodResponse(string $method, array $options = []): callable
     {
-        if ($skus === null) {
-            $skus = \array_map(
-                static fn () => \random_int(100000000, 999999999),
-                $ids
-            );
-        }
+        static $methods;
 
-        $template    = static::getResponseData("api-seller.ozon.ru/v2/product/list")['body'];
-        $templateRow = $template['result']['items'][0];
+        $methods ??= [
+            'v2/product/list' => function ($request, $options) {
+                $body = \json_decode(
+                    $request->getBody()->getContents(),
+                    true,
+                    512,
+                    JSON_THROW_ON_ERROR
+                );
 
-        $template['result']['items'] = \array_map(
-            fn ($id, $sku) => static::makeListProduct([
-                'id'       => $id,
-                'sku'      => $sku,
-                'template' => $templateRow
-            ]),
-            $ids,
-            $skus
-        );
+                $limit = $options['limit'] ?? 1000;
 
-        $template['result']['total'] = \count($template['result']['items']);
-
-        return \array_merge(
-            [static::createJsonResponse(body: $template)],
-            static::makeProductsGetByIdsResponses([$ids], [])
-        );
-    }
-
-    /**
-     * Создать Response для запроса получения товаров
-     * по идентификаторам.
-     *
-     * @param array $provides   Идентификаторы по чанкам
-     * @param array $invalidIds Неправильные идентификаторы
-     *
-     * @return ResponseInterface[]
-     */
-    public static function makeProductsGetByIdsResponses(array $provides, array $invalidIds): array
-    {
-        // Получение шабллонов
-        $template    = static::getResponseData("api-seller.ozon.ru/v2/product/info/list")['body'];
-        $templateRow = $template['result']['items'][0];
-
-        $makeRow = function ($id) use ($templateRow, $invalidIds) {
-            if (\in_array($id, $invalidIds)) {
-                return null;
-            }
-
-            return static::makeProduct([
-                'id'       => $id,
-                'template' => $templateRow
-            ]);
-        };
-
-        $makeResponse = function ($ids) use ($template, $makeRow) {
-            $template['result']['items'] = \array_filter(
-                \array_map($makeRow, \array_unique($ids)),
-                'is_array'
-            );
-
-            return static::createJsonResponse(body: $template);
-        };
-
-        return \array_map(fn ($ids) => $makeResponse($ids), $provides);
-    }
-
-    /**
-     * Создать элемент метода получения unfulfilled отправлений.
-     *
-     * Массив $options принимает:
-     *
-     * - id:              (int)    Идентификатор заказа
-     * - article:         (string) Артикул товара
-     * - template:        (array)  Шаблон отправления
-     * - productId        (int)    Идентификатор товара
-     * - productArticle   (string) Артикул товара
-     * - productPrice     (int)    Цена товара
-     * - productQuantity  (int)    Количество товара
-     *
-     * @param array $options Опции
-     *
-     * @return array
-     */
-    protected static function makePosting(array $options): array
-    {
-        $options = \array_replace(
-            [
-                'id'              => \random_int(100000000, 999999999),
-                'article'         => static::fakeArticle(),
-                'productSku'      => \random_int(100000000, 999999999),
-                'productArticle'  => static::fakeArticle(),
-                'productPrice'    => \random_int(100, 1000),
-                'productQuantity' => \random_int(1, 10)
-            ],
-            $options
-        );
-
-        $options['template']['posting_number'] = (string) $options['id'];
-        $options['template']['article']        = $options['article'];
-
-        $options['template']['products'][0]['sku']      = $options['productSku'];
-        $options['template']['products'][0]['offer_id'] = $options['productArticle'];
-        $options['template']['products'][0]['price']    = (string) $options['productPrice'];
-        $options['template']['products'][0]['quantity'] = $options['productQuantity'];
-
-        return $options['template'];
-    }
-
-    /**
-     * Создать товар из product/list.
-     *
-     * Массив $options принимает:
-     *
-     * - id:      (int)    Идентификатор товара
-     * - article: (string) Артикул товара
-     *
-     * @param array $options Опции
-     *
-     * @return array
-     */
-    protected static function makeListProduct(array $options): array
-    {
-        $options = \array_replace(
-            [
-                'id'      => \random_int(100000000, 999999999),
-                'article' => static::fakeArticle()
-            ],
-            $options
-        );
-
-        $options['template']['product_id'] = $options['id'];
-        $options['template']['offer_id']   = $options['article'];
-
-        return $options['template'];
-    }
-
-    /**
-     * Создать товар из product/info/list
-     *
-     * Массив $options принимает:
-     *
-     * - id:      (int)    Идентификатор товара
-     * - sku:     (int)    Sku товара
-     * - article: (string) Артикул товара
-     * - price:   (float)  Цена
-     *
-     * @param array $options Опции
-     *
-     * @return array
-     */
-    protected static function makeProduct(array $options): array
-    {
-        $options = \array_replace(
-            [
-                'id'      => \random_int(100000000, 999999999),
-                'sku'     => \random_int(100000000, 999999999),
-                'article' => static::fakeArticle(),
-                'price'   => (float) \random_int(100, 1000)
-            ],
-            $options
-        );
-
-        $options['template']['id']       = $options['id'];
-        $options['template']['sku']      = $options['sku'];
-        $options['template']['offer_id'] = $options['article'];
-        $options['template']['price']    = (string) $options['price'];
-
-        return $options['template'];
-    }
-
-    /**
-     * Создать товар из product/info/list
-     *
-     * Массив $options принимает:
-     *
-     * - id:      (int)    Идентификатор товара
-     * - sku:     (int)    Sku товара
-     * - article: (string) Артикул товара
-     * - price:   (float)  Цена
-     *
-     * @param array $options Опции
-     *
-     * @return array
-     */
-    protected static function makeByWarehouseStock(array $options): array
-    {
-        $options = \array_replace(
-            [
-                'id'          => \random_int(100000000, 999999999),
-                'sku'         => \random_int(100000000, 999999999),
-                'quantity'    => \random_int(0, 10),
-                'reserved'    => \random_int(0, 10),
-                'warehouseId' => \random_int(100000000, 999999999)
-            ],
-            $options
-        );
-
-        $options['template']['product_id']   = $options['id'];
-        $options['template']['sku']          = $options['sku'];
-        $options['template']['fbs_sku']      = $options['sku'];
-        $options['template']['quantity']     = $options['quantity'];
-        $options['template']['reserved']     = $options['reserved'];
-        $options['template']['warehouse_id'] = $options['warehouseId'];
-
-        return $options['template'];
-    }
-
-    /**
-     * Проверить стоит ли запускать тест, проверая response от МойСклад.
-     *
-     * @param callable          $resolve Функция для вызова и возвращения значения
-     * @param ?callable(string) $catch   Перехватить ошибку
-     *
-     *
-     * @return mixed Результат из
-     */
-    protected static function markSkippedIfBadResponse(callable $resolve, ?callable $catch = null): mixed
-    {
-        $catch ??= fn ($message) => static::markTestSkipped($message);
-
-        if (static::$credentials) {
-            try {
-                return $resolve(static::$credentials);
-            } catch (RequestException $exception) {
-                $response = $exception->getResponse();
-
-                if (\in_array($response->getStatusCode(), [401, 403])) {
-                    $catch(
-                        \sprintf(
-                            'Invalid credentials. cannot complete test. Code: [%d], Body: [%s]',
-                            $response->getStatusCode(),
-                            $response->getBody()->getContents()
-                        )
+                if (!isset($options['items'])) {
+                    $options['items'] = \array_map(
+                        fn () => [
+                            'id'      => \random_int(100000000, 999999999),
+                            'article' => static::fakeArticle()
+                        ],
+                        \array_fill(0, $limit > 1000 ? 1000 : $limit, null)
                     );
-
-                    return null;
                 }
 
+                $body = static::getResponseData('api-seller.ozon.ru/v2/product/list')['body'];
 
-                $catch(
-                    \sprintf(
-                        'Moysklad request error. Code [%d], Body [%s]',
-                        $response->getStatusCode(),
-                        $response->getBody()->getContents()
-                    )
+                $body['result']['items'] = \array_map(
+                    static fn ($item) => [
+                        'product_id' => (int) $item['id'] ?? \random_int(100000000, 999999999),
+                        'offer_id'   => $item['article'] ?? static::fakeArticle()
+                    ],
+                    $options['items']
                 );
-                return null;
-            }
-        }
 
-        $catch(
-            'Credentials not set. Cannot complete test. '
-                . 'Env variables MOYSKLAD_LOGIN, MOYSKLAD_PASSWORD '
-                . 'or MOYSKLAD_TOKEN is required'
-        );
+                $body['total'] = \count($body['result']['items']);
+
+                return static::createJsonResponse(body: $body);
+            },
+            'v2/product/info/list' => function ($request, $options) {
+                $reqBody = \json_decode(
+                    $request->getBody()->getContents(),
+                    true,
+                    512,
+                    JSON_THROW_ON_ERROR
+                );
+
+                $options = \array_replace(
+                    [
+                        'captureItem'  => static fn () => null,
+                        'captureItems' => static fn () => null,
+                        'notFound'     => []
+                    ],
+                    $options
+                );
+
+                $body = static::getResponseData('api-seller.ozon.ru/v2/product/info/list')['body'];
+
+                $templateItem = $body['result']['items'][0];
+
+                $idRelation = ['product_id' => 'id'];
+
+                $items = [];
+                foreach ($reqBody as $key => $searches) {
+                    $searches = \array_unique($searches);
+
+                    foreach ($searches as $value) {
+                        if (\in_array($value, $options['notFound'])) {
+                            continue;
+                        }
+
+                        $item = $templateItem;
+
+                        $item['id']       = \random_int(100000000, 999999999);
+                        $item['offer_id'] = static::fakeArticle();
+                        $item['sku']      = \random_int(100000000, 999999999);
+
+                        $item[$idRelation[$key] ?? $key] = $value;
+                        $options['captureItem']($item);
+
+                        $items[] = $item;
+                    }
+                }
+
+                $options['captureItems']($items);
+
+                $body['result']['items'] = $items;
+                $body['result']['count'] = \count($items);
+
+                return static::createJsonResponse(body: $body);
+            },
+            'v3/posting/fbs/unfulfilled/list' => function ($request, $options) {
+                $reqBody = \json_decode(
+                    $request->getBody()->getContents(),
+                    true,
+                    512,
+                    JSON_THROW_ON_ERROR
+                );
+
+                $limit = $options['limit'] ?? 1000;
+                if (!isset($options['items'])) {
+                    $options['items'] = \array_map(
+                        static fn () => [
+                            'id'              => static::guidv4(),
+                            'article'         => \random_int(100000000, 999999999),
+                            'productSku'      => \random_int(100000000, 999999999),
+                            'productArticle'  => static::fakeArticle(),
+                            'productQuantity' => \random_int(0, 10)
+                        ],
+                        \array_fill(0, $limit > 1000 ? 1000 : $limit, null)
+                    );
+                }
+
+                $body = static::getResponseData('api-seller.ozon.ru/v3/posting/fbs/unfulfilled/list')['body'];
+                $templatePosting = $body['result']['postings'][0];
+
+                foreach ($options['items'] as $item) {
+                    $posting = $templatePosting;
+
+                    $posting['posting_number'] = $item['id'] ?? static::guidv4();
+                    $posting['offer_id']       = $item['article'] ?? static::fakeArticle();
+
+                    $posting['products'][0]['quantity'] = $item['productQuantity'] ?? \random_int(0, 10);
+                    $posting['products'][0]['offer_id'] = $item['productArticle'] ?? static::fakeArticle();
+                    $posting['products'][0]['sku'] = $item['productSku'] ?? \random_int(100000000, 999999999);
+
+                    $body['result']['postings'][] = $posting;
+                }
+
+                return static::createJsonResponse(body: $body);
+            },
+            'v3/posting/fbs/get' => function ($request, $options) {
+                $postingNumber = \json_decode(
+                    $request->getBody()->getContents(),
+                    true,
+                    512,
+                    JSON_THROW_ON_ERROR
+                )['posting_number'];
+
+                $options = \array_replace(
+                    [
+                        'captureItem' => static fn () => null
+                    ],
+                    $options
+                );
+
+                $body = static::getResponseData('api-seller.ozon.ru/v3/posting/fbs/get')['body'];
+
+                $result                   = $body['result'];
+                $result['posting_number'] = $postingNumber;
+
+                $options['captureItem']($result);
+
+                $body['result'] = $result;
+
+                return static::createJsonResponse(body: $body);
+            },
+            'v1/product/info/stocks-by-warehouse/fbs' => function ($request, $options) {
+                $skus = \json_decode(
+                    $request->getBody()->getContents(),
+                    true,
+                    512,
+                    JSON_THROW_ON_ERROR
+                )['sku'];
+
+                $options = \array_replace(
+                    [
+                        'captureItem' => static fn () => null
+                    ],
+                    $options
+                );
+
+                $body = static::getResponseData(
+                    'api-seller.ozon.ru/v1/product/info/stocks-by-warehouse/fbs'
+                )['body'];
+
+                $body['result'] = \array_map(
+                    function ($sku) use ($options) {
+                        $stock = [
+                            'sku'            => $sku,
+                            'fbs_sku'        => $sku,
+                            'present'        => \random_int(0, 10),
+                            'reserved'       => \random_int(0, 10),
+                            'warehouse_id'   => \random_int(100000000, 999999999),
+                            'warehouse_name' => static::fakeArticle()
+                        ];
+
+                        $options['captureItem']($stock);
+
+                        return $stock;
+                    },
+                    $skus
+                );
+
+                return static::createJsonResponse(body: $body);
+            }
+        ];
+
+        return static function (RequestInterface $request) use (
+            $method,
+            $options,
+            $methods
+        ): ResponseInterface {
+            if (isset($options['capture'])) {
+                $options['capture']($request, $options);
+            }
+
+            return $methods[$method]($request, $options);
+        };
     }
 }

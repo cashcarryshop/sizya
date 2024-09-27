@@ -59,66 +59,55 @@ class OrdersTest extends TestCase
 
     protected function setUpBeforeTestGetOrders(): void
     {
-        $template     = static::getResponseData("api-seller.ozon.ru/v3/posting/fbs/unfulfilled/list")['body'];
-        $templateItem = $template['result']['postings'][0];
-
         $productSku = \random_int(100000000, 999999999);
-        $template['result']['postings'] = \array_map(
-            fn () => static::makePosting([
-                'template'   => $templateItem,
-                'productSku' => $productSku
-            ]),
-            \array_fill(0, 100, null)
-        );
+        static::$handler->append(static::createMethodResponse('v3/posting/fbs/unfulfilled/list', [
+            'items' => \array_map(
+                static fn () => ['productSku' => $productSku],
+                \array_fill(0, 100, null)
+            )
+        ]));
 
-        $template['count'] = \count($template['result']['postings']);
-
-        static::$handler->append(static::createJsonResponse(body: $template));
-
-        $template = static::getResponseData("api-seller.ozon.ru/v2/product/info/list")['body'];
-        $template['result']['items'][0] = static::makeProduct([
-            'sku'      => $productSku,
-            'template' => $template['result']['items'][0]
-        ]);
-
-        static::$handler->append(static::createJsonResponse(body: $template));
+        $productId = \random_int(100000000, 999999999);
+        static::$handler->append(static::createMethodResponse('v2/product/info/list', [
+            'captureItem' => static function (&$item) use ($productSku, $productId) {
+                $item['sku'] = $productSku;
+                $item['id']  = $productId;
+            }
+        ]));
     }
 
     protected function ordersIdsProvider(): array
     {
         [
-            'values'   => $ids,
             'provides' => $provides,
             'invalid'  => $invalidIds
         ] = static::generateProvideData();
 
-        $template = static::getResponseData("api-seller.ozon.ru/v3/posting/fbs/get")['body'];
-
         $productSku = static::guidv4();
-        static::$handler->append(...\array_map(
-            function ($id) use ($template, $invalidIds, $productSku) {
+        foreach ($provides as $ids) {
+            foreach ($ids as $id) {
                 if (\in_array($id, $invalidIds)) {
-                    return static::createResponse(404, body: 'Posting not found');
+                    static::$handler->append(static::createResponse(code: 404));
+                    continue;
                 }
 
-                $template['result']['items'] = static::makePosting([
-                    'id'         => $id,
-                    'productSku' => $productSku,
-                    'template'   => $template['result']
-                ]);
+                static::$handler->append(
+                    static::createMethodResponse('v3/posting/fbs/get', [
+                        'captureItem' => static function (&$result) use ($productSku) {
+                            $result['products'][0]['sku'] = $productSku;
+                        }
+                    ])
+                );
+            }
 
-                return static::createJsonResponse(body: $template);
-            },
-            $ids
-        ));
-
-        $template = static::getResponseData("api-seller.ozon.ru/v2/product/info/list")['body'];
-        $template['result']['items'][0] = static::makeProduct([
-            'sku'      => $productSku,
-            'template' => $template['result']['items'][0]
-        ]);
-
-        static::$handler->append(static::createJsonResponse(body: $template));
+            static::$handler->append(
+                static::createMethodResponse('v2/product/info/list', [
+                    'captureItem' => static function (&$item) use ($productSku) {
+                        $item['sku'] = $productSku;
+                    }
+                ])
+            );
+        }
 
         return $provides;
     }
