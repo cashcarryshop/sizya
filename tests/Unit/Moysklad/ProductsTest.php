@@ -56,28 +56,9 @@ class ProductsTest extends TestCase
 
     protected function setUpBeforeTestGetProducts(): void
     {
-        $ids = \array_map(
-            fn () => static::guidv4(),
-            \array_fill(0, 100, null)
+        static::$handler->append(
+            static::createMethodResponse('1.2/entity/assortment')
         );
-
-        $template    = static::getResponseData("api.moysklad.ru/api/remap/1.2/entity/assortment")['body'];
-        $templateRow = $template['rows'][0];
-
-        $makeRow = fn ($id) => static::makeAssortmentItem([
-            'id'       => $id,
-            'type'     => \random_int(1, 3) === 2 ? 'variant' : 'product',
-            'template' => $templateRow
-        ]);
-
-        static::$handler->append(function ($request) use ($template, $makeRow, $ids) {
-            $template['rows'] = \array_map($makeRow, $ids);
-
-            $template['meta']['href'] = (string) $request->getUri();
-            $template["meta"]['size'] = \count($template['rows']);
-
-            return static::createJsonResponse(body: $template);
-        });
     }
 
     protected function productsIdsProvider(): array
@@ -92,7 +73,20 @@ class ProductsTest extends TestCase
             )
         ]);
 
-        static::$handler->append(...static::makeProductsGetByIdsResponses($ids, $invalidIds));
+        static::$handler->append(
+            static::createMethodResponse('1.2/entity/assortment', [
+                'captureItems' => function (&$items) use ($invalidIds) {
+                    foreach ($items as $idx => $item) {
+                        if (\in_array($item['id'], $invalidIds)) {
+                            unset($items[$idx]);
+                        }
+                    }
+                }
+            ]),
+            static::createMethodResponse('1.2/entity/assortment', [
+                'captureItems' => fn (&$items) => $items = []
+            ])
+        );
 
         return $ids;
     }
@@ -106,38 +100,23 @@ class ProductsTest extends TestCase
             'validGenerator' => fn () => static::fakeArticle()
         ]);
 
-        // Получение шабллонов
-        $template    = static::getResponseData("api.moysklad.ru/api/remap/1.2/entity/assortment")['body'];
-        $templateRow = $template['rows'][0];
+        static::$handler->append(
+            static::createMethodResponse('1.2/entity/assortment', [
+                'captureItems' => function (&$items) use ($invalidArticles) {
+                    foreach ($items as $idx => $item) {
+                        $article = $item['meta']['type'] === 'product'
+                            ? $item['article'] : $item['code'];
 
-        $makeRow = function ($article) use ($templateRow, $invalidArticles) {
-            if (\in_array($article, $invalidArticles)) {
-                return null;
-            }
-
-            return static::makeAssortmentItem([
-                'article'  => $article,
-                'code'     => $article,
-                'type'     => \random_int(1, 3) === 2 ? 'variant' : 'product',
-                'template' => $templateRow
-            ]);
-        };
-
-        $makeResponse = function ($articles) use ($template, $makeRow) {
-            $template['rows'] = \array_filter(
-                \array_map($makeRow, \array_unique($articles)),
-                'is_array'
-            );
-
-            $template['meta']['size'] = \count($template['rows']);
-
-            return function ($request) use ($template) {
-                $template['meta']['href'] = (string) $request->getUri();
-                return static::createJsonResponse(body: $template);
-            };
-        };
-
-        static::$handler->append(...\array_map($makeResponse, $articles));
+                        if (\in_array($article, $invalidArticles)) {
+                            unset($items[$idx]);
+                        }
+                    }
+                }
+            ]),
+            static::createMethodResponse('1.2/entity/assortment', [
+                'captureItems' => fn (&$items) => $items = []
+            ])
+        );
 
         return $articles;
     }

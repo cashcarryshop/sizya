@@ -58,31 +58,11 @@ class ShortStocksTest extends TestCase
 
     protected function setUpBeforeTestGetStocks(): void
     {
-        $ids = \array_map(
-            fn () => static::guidv4(),
-            \array_fill(0, 100, null)
-        );
-
-        $storeId = static::guidv4();
-
-        $template = static::getResponseData(
-            'api.moysklad.ru/api/remap/1.2/report/stock/bystore/current'
-        )['body'][0];
-
         static::$handler->append(
-            static::createJsonResponse(
-                body: \array_map(
-                    fn ($id) => static::createShortStock([
-                        'id'       => $id,
-                        'storeId'  => \random_int(0, 30) === 30 ? static::guidv4() : $storeId,
-                        'template' => $template
-                    ]),
-                    $ids
-                )
-            )
+            static::createMethodResponse('1.2/report/stock/bystore/current'),
+            static::createMethodResponse('1.2/entity/assortment'),
+            static::createMethodResponse('1.2/entity/assortment')
         );
-
-        static::$handler->append(...static::makeProductsGetByIdsResponses([$ids], []));
     }
 
     public static function tearDownAfterClass(): void
