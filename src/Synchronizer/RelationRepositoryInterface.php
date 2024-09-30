@@ -13,6 +13,8 @@
 
 namespace CashCarryShop\Sizya\Synchronizer;
 
+use CashCarryShop\Sizya\DTO\RelationDTO;
+
 /**
  * Интерфейс репозитория отношений между элементами.
  *
@@ -30,67 +32,66 @@ interface RelationRepositoryInterface
     /**
      * Создать отношение
      *
-     * @param string $sourceId Идентификатор источника
-     * @param string $targetId Идентификатор цели
+     * @param RelationDTO $relation Отношение
+     *
+     * @see RelationDTO
      *
      * @return bool Создана ли связь
      */
-    public function create(string $sourceId, string $targetId): bool;
+    public function create(RelationDTO $relation): bool;
 
     /**
      * Удалить связь
      *
-     * @param string $sourceId Идентификатор источника
-     * @param string $targetId Идентификатор цели
+     * @param RelationDTO $relation Отношение
+     *
+     * @see RelationDTO
      *
      * @return bool Удалена ли связь
      */
-    public function destroy(string $sourceId, string $targetId): bool;
+    public function destroy(RelationDTO $relation): bool;
 
     /**
      * Получить связи по идентификаторам источников
      *
-     * Должен возвращать массив:
+     * @param string[] $sourceIds Идентификаторы источников
      *
-     * - sourceId: (string) Идентификатор источника
-     * - targetId: (string) Идентификатор цели
+     * @see RelationDTO
      *
-     * @param array<string> $sourceIds Идентификаторы источников
-     *
-     * @return array<array>
+     * @return RelationDTO[]
      */
     public function getBySourceIds(array $sourceIds): array;
 
     /**
      * Получить связи по идентификаторe источника
      *
-     * Смотреть `RelationRepsotiryInterface::getBySourceIds`
-     *
      * @param string $sourceId Идентификатор источника
      *
-     * @return array
+     * @see RelationDTO
+     *
+     * @return RelationDTO
      */
-    public function getBySourceId(string $sourceId): array;
+    public function getBySourceId(string $sourceId): RelationDTO;
 
     /**
      * Получить связи по идентификаторам целей
      *
-     * Смотреть `RelationRepsotiryInterface::getBySourceIds`
-     *
      * @param array<string> $targetIds Идентификаторы целей
      *
-     * @return array<array>
+     * @see RelationDTO
+     *
+     * @return RelationDTO[]
      */
     public function getByTargetIds(array $targetIds): array;
 
     /**
      * Получить связи по идентификатору цели
      *
-     * Смотреть `RelationRepsotiryInterface::getByTargetIds`
-     *
      * @param string $targetId Идентификаторы целей
      *
-     * @return array
+     * @see RelationDTO
+     *
+     * @return RelationDTO
      */
-    public function getByTargetId(string $targetId): array;
+    public function getByTargetId(string $targetId): RelationDTO;
 }
