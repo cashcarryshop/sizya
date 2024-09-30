@@ -99,6 +99,6 @@ class PositionCreateDTO extends AbstractDTO
         public $currency = null,
 
         #[Assert\Type('bool')]
-        public $vat= false
+        public $vat = false
     ) {}
 }

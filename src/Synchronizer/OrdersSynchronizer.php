@@ -20,6 +20,18 @@ use CashCarryShop\Sizya\OrdersGetterByAdditionalInterface;
 use CashCarryShop\Sizya\OrdersCreatorInterface;
 use CashCarryShop\Sizya\OrdersUpdaterInterface;
 use CashCarryShop\Sizya\Events\Success;
+use CashCarryShop\Sizya\Events\ForCreateValidationError;
+use CashCarryShop\Sizya\Events\ForUpdateValidationError;
+use CashCarryShop\Sizya\Events\OrdersCreated;
+use CashCarryShop\Sizya\Events\OrdersUpdated;
+use CashCarryShop\Sizya\DTO\OrderDTO;
+use CashCarryShop\Sizya\DTO\OrderUpdateDTO;
+use CashCarryShop\Sizya\DTO\OrderCreateDTO;
+use CashCarryShop\Sizya\DTO\PositionDTO;
+use CashCarryShop\Sizya\DTO\PositionCreateDTO;
+use CashCarryShop\Sizya\DTO\AdditionalCreateDTO;
+use CashCarryShop\Sizya\DTO\RelationDTO;
+use Symfony\Component\Validator\Constraints as Assert;
 use Respect\Validation\Validator as v;
 
 /**
@@ -33,6 +45,8 @@ use Respect\Validation\Validator as v;
  */
 class OrdersSynchronizer extends AbstractSynchronizer
 {
+    use InteractsWithValidator;
+
     /**
      * Проверить, поддерживается ли источник
      *
@@ -57,455 +71,6 @@ class OrdersSynchronizer extends AbstractSynchronizer
         return $target instanceof OrdersGetterInterface
             && $target instanceof OrdersCreatorInterface
             || $target instanceof OrdersUpdaterInterface;
-    }
-
-    /**
-     * Сопоставить данные отношений
-     *
-     * @param array $orders    Заказы
-     * @param array $relations Отношения заказов
-     *
-     * @return void
-     */
-    private function _compareRelations(array $orders, array &$relations): void
-    {
-        $sourceIds = array_column($orders, 'id');
-        asort($sourceIds, SORT_ASC);
-
-        $ids = array_column($relations, 'source');
-        asort($ids, SORT_ASC);
-
-        $diff = array_diff($sourceIds, $ids);
-
-        $result = [];
-        foreach (array_keys($sourceIds) as $index) {
-            if (isset($diff[$index])) {
-                $result[$index] = null;
-                continue;
-            }
-
-            $result[$index] = $relations[key($ids)];
-            next($ids);
-        }
-        $relations = $result;
-
-        unset($sourceIds);
-    }
-
-    /**
-     * Дополнить данные с помощью доп. поля
-     *
-     * @param string $additional Доп. поле
-     * @param array  $orders     Заказы
-     * @param array  $relations  Ссылка на отношения заказов
-     * @param array  $targets    Целевые заказы
-     * @param object $repository Репозиторий
-     *
-     * @return void
-     */
-    private function _supplimentByAdditional(
-        string $additional,
-        array $orders,
-        array &$relations,
-        array &$targets,
-        object $repository
-    ): void {
-        $ids = array_column($orders, 'id');
-        $sourceIds = array_column($relations, 'sourceId');
-
-        if ($notFound = array_diff($ids, $sourceIds)) {
-            $byAdditional = $this->target->getOrdersByAdditional(
-                $additional,
-                $notFound
-            );
-
-            $values = [];
-            foreach (array_column($byAdditional, 'additional') as $addRecords) {
-                foreach ($addRecords as $item) {
-                    if ($item['entityId'] === $additional) {
-                        $values[] = $item['value'];
-                        continue 2;
-                    }
-                }
-            }
-
-            asort($notFound, SORT_ASC);
-            asort($values, SORT_ASC);
-
-            foreach ($notFound as $index => $sourceId) {
-                if (current($values) === $sourceId) {
-                    $idx = key($values);
-                    $repository->create(
-                        $sourceId,
-                        $targetId = $byAdditional[$idx]['id']
-                    );
-
-                    $relations[$index] = [
-                        'sourceId' => $sourceId,
-                        'targetId' => $targetId
-                    ];
-
-                    $targets[] = $byAdditional[$idx];
-                    next($values);
-                }
-            }
-        }
-    }
-
-    /**
-     * Сопоставить данные
-     *
-     * @param array $relations Ссылка на отношение заказов и целей
-     * @param array $targets   Ссылка на цели
-     *
-     * @return void
-     */
-    private function _compareTargets(array $relations, array &$targets): void
-    {
-        $targetIds = array_column($targets, 'id');
-        asort($targetIds, SORT_ASC);
-
-        $ids = array_map(
-            static fn ($relation) => $relation['targetId'] ?? null,
-            $relations
-        );
-        asort($ids, SORT_ASC);
-
-        $diff = array_diff($ids, $targetIds);
-
-        $result = [];
-        foreach ($ids as $index => $value) {
-            if ($value === null || isset($diff[$index])) {
-                $result[$index] = null;
-                continue;
-            }
-
-            $result[$index] = $targets[key($targetIds)];
-            next($targetIds);
-        }
-
-        $targets = $result;
-    }
-
-    /**
-     * Получить набор данных для обработки данных
-     * для цели (для метода _prepareTargetData)
-     *
-     * @param array $orders   Заказы
-     * @param array $settings Настройки
-     *
-     * @return array
-     */
-    private function _bundleForPrepareTargetData(array $orders, array $settings): array
-    {
-        $cache = $settings['cache'] ?? false;
-        $repository = $settings['repository'];
-
-        $relations = $repository->getBySourceIds(array_column($orders, 'id'));
-        $targetIds = array_column($relations, 'targetId');
-
-        $targets = [];
-        if ($cache) {
-            $targets = $cache->getItems($targetIds);
-        }
-
-        if ($notFound = array_diff($targetIds, array_column($targets, 'id'))) {
-            $targets = array_merge($targets, $this->target->getOrdersByIds($notFound));
-        }
-        unset($notFound);
-        unset($targetIds);
-
-        $this->_compareRelations($orders, $relations);
-        if ($settings['additional'] ?? false) {
-            $this->_supplimentByAdditional(
-                $settings['additional'],
-                $orders,
-                $relations,
-                $targets,
-                $repository
-            );
-        }
-        $this->_compareTargets($relations, $targets);
-
-        return [
-            $this->target instanceof OrdersCreatorInterface && $settings['doCreate'],
-            $this->target instanceof OrdersUpdaterInterface && $settings['doUpdate'],
-            [],
-            [],
-            array_column($settings['status'], 'source'),
-            array_column($settings['status'], 'target'),
-            static function ($position) {
-                unset($position['id']);
-                unset($position['original']);
-                unset($position['orderId']);
-
-                return $position;
-            },
-            $cache = $settings['cache'] ?? false,
-            $repository,
-            count($orders),
-            $relations,
-            $targets
-        ];
-    }
-
-    /**
-     * Добавить значение по ключу если есть различия
-     *
-     * @param array  $previous Предыдущее значение
-     * @param array  $current  Текущее значение
-     * @param array  $item     Ссылка на элемент
-     * @param string $key      Ключ
-     *
-     * @return bool
-     */
-    private function _setIfDiff(
-        array $previous,
-        array $current,
-        array &$item,
-        string $key
-    ): bool {
-        if (isset($previous[$key], $current[$key])) {
-            if ($previous[$key] !== $current[$key]) {
-                $item[$key] = $current[$key];
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Установить если значение существует
-     *
-     * @param array  $data Данные
-     * @param array  $item Ссылка на элемент
-     * @param string $key  Ключ
-     *
-     * @return bool
-     */
-    private function _setIfExists(array $data, array &$item, string $key): bool
-    {
-        if (isset($data[$key])) {
-            $item[$key] = $data[$key];
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Установить статус соответственно переданному
-     * их отношению
-     *
-     * @param array  $item    Ссылка на массив, куда пихать статус
-     * @param string $status  Текущий статус
-     * @param array  $sStatus Статусы источников
-     * @param array  $tStatus Статусы целей
-     *
-     * @return bool
-     */
-    private function _findAndAddStatus(
-        array &$item,
-        string $status,
-        array $sStatus,
-        array $tStatus
-    ): bool {
-        $index = array_search($status, $sStatus);
-        if ($index !== false) {
-            $item['status'] = $tStatus[$index];
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Собрать данные для обновления ориентируясь
-     * на кэшериованные данные
-     *
-     * @param array     $item      Ссылка на массив, куда пихать данные
-     * @param ?callable $formatter Форматировщик данных для позиций
-     * @param array     $target    Целевой заказ
-     * @param array     $current   Текущие данные
-     * @param array     $sStatus   Статусы источников (SourceStatuses)
-     * @param array     $tStatus   Статусы целей (TargetStatuses)
-     *
-     * @return bool Было ли добавлено хоть 1 свойство
-     */
-    private function _addUpdateData(
-        array &$item,
-        ?callable $formatter,
-        array $target,
-        array $current,
-        array $sStatus,
-        array $tStatus
-    ): bool {
-        $added = false;
-
-        $this->_findAndAddStatus($current, $current['status'], $sStatus, $tStatus)
-            && $this->_setIfDiff($target, $current, $item, 'status')
-            && $added = true;
-
-        // $formatter
-            // && $this->_setIfDiff($target, $current, $target, 'positions')
-            // && $item['positions'] = array_map($formatter, $target['positions'])
-            // && $added = true;
-
-        $this->_setIfDiff($target, $current, $item, 'article') && $added = true;
-        $this->_setIfDiff($target, $current, $item, 'shipment_date') && $added = true;
-        $this->_setIfDiff($target, $current, $item, 'delivery_date') && $added = true;
-
-        return $added;
-    }
-
-    /**
-     * Добавить заказ в массив через Middleware
-     *
-     * В массиве $additional:
-     *
-     * - source: (array)  Данные источника
-     * - target: (?array) Цель, текущие данные заказа, только при обновлении
-     *
-     * @param int       $index      Индекс элемента
-     * @param array     $data       Данные для обновления. создания
-     * @param array     $array      Ссылка на масссив куда добавить заказ
-     * @param ?callable $middleware Посредник
-     * @param array     $additional Доп. данные
-     *
-     *
-     * @return void
-     */
-    public function _addThroughMiddleware(
-        int $index,
-        array $data,
-        array &$array,
-        ?callable $middleware,
-        array $additional
-    ): void {
-        if ($middleware === null) {
-            $array[$index] = $data;
-            return;
-        }
-
-        call_user_func(
-            $middleware,
-            $data,
-            static function ($data) use ($index, &$array) {
-                $array[$index] = $data;
-            },
-            $additional
-        );
-    }
-
-    /**
-     * Подготовить данные для цели
-     *
-     * @param array $orders   Заказы источника
-     * @param array $settings Настройки
-     *
-     * @return array Данные для обновления, создание данных
-     */
-    private function _prepareTargetData(array $orders, array $settings): array
-    {
-        list(
-            $doCreate,
-            $doUpdate,
-            $create,
-            $update,
-            $sStatus,
-            $tStatus,
-            $pFormatter,
-            $cache,
-            $repository,
-            $count,
-            $relations,
-            $targets,
-        ) = $this->_bundleForPrepareTargetData($orders, $settings);
-
-        if (!$doCreate && !$doUpdate) {
-            return [$create, $update];
-        }
-
-        for ($i = 0; $i < $count; ++$i) {
-            $item = [];
-
-            // Если найдена связь между заказами, целевой
-            // заказ и имеется возможность его обновить - обновляем.
-            // Если связь найдена, но целевого заказа нет,
-            // удаляем связь
-            if ($relation = $relations[$i]) {
-                if ($target = $targets[$i]) {
-                    if ($doUpdate) {
-                        $item['id'] = $relation['targetId'];
-                        $this->_addUpdateData(
-                            $item,
-                            $pFormatter,
-                            $target,
-                            $orders[$i],
-                            $sStatus,
-                            $tStatus
-                        ) && $this->_addThroughMiddleware(
-                            $i,
-                            $item,
-                            $update,
-                            $settings['middleware'] ?? null,
-                            [
-                                'index' => $i,
-                                'sources' => $orders,
-                                'targets' => $targets
-                            ]
-                        );
-                    }
-
-                    continue;
-                }
-
-                $repository->destroy(...$relation);
-            }
-
-            if ($doCreate) {
-                $this->_setIfExists($orders[$i], $item, 'article');
-                $this->_setIfExists($orders[$i], $item, 'created');
-                $this->_setIfExists($orders[$i], $item, 'positions')
-                    && $item['positions'] = array_map(
-                        $pFormatter, $item['positions']
-                    );
-
-                $this->_findAndAddStatus(
-                    $item,
-                    $orders[$i]['status'],
-                    $sStatus,
-                    $tStatus
-                );
-
-                $this->_setIfExists($orders[$i], $item, 'shipment_date');
-                $this->_setIfExists($orders[$i], $item, 'delivery_date');
-                $this->_setIfExists($orders[$i], $item, 'currency');
-                $settings['additional'] ?? false
-                    && $item['additional'] = [
-                        $settings['additional'] => $orders[$i]['id']
-                    ];
-
-                if ($item) {
-                    $this->_addThroughMiddleware(
-                        $i,
-                        $item,
-                        $create,
-                        $settings['middleware'] ?? null,
-                        [
-                            'index' => $i,
-                            'sources' => $orders,
-                            'targets' => $targets
-                        ]
-                    );
-                }
-            }
-        }
-
-        $cache && $cache->putItems($update);
-
-        return [$create, $update, $repository, $cache];
     }
 
     /**
@@ -567,6 +132,14 @@ class OrdersSynchronizer extends AbstractSynchronizer
      */
     protected function process(array $settings): bool
     {
+        $settings = \array_replace(
+            [
+                'doUpdate' => true,
+                'doCreate' => true
+            ],
+            $settings
+        );
+
         v::allOf(
             v::key('doUpdate', v::boolType(), false),
             v::key('doCreate', v::boolType(), false),
@@ -588,65 +161,421 @@ class OrdersSynchronizer extends AbstractSynchronizer
             )
         )->assert($settings);
 
-        $settings = array_replace(['doUpdate' => true, 'doCreate' => true], $settings);
+        $this->_run($settings);
 
-        list(
-            $create,
-            $update,
-            $repository,
-            $cache
-        ) = $this->_prepareTargetData($orders = $this->source->getOrders(), $settings);
+        return true;
+    }
 
-        $updated = [];
-        if ($update) {
-            $updated = $this->target->massUpdateOrders($update);
-        }
+    /**
+     * Запуск.
+     *
+     * @param array $settings Настройки
+     *
+     * @return void
+     */
+    private function _run(array $settings): void
+    {
+        $sources    = $this->source->getOrders();
+        $sourcesIds = \array_column($sources, 'id');
 
-        $created = [];
-        if ($create) {
-            $created = $this->target->massCreateOrders($create);
-        }
+        $relations          = $settings['repository']->getBySourceIds($sourcesIds);
+        $relationsSourceIds = \array_column($relations, 'sourceId');
 
-        $put = [];
-        $sources = array_intersect_key($orders, $create);
+        \asort($sourcesIds,         SORT_STRING);
+        \asort($relationsSourceIds, SORT_STRING);
 
-        // Создание отношений между заказами.
-        // Сохранение созданных заказов в кэш.
-        foreach ($created as $item) {
-            $source = current($sources);
-            next($sources);
+        $targetIds = [];
+        $notFound  = [];
 
-            if ($item['error']) {
+        \reset($relationsSourceIds);
+        foreach ($sourcesIds as $idx => $sourceId) {
+            if (\current($relationsSourceIds) === $sourceId) {
+                $targetsIds[$idx] = $relations[\key($relationsSourceIds)]->targetId;
+                \next($relationsSourceIds);
                 continue;
             }
 
-            $repository->create($source['id'], $item['id']);
-            unset($item['error']);
-            $put[] = $item;
+            $notFound[$idx]    = $sources[$idx];
+            $notFoundIds[$idx] = $sourceId;
         }
-        unset($sources);
 
-        if ($cache) {
-            // Откат элементов в кэше, которые не удалось обновить.
-            foreach ($updated as $item) {
-                if ($item['error']) {
-                    $put[] = current($update);
-                }
+        $targets = $this->_prepareForAdditionals([
+            'settings'    => $settings,
+            'notFound'    => &$notFound,
+            'notFoundIds' => $notFoundIds,
+            'relations'   => &$relations,
+            'targetsIds'  => &$targetsIds,
+        ]);
 
-                next($update);
-            }
+        unset($notFoundIds);
 
-            $put && $cache->putItems($put);
-        }
-        unset($put);
+        $forCreate = [];
+        $forUpdate = [];
 
-        $this->event(
-            new Success([
-                'created' => $created,
-                'updated' => $updated
-            ])
+        $sourceStatuses = \array_column($settings['status'], 'source');
+        $targetStatuses = \array_column($settings['status'], 'target');
+
+        $statusRelations = \array_combine(
+            $sourceStatuses,
+            $targetStatuses
         );
 
-        return true;
+        $forCreate = $this->_makeForCreate([
+            'settings'        => $settings,
+            'sources'         => $notFound,
+            'statusRelations' => $statusRelations
+        ]);
+
+        $targets = \array_merge(
+            $this->target->getOrdersByIds($targetsIds),
+            $targets
+        );
+
+        \asort($targetsIds, SORT_STRING);
+        \array_multisort(\array_column($targets, 'id'), SORT_STRING, $targets);
+
+        $forUpdate = $this->_makeForUpdate([
+            'settings'             => $settings,
+            'sources'              => $sources,
+            'targets'              => &$targets,
+            'associatedTargetsIds' => $targetsIds,
+            'statusRelations'      => $statusRelations
+        ]);
+
+        $associatedTargets = [];
+
+        \reset($targets);
+        foreach ($targetsIds as $idx => $targetId) {
+            $associatedTargets[$idx] = \current($targets);
+            \next($targets);
+        }
+        $targets = $associatedTargets;
+
+        unset($associatedTargets);
+        unset($targetsIds);
+        unset($statusRelations);
+        unset($sourceStatuses);
+        unset($targetStatuses);
+
+        // Данные для обновления и создания
+        // по индексам соответствуют массиву
+        // с источниками.
+        \ksort($targets);
+        \ksort($forUpdate);
+        \ksort($forCreate);
+
+        [$forCreate, $forUpdate] = $this->_runDataThroughMiddleware([
+            'settings'  => $settings,
+            'forCreate' => $forCreate,
+            'forUpdate' => $forUpdate,
+            'sources'   => $sources,
+            'targets'   => $targets
+        ]);
+
+        unset($sources);
+        unset($targets);
+
+        if ($this->target instanceof OrdersCreatorInterface) {
+            // todo: Сделать добавление данных в репозиторий
+            // отношений идентификаторов источников и целей.
+            $this->event(
+                new OrdersCreated(
+                    $this->target->massCreateOrders($forCreate)
+                )
+            );
+        }
+
+        if ($this->target instanceof OrdersUpdaterInterface) {
+            $this->evnet(
+                new OrdersUpdated(
+                    $this->target->massUpdateOrders($forUpdate)
+                )
+            );
+        }
+    }
+
+    /**
+     * Получить и обработать данные при получении заказов
+     * оп дополнительному полю.
+     *
+     * Массив $data принимает:
+     *
+     * - settings:    (array)  Настройки
+     * - notFound:    (&array) Ссылка на массив с не найденными заказами
+     * - notFoundIds: (array)  Массив с не найденными идентификаторами заказов
+     * - relations:   (array)  Отношения источников и целей
+     *
+     * @param array $data Данные
+     *
+     * @param array $settings    Настройки
+     * @param array $notFound    Ссылка на массив с не найденными заказами
+     * @param array $notFoundIds Массив с не найденными идентификаторами заказов
+     *
+     * @return array
+     */
+    private function _prepareForAdditionals(array $data): array
+    {
+        if (!$this->target instanceof OrdersGetterByAdditionalInterface) {
+            return [];
+        }
+
+        [
+            'settings'    => $settings,
+            'notFound'    => &$notFound,
+            'notFoundIds' => $notFoundIds,
+            'relations'   => &$relations,
+            'targetsIds'  => &$targetsIds
+        ] = $data;
+
+        if ($settings['additional']) {
+            $targets = $this->target->getOrdersByAdditional(
+                $settings['additional'], $notFoundIds
+            );
+
+            $targetsSourcesIds = \array_map(
+                static function ($target) use ($settings) {
+                    foreach ($target->additionals as $idx => $additional) {
+                        if ($additional->id === $settings['additional']) {
+                            return $target->additionals[$idx]['value'];
+                        }
+                    }
+
+                    if (!$additionalIndex) {
+                        throw new \RuntimException(sprintf(
+                            'Additional with [%s] id not found',
+                            $settings['additional']
+                        ));
+                    }
+                },
+                $targetsByAdditional
+            );
+
+            \asort($targetsSourcesIds, SORT_STRING);
+
+            \reset($targetsSourcesIds);
+            foreach ($notFoundIds as $idx => $sourceId) {
+                if (\current($targetsSourcesIds) === $sourceId) {
+                    $settings['repository']->create(
+                        $relation = RelationDTO::fromArray([
+                            'sourceId' => $sourceId,
+                            'targetId' => $targets[\key($targetsSourcesIds)]->id
+                        ])
+                    );
+
+                    $relations[]  = $relation;
+                    $targetsIds[$idx] = $relation->targetId;
+
+                    unset($notFound[$idx]);
+                    \next($targetsSourcesIds);
+                }
+            }
+        }
+    }
+
+    /**
+     * Собрать данные для создания.
+     *
+     * Массив $data принимает:
+     *
+     * - settings:        (array) Настройки
+     * - sources:         (array) Источники
+     * - statusRelationns (array) Отношения статусов
+     *
+     * @param array $data Данные
+     *
+     * @return array
+     */
+    private function _makeForCreate(array $data): array
+    {
+        [
+            'settings'        => $settings,
+            'sources'         => $sources,
+            'statusRelations' => $statusRelations
+        ] = $data;
+
+        if (!$settings['doCreate']
+            || !$this->target instanceof OrdersCreatorInterface
+        ) {
+            return [];
+        }
+
+        $makeCreatePosition = static fn ($position) =>
+            PositionCreateDTO::fromArray([
+                'article'  => $position->article,
+                'quantity' => $position->quantity,
+                'reserve'  => $position->reserve,
+                'price'    => $position->price,
+                'discount' => $position->discount,
+                'currency' => $position->currency,
+                'vat'      => $position->vat
+            ]);
+
+        $forCreate = [];
+        foreach ($sources as $idx => $source) {
+            $data = [
+                'created'        => $source->created,
+                'article'        => $source->article,
+                'shipmentDate'   => $source->shipmentDate,
+                'deliveringDate' => $source->deliveringDate
+            ];
+
+            if (isset($statusRelations[$source->status])) {
+                $data['status'] = $statusRelations[$source->status];
+            }
+
+            if ($settings['additional']) {
+                $data['additionals'] = [
+                    AdditionalCreateDTO::fromArray([
+                        'entityId' => $settings['additional'],
+                        'value'    => $source->id
+                    ])
+                ];
+            }
+
+            $data['positions'] = \array_map($makeCreatePosition, $source->positions);
+
+            $forCreate[$idx] = OrderCreateDTO::fromArray($data);
+        }
+
+        return $forCreate;
+    }
+
+    /**
+     * Создать данные для обновления заказов.
+     *
+     * Массив $data принимает:
+     *
+     * - settings:            (array) Настройки
+     * - sources:             (array) Источники
+     * - targets:             (array) Цели
+     * - associatedTargetsIds (array) Идентификаторы найденных целей.
+     *                                Индексы у элементов соотносятся с $sources
+     *
+     * @param array $data Данные
+     *
+     * @return array
+     */
+    private function _makeForUpdate(array $settings): array
+    {
+        [
+            'settings'             => $settings,
+            'sources'              => $sources,
+            'targets'              => &$targets,
+            'associatedTargetsIds' => $associatedTargetsIds,
+            'statusRelations'      => $statusRelations
+        ] = $data;
+
+        if (!$settings['doUpdate']
+            || !$this->target instanceof OrdersUpdaterInterface
+        ) {
+            return [];
+        }
+
+        $forUpdate = [];
+        \reset($targets);
+        foreach ($associatedTargetsIds as $associatedId => $targetId) {
+            $source = $sources[$associatedId];
+            $target = \current($targets);
+
+            $data = [
+                'id' => $target->id,
+            ];
+
+            if (isset($statusRelations[$source->status])) {
+                if ($statusRelations[$source->status] !== $target->status) {
+                    $data['status'] = $statusRelations[$source->status];
+                }
+            }
+
+            if ($source->shipmentDate !== $target->shipmentDate) {
+                $data['shipmentDate'] = $source->shipmentDate;
+            }
+
+            if ($source->deliveringDate !== $target->deliveringDate) {
+                $date['deliveringDate'] = $target->deliveringDate;
+            }
+
+            $forUpdate[$associatedId] = OrderUpdateDTO::fromArray($data);
+
+            \next($targets);
+        }
+
+        return $forUpdate;
+    }
+
+    /**
+     * Прогнать данные через middleware.
+     *
+     * Массив $data принимает:
+     *
+     * - settings:  (array) Настройки
+     * - forCreate: (array) Данные для создания
+     * - forUpdate: (array) Данные для обновления
+     * - sources:   (array) Источники
+     * - targets:   (array) Цели
+     *
+     * @param array $data Данные
+     *
+     * @return array<OrderCreateDTO[], OrderUpdateDTO[]>
+     */
+    private function _runDataThroughMiddleware(array $data): array
+    {
+        [
+            'settings'  => $settings,
+            'forCreate' => $forCreate,
+            'forUpdate' => $forUpdate,
+            'sources'   => $sources,
+            'targets'   => $targets
+        ] = $data;
+
+        if (!isset($settings['middleware'])) {
+            return [$forCreate, $forUpdate];
+        }
+
+        $cloneForUpdate = $forUpdate;
+        $cloneforCreate = $forCreate;
+
+        $settings['middleware']($cloneForCreate, $cloneForUpdate);
+
+        $violations = $this->getValidator()
+            ->validate($cloneForCreate, [
+                new Assert\All(new Assert\Type(OrderCreateDTO::class)),
+                new Assert\Valid
+            ]);
+
+        if ($violations->count()) {
+            $this->event(
+                new ForCreateValidationError(
+                    $sources,
+                    $cloneForCreate,
+                    $violations
+                )
+            );
+        } else {
+            $forCreate = $cloneforCreate;
+        }
+        unset($cloneForCreate);
+
+        $violations = $this->getValidator()
+            ->validate($cloneForUpdate, [
+                new Assert\All(new Assert\Type(OrderUpdateDTO::class)),
+                new Assert\Valid
+            ]);
+
+        if ($violations->count()) {
+            $this->event(
+                new ForUpdateValidationError(
+                    $sources,
+                    $targets,
+                    $cloneForUpdate,
+                    $violations
+                )
+            );
+        } else {
+            $forUpdate = $cloneForUpdate;
+        }
+        unset($cloneForUpdate);
+
+        return [$forCreate, $forUpdate];
     }
 }

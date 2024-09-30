@@ -38,7 +38,6 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 class OrderCreateDTO extends AbstractDTO
 {
-
     /**
      * Создать экземпляр заказа
      *
