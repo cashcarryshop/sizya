@@ -19,12 +19,12 @@
   "license": "unlicense",
   "autoload": {
     "psr-4": {
-      "cashcarryshop\\sizya\\": "src/"
+      "CashCarryShop\\Sizya\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "cashcarryshop\\sizya\\tests\\": "tests/"
+      "CashCarryShop\\Sizya\\Tests\\": "tests/"
     }
   },
   "authors": [

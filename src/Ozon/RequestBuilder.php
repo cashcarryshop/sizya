@@ -37,46 +37,46 @@ class RequestBuilder
      *
      * @var array<string>
      */
-    protected array $path = [];
+    private array $_path = [];
 
     /**
      * Query параметры
      *
      * @var array<string, string|array|bool|null>
      */
-    protected array $query = [];
+    private array $_query = [];
 
     /**
      * Тело запроса
      *
      * @var array|StreamInterface
      */
-    protected array|StreamInterface $body = [];
+    private array|StreamInterface $_body = [];
 
     /**
      * Токен
      *
      * @var string
      */
-    public readonly string $token;
+    private readonly string $_token;
 
     /**
      * Идентификатор клиента
      *
      * @var int
      */
-    public readonly int $clientId;
+    private readonly int $_clientId;
 
     /**
      * Создать сборщик
      *
      * @param string $token    Токен
-     * @param int    $clientId Идентификатор клиента
+     * @Param int    $clientId Идентификатор клиента
      */
     public function __construct(string $token, int $clientId)
     {
-        $this->token = $token;
-        $this->clientId = $clientId;
+        $this->_token    = $token;
+        $this->_clientId = $clientId;
     }
 
     /**
@@ -90,7 +90,7 @@ class RequestBuilder
     public function point(string $method): static
     {
         foreach (explode('/', $method) as $item) {
-            $item && $this->path[] = $item;
+            $item && $this->_path[] = $item;
         }
 
         return $this;
@@ -106,7 +106,7 @@ class RequestBuilder
      */
     public function query(string $name, string|bool|array|null $value = null): static
     {
-        $this->query[$name] = $value;
+        $this->_query[$name] = $value;
         return $this;
     }
 
@@ -119,7 +119,7 @@ class RequestBuilder
      */
     public function body(array|StreamInterface $body): static
     {
-        $this->body = $body;
+        $this->_body = $body;
         return $this;
     }
 
@@ -146,8 +146,8 @@ class RequestBuilder
      */
     private function _buildUrl(): string
     {
-        $url = self::SCHEMA . '://' . self::DOMAIN . '/' . implode('/', $this->path);
-        return $url . sprintf('?%s', http_build_query($this->query));
+        $url = self::SCHEMA . '://' . self::DOMAIN . '/' . implode('/', $this->_path);
+        return $url . sprintf('?%s', http_build_query($this->_query));
     }
 
     /**
@@ -160,8 +160,8 @@ class RequestBuilder
     {
         return [
             'Host' => self::DOMAIN,
-            'Client-Id' => $this->clientId,
-            'Api-Key' => $this->token,
+            'Client-Id' => $this->_clientId,
+            'Api-Key' => $this->_token,
             'Content-Type' => 'application/json',
         ];
     }
@@ -173,10 +173,10 @@ class RequestBuilder
      */
     private function _buildBody(): string|StreamInterface
     {
-        if ($this->body) {
-            return is_array($this->body)
-                ? json_encode($this->body)
-                : $this->body;
+        if ($this->_body) {
+            return is_array($this->_body)
+                ? json_encode($this->_body)
+                : $this->_body;
         }
 
         return '';

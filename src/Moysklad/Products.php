@@ -212,8 +212,6 @@ class Products extends AbstractSource implements ProductsGetterInterface
             )->wait(),
             $errors
         );
-
-        return $products;
     }
 
     /**

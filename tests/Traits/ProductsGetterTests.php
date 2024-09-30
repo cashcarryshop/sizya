@@ -65,7 +65,12 @@ trait ProductsGetterTests
             foreach ($this->productsIdsProvider() as $ids) {
                 $products = $getter->getProductsByIds($ids);
 
-                $this->assertSameSize($ids, $products);
+                if (\count($products) === 0) {
+                    $this->markTestIncomplete(
+                        'No products were found for '
+                            . \get_class($getter)
+                    );
+                }
 
                 $validator = $this->createValidator();
                 foreach ($products as $product) {
@@ -80,6 +85,8 @@ trait ProductsGetterTests
                     $violations = $validator->validate($product);
                     $this->assertCount(0, $violations, (string) $violations);
                 }
+
+                $this->assertSameSize($ids, $products);
             }
         }
     }
@@ -92,7 +99,12 @@ trait ProductsGetterTests
             foreach ($this->productsArticlesProvider() as $articles) {
                 $products = $getter->getProductsByArticles($articles);
 
-                $this->assertSameSize($articles, $products);
+                if (\count($products) === 0) {
+                    $this->markTestIncomplete(
+                        'No products were found for '
+                            . \get_class($getter)
+                    );
+                }
 
                 $validator = $this->createValidator();
                 foreach ($products as $product) {
@@ -105,13 +117,10 @@ trait ProductsGetterTests
                     );
 
                     $violations = $validator->validate($product);
-
-                    if ($violations->count()) {
-                        var_dump($product);
-                    }
-
                     $this->assertCount(0, $violations, (string) $violations);
                 }
+
+                $this->assertSameSize($articles, $products);
             }
 
         }

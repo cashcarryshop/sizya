@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 /**
- * Общее событие на ошибки
+ * Этот файл является частью пакета sizya.
  *
  * PHP version 8
  *

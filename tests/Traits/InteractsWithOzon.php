@@ -127,7 +127,7 @@ trait InteractsWithOzon
 
                 $options['captureItems']($items);
 
-                $body['result']['items'] = $items;
+                $body['result']['items'] = \array_values($items);
                 $body['result']['count'] = \count($items);
 
                 return static::createJsonResponse(body: $body);
@@ -199,11 +199,13 @@ trait InteractsWithOzon
                 return static::createJsonResponse(body: $body);
             },
             'v1/product/info/stocks-by-warehouse/fbs' => function ($request, $options) {
-                $skus = \json_decode(
-                    $request->getBody()->getContents(),
-                    true,
-                    512,
-                    JSON_THROW_ON_ERROR
+                $skus = \array_unique(
+                    \json_decode(
+                        $request->getBody()->getContents(),
+                        true,
+                        512,
+                        JSON_THROW_ON_ERROR
+                    )
                 )['sku'];
 
                 $options = \array_replace(

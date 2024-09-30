@@ -102,7 +102,10 @@ trait InteractsWithSettings
     private function _validate(): void
     {
         $violations = $this->getValidator()
-            ->validate($this->settings, new Assert\Collection($this->rules()));
+            ->validate(
+                $this->settings,
+                new Assert\Collection($this->rules())
+            );
 
         if ($violations->count()) {
             throw new ValidationException(violations: $violations);

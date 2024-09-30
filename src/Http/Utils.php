@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 /**
- * Вспомогательный класс для работы с Http
+ * Этот файл является частью пакета sizya.
  *
  * PHP version 8
  *

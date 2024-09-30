@@ -53,21 +53,21 @@ class RequestBuilder
      *
      * @var array<string>
      */
-    protected array $path = [];
+    private array $_path = [];
 
     /**
      * Тело запроса
      *
      * @var array|StreamInterface
      */
-    protected array|StreamInterface $body = [];
+    private array|StreamInterface $_body = [];
 
     /**
      * Данные авторизации
      *
      * @var array
      */
-    public readonly array $credentials;
+    private readonly array $_credentials;
 
     /**
      * Создать сборщик
@@ -76,7 +76,7 @@ class RequestBuilder
      */
     public function __construct(array $credentials)
     {
-        $this->credentials = $credentials;
+        $this->_credentials = $credentials;
     }
 
     /**
@@ -90,7 +90,7 @@ class RequestBuilder
     public function point(string $method): static
     {
         foreach (explode('/', $method) as $item) {
-            $item && $this->path[] = $item;
+            $item && $this->_path[] = $item;
         }
 
         return $this;
@@ -105,7 +105,7 @@ class RequestBuilder
      */
     public function body(array|StreamInterface $body): static
     {
-        $this->body = $body;
+        $this->_body = $body;
         return $this;
     }
 
@@ -164,7 +164,7 @@ class RequestBuilder
     private function _buildUrl(): string
     {
         $url = self::SCHEMA . '://' . self::DOMAIN . '/' . self::PATH;
-        $url .= '/' . implode('/', $this->path);
+        $url .= '/' . \implode('/', $this->_path);
 
         $query = $this->params;
 
@@ -178,10 +178,10 @@ class RequestBuilder
             $this->filters
         ));
 
-        $expand = implode(';', $this->expand);
-        $order = implode(';', array_map(
+        $expand = \implode(';', $this->expand);
+        $order = \implode(';', array_map(
             fn ($name, $order) => sprintf('%s,%s', $name, $order->value),
-            array_keys($this->order), $this->order
+            \array_keys($this->order), $this->order
         ));
 
         $filters && $query['filter'] = $filters;
@@ -191,7 +191,7 @@ class RequestBuilder
         $this->offset && $query['offset'] = $this->offset;
 
         if ($query) {
-            $url .= sprintf('?%s', http_build_query($query));
+            $url .= \sprintf('?%s', \http_build_query($query));
         }
 
         return $url;
@@ -205,19 +205,19 @@ class RequestBuilder
      */
     private function _buildHeaders(): array
     {
-        $count = count($this->credentials);
+        $count = \count($this->_credentials);
 
-        if (!in_array($count, [1, 2])) {
+        if (!\in_array($count, [1, 2])) {
             throw new InvalidArgumentException(
                 'The size of the credential array must be equal to 1 for a token '
                     . "or 2 for a login-password, $count provided"
             );
         }
 
-        $authorization = 'Bearer ' . $this->credentials[0];
+        $authorization = 'Bearer ' . $this->_credentials[0];
         if ($count === 2) {
             $authorization = 'Basic ' . base64_encode(
-                $this->credentials[0] . ':' . $this->credentials[1]
+                $this->_credentials[0] . ':' . $this->_credentials[1]
             );
         }
 
@@ -241,7 +241,7 @@ class RequestBuilder
             $this->_buildMethod($method),
             $this->_buildUrl(),
             $this->_buildHeaders(),
-            Utils::getStream($this->body, 'json_encode')
+            Utils::getStream($this->_body, 'json_encode')
         );
     }
 }
