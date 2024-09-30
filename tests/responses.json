@@ -15,15 +15,6 @@
       "discount": 0,
       "vat": 18,
       "vatEnabled": true,
-      "assortment": {
-        "meta": {
-          "href": "https://api.moysklad.ru/api/remap/1.2/entity/$type/$id",
-          "metadataHref": "https://api.moysklad.ru/api/remap/1.2/entity/$type/metadata",
-          "type": "product",
-          "mediaType": "application/json",
-          "uuidHref": "https://online.moysklad.ru/app/#good/edit?id=392c045c-2842-11e9-ac12-000a00000002"
-        }
-      },
       "reserve": 1
     }
   },
@@ -277,7 +268,7 @@
         }
       },
       "meta": {
-        "href": "https://api.moysklad.ru/api/remap/1.2/entity/customerOrder",
+        "href": "https://api.moysklad.ru/api/remap/1.2/entity/customerorder",
         "type": "customerorder",
         "mediaType": "application/json",
         "size": 1,
@@ -393,7 +384,7 @@
           "attributes": [
             {
               "meta": {
-                "href": "https://api.moysklad.ru/api/remap/1.2/entity/customerorder/metadata/attributes/0cd74e1e-2e59-11e6-8a84-bae50000008a",
+                "href": "https://api.moysklad.ru/api/remap/1.2/entity/customerorder/metadata/attributes/$id",
                 "type": "attributemetadata",
                 "mediaType": "application/json"
               },
