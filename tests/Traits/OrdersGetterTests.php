@@ -55,7 +55,11 @@ trait OrdersGetterTests
                 $violations = $validator->validate($order);
                 $this->assertCount(0, $violations, (string) $violations);
             }
+
+            return;
         }
+
+        $this->markTestIncomplete('Orders getter is null');
     }
 
     public function testGetOrdersByIds(): void
@@ -83,6 +87,8 @@ trait OrdersGetterTests
                 }
             }
         }
+
+        $this->markTestIncomplete('Orders getter is null');
     }
 
     protected static function generateIds(array $ids): array

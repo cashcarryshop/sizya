@@ -39,41 +39,37 @@ trait StocksUpdaterTests
         $updater = $this->createStocksUpdater();
 
         if ($updater) {
-            try {
-                foreach ($this->updateStocksProvider() as $updateStocks) {
-                    $results = $updater->updateStocks($updateStocks);
+            foreach ($this->updateStocksProvider() as $updateStocks) {
+                $results = $updater->updateStocks($updateStocks);
 
-                    $this->assertSameSize($updateStocks, $results);
+                $this->assertSameSize($updateStocks, $results);
 
-                    foreach ($results as $result) {
-                        $this->assertThat(
-                            $result,
-                            $this->logicalOr(
-                                $this->isInstanceOf(StockDTO::class),
-                                $this->isInstanceOf(ByErrorDTO::class)
-                            )
-                        );
-                    }
-
-                    $validator = $this->createValidator();
-                    foreach ($stocks as $stock) {
-                        $violations = $validator->validate($stock);
-                        $this->assertCount(0, $violations);
-                    }
-
-                    $this->resetStocks($updater, $updateStocks);
+                foreach ($results as $result) {
+                    $this->assertThat(
+                        $result,
+                        $this->logicalOr(
+                            $this->isInstanceOf(StockDTO::class),
+                            $this->isInstanceOf(ByErrorDTO::class)
+                        )
+                    );
                 }
-            } catch (Throwable $exception) {
-                $this->resetStocks($updater, $updateStocks);
 
-                throw $exception;
+                $validator = $this->createValidator();
+                foreach ($stocks as $stock) {
+                    $violations = $validator->validate($stock);
+                    $this->assertCount(0, $violations);
+                }
+
+                $this->resetStocks($updater, $updateStocks);
             }
+
+            return;
         }
+
+        $this->markTestIncomplete('Stocks updater is null');
     }
 
     abstract protected function createStocksUpdater(): ?StocksUpdaterInterface;
 
     abstract protected function updateStocksProvider(): array;
-
-    abstract protected function resetStocks(StocksUpdaterInterface $updater, array $updateStocks): void;
 }

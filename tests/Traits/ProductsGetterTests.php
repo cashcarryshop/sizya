@@ -54,7 +54,11 @@ trait ProductsGetterTests
                 $violations = $validator->validate($product);
                 $this->assertCount(0, $violations, (string) $violations);
             }
+
+            return;
         }
+
+        $this->markTestIncomplete('Products getter is null');
     }
 
     public function testGetProductsByIds(): void
@@ -88,7 +92,11 @@ trait ProductsGetterTests
 
                 $this->assertSameSize($ids, $products);
             }
+
+            return;
         }
+
+        $this->markTestIncomplete('Products getter is null');
     }
 
     public function testGetProductsByArticles(): void
@@ -123,7 +131,10 @@ trait ProductsGetterTests
                 $this->assertSameSize($articles, $products);
             }
 
+            return;
         }
+
+        $this->markTestIncomplete('Products getter is null');
     }
 
     protected static function generateIds(array $products, array $invalidIds): array

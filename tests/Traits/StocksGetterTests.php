@@ -46,7 +46,11 @@ trait StocksGetterTests
                 $violations = $validator->validate($stock);
                 $this->assertCount(0, $violations, (string) $violations);
             }
+
+            return;
         }
+
+        $this->markTestIncomplete('Stocks getter is null');
     }
 
     abstract protected function createStocksGetter(): ?StocksGetterInterface;

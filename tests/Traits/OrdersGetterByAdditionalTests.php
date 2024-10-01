@@ -60,7 +60,11 @@ trait OrdersGetterByAdditionalTests
                     $this->assertCount(0, $violations);
                 }
             }
+
+            return;
         }
+
+        $this->markTestIncomplete('Orders additional getter is null');
     }
 
     abstract protected function createOrdersGetterByAdditional(): ?OrdersGetterByAdditionalInterface;
