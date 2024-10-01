@@ -38,10 +38,10 @@ trait OrdersCreatorTests
         $creator = $this->createOrdersCreator();
 
         if ($creator) {
-            $forUpdate = $this->ordersCreateProvider();
-            $updated   = $creator->massCreateOrders($forUpdate);
+            $forCreate = $this->ordersCreateProvider();
+            $updated   = $creator->massCreateOrders($forCreate);
 
-            $this->assertSameSize($forUpdate, $updated);
+            $this->assertSameSize($forCreate, $updated);
 
             $validator = $this->createValidator();
             foreach ($updated as $order) {
@@ -68,7 +68,7 @@ trait OrdersCreatorTests
         $creator = $this->createOrdersCreator();
 
         if ($creator) {
-            $forUpdate = $this->orderCreateProvider();
+            $forCreate = $this->orderCreateProvider();
             $updated   = $creator->massCreateOrders();
 
             $validator = $this->createValidator();

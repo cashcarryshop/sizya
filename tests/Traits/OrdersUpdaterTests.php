@@ -13,7 +13,7 @@
 
 namespace CashCarryShop\Sizya\Tests\Traits;
 
-use CashCarryShop\Sizya\OrdersCreatorInterface;
+use CashCarryShop\Sizya\OrdersUpdaterInterface;
 use CashCarryShop\Sizya\DTO\OrderDTO;
 use CashCarryShop\Sizya\DTO\OrdersUpdateDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
@@ -27,15 +27,15 @@ use CashCarryShop\Sizya\DTO\ByErrorDTO;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  *
- * @see OrdersCreatorInterface
+ * @see OrdersUpdaterInterface
  */
-trait OrdersCreatorTests
+trait OrdersUpdaterTests
 {
     use UpdateValidatorTrait;
 
     public function testMassUpdateOrders(): void
     {
-        $creator = $this->createOrdersCreator();
+        $creator = $this->createOrdersUpdater();
 
         if ($creator) {
             $forUpdate = $this->ordersUpdateProvider();
@@ -65,7 +65,7 @@ trait OrdersCreatorTests
 
     public function testUpdateOrder(): void
     {
-        $creator = $this->createOrdersCreator();
+        $creator = $this->createOrdersUpdater();
 
         if ($creator) {
             $forUpdate = $this->orderUpdateProvider();
@@ -89,7 +89,7 @@ trait OrdersCreatorTests
         $this->markTestIncomplete('Orders creator is null');
     }
 
-    abstract protected function createOrdersCreator(): ?OrdersCreatorInterface;
+    abstract protected function createOrdersUpdater(): ?OrdersUpdaterInterface;
 
     abstract protected function ordersUpdateProvider(): array;
 
