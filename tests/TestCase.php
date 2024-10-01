@@ -13,6 +13,7 @@
 
 namespace CashCarryShop\Sizya\Tests;
 
+use CashCarryShop\Sizya\DTO\DTOInterface;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 
 /**
@@ -87,6 +88,16 @@ abstract class TestCase extends BaseTestCase
             $randomString .= $characters[\random_int(0, $charactersLength - 1)];
         }
         return $randomString;
+    }
+
+    /**
+     * Сгенерировать рандомную дату для dto.
+     *
+     * @return string
+     */
+    protected static function fakeDtoDate(): string
+    {
+        return \date(DTOInterface::DATE_FORMAT, \mt_rand(1, \time()));
     }
 
     /**
