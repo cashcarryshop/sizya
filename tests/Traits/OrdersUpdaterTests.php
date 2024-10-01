@@ -38,23 +38,24 @@ trait OrdersUpdaterTests
         $creator = $this->createOrdersUpdater();
 
         if ($creator) {
-            $forUpdate = $this->ordersUpdateProvider();
-            $updated   = $creator->massUpdateOrders($forUpdate);
+            foreach ($this->ordersUpdateProvider() as $forUpdate) {
+                $updated = $creator->massUpdateOrders($forUpdate);
 
-            $this->assertSameSize($forUpdate, $updated);
+                $this->assertSameSize($forUpdate, $updated);
 
-            $validator = $this->createValidator();
-            foreach ($updated as $order) {
-                $this->assertThat(
-                    $order,
-                    $this->logicalOr(
-                        $this->isInstanceOf(OrderDTO::class),
-                        $this->isInstanceOf(ByErrorDTO::class)
-                    )
-                );
+                $validator = $this->createValidator();
+                foreach ($updated as $order) {
+                    $this->assertThat(
+                        $order,
+                        $this->logicalOr(
+                            $this->isInstanceOf(OrderDTO::class),
+                            $this->isInstanceOf(ByErrorDTO::class)
+                        )
+                    );
 
-                $violations = $validator->validate($order);
-                $this->assertCount(0, $violations, (string) $violations);
+                    $violations = $validator->validate($order);
+                    $this->assertCount(0, $violations, (string) $violations);
+                }
             }
 
             return;
