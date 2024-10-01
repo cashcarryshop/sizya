@@ -18,7 +18,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 /**
  * DTO для дополнительных полей.
  *
- * Свойства article и orderid взаимозаменяемые,
+ * Свойства article и productId взаимозаменяемые,
  * но обязательные.
  *
  * @category DTO
@@ -27,30 +27,30 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  *
- * @property ?string $orderId  Идентификатор товара
- * @property ?string $article  Артикул товара
- * @property int     $quantity Количество товаров
- * @property int     $reserve  Количество зарезервированных товаров
- * @property float   $price    Цена товара
- * @property float   $discount Скидка
- * @property ?string $type     Тип товара
- * @property ?string $currency Валюта
- * @property ?bool   $vat      Учитывать ли НДС
+ * @property ?string $productId Идентификатор товара
+ * @property ?string $article   Артикул товара
+ * @property int     $quantity  Количество товаров
+ * @property int     $reserve   Количество зарезервированных товаров
+ * @property float   $price     Цена товара
+ * @property float   $discount  Скидка
+ * @property ?string $type      Тип товара
+ * @property ?string $currency  Валюта
+ * @property ?bool   $vat       Учитывать ли НДС
  */
 class PositionCreateDTO extends AbstractDTO
 {
     /**
      * Создать экземпляр позиции
      *
-     * @param ?string $orderId  Идентификатор товара
-     * @param ?string $article  Артикул товара
-     * @param ?string $type     Тип товара
-     * @param int     $quantity Количество товаров
-     * @param int     $reserve  Количество зарезервированных товаров
-     * @param float   $price    Цена товара
-     * @param float   $discount Скидка
-     * @param ?string $currency Валюта
-     * @param ?bool   $vat      Учитывать ли НДС
+     * @param ?string $productId Идентификатор товара
+     * @param ?string $article   Артикул товара
+     * @param ?string $type      Тип товара
+     * @param int     $quantity  Количество товаров
+     * @param int     $reserve   Количество зарезервированных товаров
+     * @param float   $price     Цена товара
+     * @param float   $discount  Скидка
+     * @param ?string $currency  Валюта
+     * @param ?bool   $vat       Учитывать ли НДС
      */
     public function __construct(
         #[Assert\Type(['string', 'null'])]
@@ -58,11 +58,11 @@ class PositionCreateDTO extends AbstractDTO
             expression: 'this.article === null',
             constraints: [new Assert\NotBlank]
         )]
-        public $orderId = null,
+        public $productId = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(
-            expression: 'this.orderId === null',
+            expression: 'this.productId === null',
             constraints: [new Assert\NotBlank]
         )]
         public $article = null,

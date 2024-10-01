@@ -18,8 +18,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 /**
  * DTO для обновления позиций.
  *
- * Если передать `orderId` вместе с `article`,
- * `orderId` будет приоритетнее.
+ * Если передать `productId` вместе с `article`,
+ * `productId` будет приоритетнее.
  *
  * @category DTO
  * @package  Sizya
@@ -27,16 +27,16 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  *
- * @property string  $id       Идентификатор позиции
- * @property ?string $orderId  Идентификатор товара
- * @property ?string $article  Артикул товара
- * @property int     $quantity Количество товаров
- * @property int     $reserve  Количество зарезервированных товаров
- * @property float   $price    Цена товара
- * @property float   $discount Скидка
- * @property ?string $type     Тип товара
- * @property ?string $currency Валюта
- * @property ?bool   $vat      Учитывать ли НДС
+ * @property string  $id        Идентификатор позиции
+ * @property ?string $productId Идентификатор товара
+ * @property ?string $article   Артикул товара
+ * @property int     $quantity  Количество товаров
+ * @property int     $reserve   Количество зарезервированных товаров
+ * @property float   $price     Цена товара
+ * @property float   $discount  Скидка
+ * @property ?string $type      Тип товара
+ * @property ?string $currency  Валюта
+ * @property ?bool   $vat       Учитывать ли НДС
  */
 class PositionUpdateDTO extends AbstractDTO
 {
@@ -44,16 +44,16 @@ class PositionUpdateDTO extends AbstractDTO
     /**
      * Создать экземпляр позиции
      *
-     * @param string  $id       Идентификатор позиции
-     * @param ?string $orderId  Идентификатор товара
-     * @param ?string $article  Артикул товара
-     * @param ?string $type     Тип товара
-     * @param int     $quantity Количество товаров
-     * @param int     $reserve  Количество зарезервированных товаров
-     * @param float   $price    Цена товара
-     * @param float   $discount Скидка
-     * @param ?string $currency Валюта
-     * @param ?bool   $vat      Учитывать ли НДС
+     * @param string  $id        Идентификатор позиции
+     * @param ?string $productId Идентификатор товара
+     * @param ?string $article   Артикул товара
+     * @param ?string $type      Тип товара
+     * @param int     $quantity  Количество товаров
+     * @param int     $reserve   Количество зарезервированных товаров
+     * @param float   $price     Цена товара
+     * @param float   $discount  Скидка
+     * @param ?string $currency  Валюта
+     * @param ?bool   $vat       Учитывать ли НДС
      */
     public function __construct(
         #[Assert\Type('string')]
@@ -65,7 +65,7 @@ class PositionUpdateDTO extends AbstractDTO
             expression: 'value !== null',
             constraints: [new Assert\NotBlank]
         )]
-        public $orderId = null,
+        public $productId = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(

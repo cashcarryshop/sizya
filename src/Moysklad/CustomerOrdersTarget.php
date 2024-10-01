@@ -156,14 +156,14 @@ class CustomerOrders extends CustomerOrdersSource
                             ),
                             'positions' => \array_map(
                                 static fn ($position) => PositionDTO::fromArray([
-                                    'id'       => $position['id'],
-                                    'orderId'  => $position['assortment']['id'],
-                                    'type'     => $position['assortment']['meta']['type'],
-                                    'quantity' => $position['quantity'],
-                                    'reserve'  => $position['reserve'] ?? 0,
-                                    'price'    => (float) ($position['price'] / 100),
-                                    'discount' => (float) $position['discount'],
-                                    'original' => $position
+                                    'id'        => $position['id'],
+                                    'productId' => $position['assortment']['id'],
+                                    'type'      => $position['assortment']['meta']['type'],
+                                    'quantity'  => $position['quantity'],
+                                    'reserve'   => $position['reserve'] ?? 0,
+                                    'price'     => (float) ($position['price'] / 100),
+                                    'discount'  => (float) $position['discount'],
+                                    'original'  => $position
                                 ]),
                                 $item['positions']['rows']
                             ),
@@ -190,7 +190,7 @@ class CustomerOrders extends CustomerOrdersSource
         $articles = [];
         foreach ($validated as $oIdx => $order) {
             foreach ($order->positions as $pIdx => $position) {
-                if ($position->orderId) {
+                if ($position->productId) {
                     continue;
                 }
 
@@ -341,14 +341,14 @@ class CustomerOrders extends CustomerOrdersSource
         SizyaUtils::setIfNotNull('price',    $position, $data)
             && $data['price'] = $data['price'] * 100;
 
-        if ($position['orderId']->orderId) {
+        if ($position->productId) {
             $type = 'product';
             if ($position->type) {
                 $type = $position->type;
             }
 
             $data['assortment'] = [
-                'meta' => $this->meta()->$type($position->orderId)
+                'meta' => $this->meta()->$type($position->productId)
             ];
 
             return $data;

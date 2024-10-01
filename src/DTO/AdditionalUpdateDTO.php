@@ -30,7 +30,6 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 class AdditionalUpdateDTO extends AbstractDTO
 {
-
     /**
      * Создать экземпляр доп. поля
      *
