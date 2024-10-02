@@ -105,16 +105,26 @@ class CustomerOrdersTarget extends CustomerOrdersSource
     private function _createOrUpdate(array $orders): array
     {
         [
-            $validated,
-            $errors
+            $firstStepValidated,
+            $firstStepErrors
         ] = SizyaUtils::splitByValidationErrors(
             $this->getValidator(), $orders, [
                 new Assert\NotBlank,
-                new Assert\Type([OrderCreateDTO::class, OrderUpdateDTO::class]),
-                new Assert\Valid
+                new Assert\Type([OrderCreateDTO::class, OrderUpdateDTO::class])
             ]
         );
         unset($orders);
+
+        [
+            $validated,
+            $errors
+        ] = SizyaUtils::splitByValidationErrors(
+            $this->getValidator(), $firstStepValidated, [new Assert\Valid]
+        );
+        unset($firstStepValidated);
+
+        $errors = \array_merge($firstStepErrors, $errors);
+        unset($firstStepErrors);
 
         $this->_prepareOrders($validated, $errors);
 
