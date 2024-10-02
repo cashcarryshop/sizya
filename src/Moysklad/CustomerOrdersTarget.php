@@ -20,6 +20,7 @@ use CashCarryShop\Sizya\DTO\{OrderDTO, OrderCreateDTO, OrderUpdateDTO};
 use CashCarryShop\Sizya\DTO\{PositionDTO, PositionCreateDTO, PositionUpdateDTO};
 use CashCarryShop\Sizya\DTO\{AdditionalDTO, AdditionalCreateDTO, AdditionalUpdateDTO};
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
+use Symfony\Component\Validator\Constraints as Assert;
 
 use CashCarryShop\Sizya\Utils as SizyaUtils;
 use GuzzleHttp\Promise\Utils as PromiseUtils;
