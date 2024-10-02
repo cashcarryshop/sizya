@@ -108,7 +108,7 @@ class CustomerOrdersTarget extends CustomerOrdersSource
             $validated,
             $errors
         ] = SizyaUtils::splitByValidationErrors(
-            $this->getValidator(), $productsIds, [
+            $this->getValidator(), $orders, [
                 new Assert\NotBlank,
                 new Assert\Type([OrderCreateDTO::class, OrderUpdateDTO::class]),
                 new Assert\Valid
