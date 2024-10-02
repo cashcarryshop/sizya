@@ -15,7 +15,7 @@ namespace CashCarryShop\Sizya\Tests\Traits;
 
 use CashCarryShop\Sizya\OrdersCreatorInterface;
 use CashCarryShop\Sizya\DTO\OrderDTO;
-use CashCarryShop\Sizya\DTO\OrdersCreateDTO;
+use CashCarryShop\Sizya\DTO\OrderCreateDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
 
 /**
