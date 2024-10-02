@@ -31,7 +31,7 @@ use CashCarryShop\Sizya\DTO\ByErrorDTO;
  */
 trait OrdersUpdaterTests
 {
-    use UpdateValidatorTrait;
+    use CreateValidatorTrait;
 
     public function testMassUpdateOrders(): void
     {
