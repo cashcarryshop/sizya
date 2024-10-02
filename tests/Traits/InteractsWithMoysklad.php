@@ -46,14 +46,7 @@ trait InteractsWithMoysklad
         static $methods;
 
         $methods ??= [
-            '1.2/report/stock/bystore/current' => function ($request, $options) {
-                $reqBody = \json_decode(
-                    $request->getBody()->getContents(),
-                    true,
-                    512,
-                    JSON_THROW_ON_ERROR
-                );
-
+            'get@1.2/report/stock/bystore/current' => function ($request, $options) {
                 $options = \array_replace(
                     [
                         'captureItem'  => static fn () => null,
@@ -85,7 +78,7 @@ trait InteractsWithMoysklad
 
                 return static::createJsonResponse(body: $options['items']);
             },
-            '1.2/entity/assortment' => function ($request, $options) {
+            'get@1.2/entity/assortment' => function ($request, $options) {
                 \parse_str($request->getUri()->getQuery(), $query);
 
                 $options = \array_replace(
@@ -196,7 +189,7 @@ trait InteractsWithMoysklad
 
                 return static::createJsonResponse(body: $body);
             },
-            '1.2/entity/customerorder' => function ($request, $options) {
+            'get@1.2/entity/customerorder' => function ($request, $options) {
                 \parse_str($request->getUri()->getQuery(), $query);
 
                 $options = \array_replace(
@@ -252,7 +245,7 @@ trait InteractsWithMoysklad
 
                     $expand = [
                         'positions'  => $exp[0] === 'positions',
-                        'assortment' => ($exp[1] ?? 'none') === 'assortment'
+                        'assortment' => isset($exp[1]) && $exp[1] === 'assortment'
                     ];
                 }
 
@@ -336,6 +329,137 @@ trait InteractsWithMoysklad
                 $body['meta']['href'] = (string) $request->getUri();
 
                 return static::createJsonResponse(body: $body);
+            },
+            'post@1.2/entity/customerorder' => function ($request, $options) {
+                \parse_str($request->getUri()->getQuery(), $query);
+                $reqBody = \json_decode(
+                    $request->getBody()->getContents(),
+                    true,
+                    512,
+                    JSON_THROW_ON_ERROR,
+                );
+
+                $body = static::getResponseData(
+                    'post@api.moysklad.ru/api/remap/1.2/entity/customerorder'
+                )['body'];
+
+                $item      = $body[0];
+                $attribute = $item['attributes'][0];
+                $expand    = [
+                    'positions'  => false,
+                    'assortment' => false
+                ];
+
+                if (isset($query['expand'])) {
+                    $exp = \explode('.', $query['expand']);
+
+                    $expand = [
+                        'positions'  => $exp[0] === 'positions',
+                        'assortment' => isset($exp[1]) && $exp[1] === 'assortment'
+                    ];
+                }
+
+                $makeItem = function ($received) use ($item) {
+                    $replaces = [
+                        '$id' => $id = $received['id'] ?? static::guidv4()
+                    ];
+
+                    $item['id']      = $id;
+                    $item['meta']['href'] = \strtr(
+                        $item['meta']['href'], [
+                            '$id' => $id
+                        ]
+                    );
+
+                    $item['updated']      = $received['updated'] ?? static::fakeDate();
+                    $item['name']         = $received['name'] ?? static::fakeArticle();
+                    $item['moment']       = $received['moment'] ?? static::fakeDate();
+                    $item['created']      = $received['created'] ?? static::fakeDate();
+                    $item['applicable']   = $received['applicable'] ?? true;
+                    $item['vatEnabled']   = $received['vatEnabled'] ?? false;
+                    $item['vatInvaluded'] = $received['vatIncluded'] ?? false;
+                    $item['published']    = $received['published'] ?? true;
+                    $item['printed']      = $received['printed'] ?? false;
+                    $item['organization'] = $received['organization'];
+                    $item['agent']        = $received['agent'];
+
+                    if (isset($received['state'])) {
+                        $item['state'] = $received['state'];
+                    }
+
+                    $item['positions']['meta']['href'] = \strtr(
+                        $item['positions']['meta']['href'],
+                        $replaces
+                    );
+
+                    $issetPositions = isset($received['positions']);
+
+                    $item['positins']['size'] = $issetPositions
+                        ? \count($received['positions'])
+                        : 0;
+
+                    if ($issetPositions && $expand['positions']) {
+                        $positions = [];
+                        foreach ($received['positions'] as $position) {
+                            $created = static::makePosition([
+                                'id'       => $position['id'] ?? static::guidv4(),
+                                'entityId' => $id,
+                                'category' => 'customerorder'
+                            ]);
+
+                            if ($expand['assortment']) {
+                                $created['assortment'] = static::makeAssortmentItem([
+                                    'id' => static::guidFromHref(
+                                        $position['assortment']['meta']['href']
+                                    ),
+                                    'type' => $position['assortment']['meta']['type']
+                                ]);
+                            }
+
+                            $created['quantity'] = $position['quantity'] ?? 1;
+                            $created['price']    = $position['price']
+                                ?? (float) \random_int(10, 10000);
+
+                            $created['discount']   = $position['discount'] ?? 0.0;
+                            $created['vat']        = $position['vat'] ?? 0;
+                            $created['vatEnabled'] = $position['vatEnabled'] ?? false;
+
+                            $created['reserve'] = $created['quantity'];
+                            if ($position['reserve']) {
+                                $created['reserve'] = $position['reserve'];
+                            }
+
+                            $positions[] = $position;
+                        }
+
+                        $item['positions'] = ['rows' => $positions];
+                    }
+
+                    $item['attributes'] = [];
+
+                    if (isset($received['attributes'])) {
+                        foreach ($received['attributes'] as $attribute) {
+                            $item['attributes'][] = static::makeAttribute([
+                                'id'    => static::guidFromHref(
+                                    $attribute['meta']['href']
+                                ),
+                                'value' => $attribute['value']
+                            ]);
+                        }
+                    }
+
+                    $options['captureItem']($item);
+
+                    return $item;
+                };
+
+                $body = isset($reqBody[0])
+                    ? $makeItem($reqBody)
+                    : \array_map($makeItem, $reqBody);
+
+                $options['captureBody']($body);
+
+                return $body;
             }
         ];
 
@@ -348,7 +472,11 @@ trait InteractsWithMoysklad
                 $options['capture']($request, $options);
             }
 
-            return $methods[$method]($request, $options);
+            $exp    = \exp('@', $method);
+            $method = isset($exp[1]) ? $exp[0] : 'get';
+            $path = $exp[1] ?? $exp[0];
+
+            return $methods["{$method}@{$path}"]($request, $options);
         };
     }
 
@@ -551,44 +679,15 @@ trait InteractsWithMoysklad
     }
 
     /**
-     * Создать атрибут
+     * Получить guid из href
      *
-     * Массив $options принимает:
+     * @param string $href Ссылка
      *
-     * - id:       (string) Идентификатор атрибута
-     * - type:     (string) Тип атрибута
-     * - category: (string) Категорию атрибута
-     * - value:    (mixed)  Значение атрибута
-     * - template: (array)  Шаблон атрибута
-     *
-     * @param array $options Опции
-     *
-     * @return array
+     * @return string
      */
-    protected static function makeAttributeItem(array $options = []): array
+    protected static function guidFromHref(string $href): string
     {
-        $options = \array_replace(
-            [
-                'id'       => static::guidv4(),
-                'article'  => static::fakeArticle(),
-                'value'    => static::fakeString(),
-                'type'     => 'string',
-                'category' => 'customerorder'
-            ],
-            $options
-        );
-
-        $options['template']['meta']['href'] = \strtr(
-            $options['template']['meta']['href'], [
-                'id'       => $options['id'],
-                'category' => $options['category']
-            ]
-        );
-
-        $options['template']['id']    = $options['id'];
-        $options['template']['type']  = $options['type'];
-        $options['template']['value'] = $options['value'];
-
-        return $options['template'];
+        $exp = \explode('/', $href);
+        return \end($exp);
     }
 }
