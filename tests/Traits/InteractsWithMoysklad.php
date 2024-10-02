@@ -339,6 +339,14 @@ trait InteractsWithMoysklad
                     JSON_THROW_ON_ERROR,
                 );
 
+                $options = \array_replace(
+                    [
+                        'captureItem' => static fn () => null,
+                        'captureBody' => static fn () => null
+                    ],
+                    $options
+                );
+
                 $body = static::getResponseData(
                     'post@api.moysklad.ru/api/remap/1.2/entity/customerorder'
                 )['body'];
@@ -459,7 +467,7 @@ trait InteractsWithMoysklad
 
                 $options['captureBody']($body);
 
-                return $body;
+                return static::createJsonResponse(body: $body);
             }
         ];
 
