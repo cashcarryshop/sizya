@@ -209,12 +209,15 @@ class Utils
             $chunk[$key] = $value;
 
             \next($items);
-            if ($shouldPush($counter, $i)) {
+            if ($shouldPush($counter, $key, $i)) {
                 $counter    = 0;
                 $promises[] = $getPromise($data);
                 $chunks[]   = $chunk;
                 $chunk      = [];
                 $data       = [];
+            } else if ($chunk && $i + 1 === $count) {
+                $chunks[]   = $chunk;
+                $promises[] = $getPromise($data);
             }
         }
 
