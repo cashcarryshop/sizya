@@ -33,7 +33,7 @@ use GuzzleHttp\Promise\Utils as PromiseUtils;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-class CustomerOrders extends CustomerOrdersSource
+class CustomerOrdersTarget extends CustomerOrdersSource
     implements SynchronizerTargetInterface,
                OrdersCreatorInterface,
                OrdersUpdaterInterface
