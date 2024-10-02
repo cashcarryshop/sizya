@@ -472,7 +472,7 @@ trait InteractsWithMoysklad
                 $options['capture']($request, $options);
             }
 
-            $exp    = \exp('@', $method);
+            $exp    = \explode('@', $method);
             $method = isset($exp[1]) ? $exp[0] : 'get';
             $path = $exp[1] ?? $exp[0];
 
