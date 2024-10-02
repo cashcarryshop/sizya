@@ -461,13 +461,19 @@ trait InteractsWithMoysklad
                     return $item;
                 };
 
-                $body = isset($reqBody[0])
+                $isSingle = isset($reqBody[0]);
+
+                $body = $isSingle
                     ? $makeItem($reqBody)
                     : \array_map($makeItem, $reqBody);
 
                 $options['captureBody']($body);
 
-                return static::createJsonResponse(body: $body);
+                return static::createJsonResponse(
+                    body: $isSingle
+                        ? $body
+                        : \array_values($body)
+                );
             }
         ];
 
