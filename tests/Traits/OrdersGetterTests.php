@@ -86,6 +86,8 @@ trait OrdersGetterTests
                     $this->assertCount(0, $violations, (string) $violations);
                 }
             }
+
+            return;
         }
 
         $this->markTestIncomplete('Orders getter is null');
