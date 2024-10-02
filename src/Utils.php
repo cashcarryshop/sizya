@@ -250,7 +250,7 @@ class Utils
             return false;
         }
 
-        $data[$key] = $object->$targetKey;
+        $data[$targetKey] = $object->$key;
         return true;
     }
 }

@@ -141,11 +141,14 @@ class CustomerOrdersTarget extends CustomerOrdersSource
             static fn ($data) => (clone $builder)->body($data)->build('POST')
         );
 
-        return \array_merge(
-            SizyaUtils::mapResults(
-                $chunks,
-                PromiseUtils::settle($promises)->wait(),
-                static fn ($response, $chunk) => [
+        $orders = SizyaUtils::mapResults(
+            \array_map(
+                static fn ($chunk) => \range(0, \count($chunk) - 1),
+                $chunks
+            ),
+            PromiseUtils::settle($promises)->wait(),
+            function ($response, $chunk) {
+                return [
                     'values' => $chunk,
                     'dtos'   => \array_map(
                         static fn ($item) => OrderDTO::fromArray([
@@ -182,9 +185,11 @@ class CustomerOrdersTarget extends CustomerOrdersSource
                         ]),
                         $this->decodeResponse($response)
                     )
-                ]
-            )
+                ];
+            }
         );
+
+        return \array_merge($orders, $errors);
     }
 
     /**
@@ -220,22 +225,24 @@ class CustomerOrdersTarget extends CustomerOrdersSource
             }
         }
 
-        $products = $this->getSettings('products')
-            ->getProductsByArticles(\array_keys($articles));
+        if ($articles) {
+            $products = $this->getSettings('products')
+                ->getProductsByArticles(\array_keys($articles));
 
-        foreach ($products as $item) {
-            if ($item instanceof ByErrorDTO) {
-                $errors[] = ByErrorDTO::fromArray([
-                    'type'   => ByErrorDTO::NOT_FOUND,
-                    'value'  => $validated[$articles[$item->value]['oIdx']],
-                    'reason' => $item
-                ]);
-                unset($validated[$articles[$item->value]['oIdx']]);
-                continue;
+            foreach ($products as $item) {
+                if ($item instanceof ByErrorDTO) {
+                    $errors[] = ByErrorDTO::fromArray([
+                        'type'   => ByErrorDTO::NOT_FOUND,
+                        'value'  => $validated[$articles[$item->value]['oIdx']],
+                        'reason' => $item
+                    ]);
+                    unset($validated[$articles[$item->value]['oIdx']]);
+                    continue;
+                }
+
+                $data = $articles[$item->article];
+                $validated[$data['oIdx']]->positions[$data['pIdx']]->offerId = $item->id;
             }
-
-            $data = $articles[$item->article];
-            $validated[$data['oIdx']]->positions[$data['pIdx']]->offerId = $item->id;
         }
     }
 
@@ -264,7 +271,10 @@ class CustomerOrdersTarget extends CustomerOrdersSource
         $this->_setIfExistInSettings('salesChannel', $data)
             && $data['salesChannel'] = $this->meta()->salesChannel($data['salesChannel']);
 
-        SizyaUtils::setIfNotNull('id',          $order, $data);
+        if (\property_exists($order, 'id')) {
+            SizyaUtils::setIfNotNull('id', $order, $data);
+        }
+
         SizyaUtils::setIfNotNull('article',     $order, $data, 'name');
         SizyaUtils::setIfNotNull('description', $order, $data);
         SizyaUtils::setIfNotNull('created',     $order, $data)
@@ -278,12 +288,12 @@ class CustomerOrdersTarget extends CustomerOrdersSource
                 )
             ];
 
-        SizyaUtils::setIfNotNull('shipment_date', $order, $data, 'deliveryPlannedMoment')
+        SizyaUtils::setIfNotNull('shipmentDate', $order, $data, 'deliveryPlannedMoment')
             && $data['deliveryPlannedMoment'] = Utils::dateToMoysklad(
                 $data['deliveryPlannedMoment']
             );
 
-        SizyaUtils::setIfNotNull('additional', $order, $data, 'attributes')
+        SizyaUtils::setIfNotNull('additionals', $order, $data, 'attributes')
             && $data['attributes'] = \array_map(
                 fn ($additional) => $this->_convertAdditional($additional),
                 $data['attributes']
@@ -326,8 +336,7 @@ class CustomerOrdersTarget extends CustomerOrdersSource
     private function _convertAdditional(AdditionalCreateDTO|AdditionalUpdateDTO $additional): array
     {
         return [
-            'name'  => $additional['name'],
-            'value' => $additional['value'],
+            'value' => $additional->value,
             'meta'  => $this->meta()->create(
                 "entity/customerorder/metadata/attributes/{$additional->entityId}",
                 'attributemetadata'
@@ -346,7 +355,10 @@ class CustomerOrdersTarget extends CustomerOrdersSource
     {
         $data = [];
 
-        SizyaUtils::setIfNotNull('id',       $position, $data);
+        if (\property_exists($position, 'id')) {
+            SizyaUtils::setIfNotNull('id', $position, $data);
+        }
+
         SizyaUtils::setIfNotNull('quantity', $position, $data);
         SizyaUtils::setIfNotNull('discount', $position, $data);
         SizyaUtils::setIfNotNull('price',    $position, $data)
