@@ -101,6 +101,16 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
+     * Сгенерировать фейковую дату в формате Y-m-d H:i:s.
+     *
+     * @return string
+     */
+    protected static function fakeDate(): string
+    {
+        return \date('Y-m-d H:i:s', \mt_rand(1, \time()));
+    }
+
+    /**
      * Сгенерировать массивы с данными для dataProvider.
      *
      * Массив $options принимает:
