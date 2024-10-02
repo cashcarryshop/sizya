@@ -647,7 +647,7 @@
         "invoicedSum": 0
       }
     ]
-  }
+  },
   "api.moysklad.ru/api/remap/1.2/entity/customerorder/$orderId/positions": {
     "headers": {},
     "body": {
