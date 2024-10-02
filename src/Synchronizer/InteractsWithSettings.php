@@ -14,8 +14,6 @@
 namespace CashCarryShop\Sizya\Synchronizer;
 
 use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
-use CashCarryShop\Synchronizer\SynchronizerDualRoleInterface;
 use CashCarryShop\Sizya\Exceptions\ValidationException;
 
 /**
