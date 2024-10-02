@@ -70,7 +70,7 @@ trait OrdersCreatorTests
 
         if ($creator) {
             $forCreate = $this->orderCreateProvider();
-            $updated   = $creator->massCreateOrders();
+            $updated   = $creator->massCreateOrders($forCreate);
 
             $validator = $this->createValidator();
             $this->assertThat(

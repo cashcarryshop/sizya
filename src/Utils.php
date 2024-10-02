@@ -179,7 +179,7 @@ class Utils
      * @param array                                $items      Элементы
      * @param callable                             $getData    Получить данные одного элемента для promise
      * @param callable                             $getPromise Получить Promise
-     * @param ?callable(int, int|string, int):bool $shouldPush Проверка следует ли добавить новый чанк
+     * @param ?callable(int, int):bool $shouldPush Проверка следует ли добавить новый чанк
      *
      * @return array<string, array>
      */
@@ -200,13 +200,16 @@ class Utils
         $promises = [];
         $data     = [];
 
+        \reset($items);
         for ($i = 0; $i < $count; ++$i) {
-            $key = $currentCount;
+            $key   = \key($items);
+            $value = \current($items);
 
-            $data[]      = $getData($items[$i], $key);
-            $chunk[$key] = $items[$i];
+            $data[]      = $getData($value, $key);
+            $chunk[$key] = $value;
 
-            if ($shouldPush($counter, $key, $i)) {
+            \next($items);
+            if ($shouldPush($counter, $i)) {
                 $counter    = 0;
                 $promises[] = $getPromise($data);
                 $chunks[]   = $chunk;
