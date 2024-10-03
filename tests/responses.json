@@ -1104,5 +1104,19 @@
         "product_exemplars": null
       }
     }
+  },
+  "api-seller.ozon.ru/v2/products/stocks": {
+    "headers": {},
+    "body": {
+      "result": [
+        {
+          "warehouse_id": 22142605386000,
+          "product_id": 118597312,
+          "offer_id": "PH11042",
+          "updated": true,
+          "errors": [ ]
+        }
+      ]
+    }
   }
 }
