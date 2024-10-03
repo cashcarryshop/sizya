@@ -100,8 +100,11 @@ class CustomerOrdersTargetTest extends TestCase
         ]);
 
         static::$handler->append(
-            // static::createMethodResponse('1.2/entity/assortment'),
-            static::createMethodResponse('post@1.2/entity/customerorder')
+            ...\array_fill(
+                0,
+                \count($provides),
+                static::createMethodResponse('post@1.2/entity/customerorder')
+            )
         );
 
         return $provides;
@@ -110,7 +113,6 @@ class CustomerOrdersTargetTest extends TestCase
     protected function orderUpdateProvider(): OrderUpdateDTO
     {
         static::$handler->append(
-            // static::createMethodResponse('1.2/entity/assortment'),
             static::createMethodResponse('post@1.2/entity/customerorder')
         );
 
@@ -144,8 +146,11 @@ class CustomerOrdersTargetTest extends TestCase
         ]);
 
         static::$handler->append(
-            // static::createMethodResponse('1.2/entity/assortment'),
-            static::createMethodResponse('post@1.2/entity/customerorder'),
+            ...\array_fill(
+                0,
+                \count($provides),
+                static::createMethodResponse('post@1.2/entity/customerorder')
+            ),
         );
 
         return $provides;

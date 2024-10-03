@@ -82,15 +82,19 @@ class CustomerOrdersSourceTest extends TestCase
         ]);
 
         static::$handler->append(
-            static::createMethodResponse('1.2/entity/customerorder', [
-                'captureItems' => function (&$items) use ($invalidIds) {
-                    foreach ($items as $idx => $item) {
-                        if (\in_array($item['id'], $invalidIds)) {
-                            unset($items[$idx]);
+            ...\array_fill(
+                0,
+                \count($ids),
+                static::createMethodResponse('1.2/entity/customerorder', [
+                    'captureItems' => function (&$items) use ($invalidIds) {
+                        foreach ($items as $idx => $item) {
+                            if (\in_array($item['id'], $invalidIds)) {
+                                unset($items[$idx]);
+                            }
                         }
                     }
-                }
-            ])
+                ])
+            )
         );
 
         return $ids;

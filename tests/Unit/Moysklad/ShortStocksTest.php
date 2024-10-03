@@ -41,7 +41,6 @@ class ShortStocksTest extends TestCase
      */
     protected static ?ShortStocks $entity = null;
 
-
     public static function setUpBeforeClass(): void
     {
         static::$entity = new ShortStocks([
