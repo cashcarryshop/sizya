@@ -32,7 +32,6 @@ use CashCarryShop\Sizya\DTO\PositionCreateDTO;
 use CashCarryShop\Sizya\DTO\AdditionalCreateDTO;
 use CashCarryShop\Sizya\DTO\RelationDTO;
 use Symfony\Component\Validator\Constraints as Assert;
-use Respect\Validation\Validator as v;
 
 /**
  * Синхронизатор заказов
@@ -74,9 +73,53 @@ class OrdersSynchronizer extends AbstractSynchronizer
     }
 
     /**
+     * Значение по умолчанию для настроек.
+     *
+     * @return array
+     */
+    protected function defaults(): array
+    {
+        return [
+            'doUpdate'   => true,
+            'doCreate'   => true,
+            'middleware' => null,
+            'status'     => [],
+            'additional' => null
+        ];
+    }
+
+    /**
+     * Получить правила валидации настроек
+     * для метода synchronize.
+     *
+     * @return array
+     */
+    protected function rules(): array
+    {
+        return [
+            'doUpdate'   => [new Assert\Type('bool')],
+            'doCreate'   => [new Assert\Type('bool')],
+            'middleware' => [new Assert\Type(['callable', 'null'])],
+            'repository' => [new Assert\Type(RelationRepositoryInterface::class)],
+            'status'     => [
+                new Assert\NotBlank,
+                new Assert\All(
+                    new Assert\Collection([
+                        'source' => [new Assert\Type('string')],
+                        'target' => [new Assert\Type('string')]
+                    ])
+                )
+            ],
+            'additional' => [new Assert\Type(['string', 'bool'])],
+        ];
+    }
+
+    /**
      * Синхронизировать
      *
      * Массив $settings принимает:
+     *
+     * Смотреть правила валидации выше, метод rules.
      *
      * - optional(doUpdate):   (bool)     Обновлять ли параметры заказа
      * - optional(doCreate):   (bool)     Создавать ли новые заказы
@@ -132,36 +175,6 @@ class OrdersSynchronizer extends AbstractSynchronizer
      */
     protected function process(array $settings): bool
     {
-        $settings = \array_replace(
-            [
-                'doUpdate' => true,
-                'doCreate' => true
-            ],
-            $settings
-        );
-
-        // todo: Заменить валидацию respect на symfony
-        v::allOf(
-            v::key('doUpdate', v::boolType(), false),
-            v::key('doCreate', v::boolType(), false),
-            v::key('middleware', v::callableType(), false),
-            v::key('repository', v::instance(RelationRepositoryInterface::class)),
-            v::key('status', v::each(
-                v::allOf(
-                    v::key('source', v::stringType()),
-                    v::key('target', v::stringType())
-                )
-            ), false),
-            v::key('additional', v::stringType(), false),
-            v::when(
-                v::key('additional', v::stringType()),
-                $this->target instanceof OrdersGetterByAdditionalInterface
-                    ? v::alwaysValid()
-                    : v::alwaysInvalid(),
-                v::alwaysValid()
-            )
-        )->assert($settings);
-
         $this->_run($settings);
 
         return true;
@@ -529,7 +542,7 @@ class OrdersSynchronizer extends AbstractSynchronizer
             'targets'   => $targets
         ] = $data;
 
-        if (!isset($settings['middleware'])) {
+        if ($settings['middleware']) {
             return [$forCreate, $forUpdate];
         }
 

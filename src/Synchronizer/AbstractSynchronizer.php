@@ -15,6 +15,8 @@ namespace CashCarryShop\Sizya\Synchronizer;
 
 use CashCarryShop\Synchronizer\AbstractSynchronizer as DefaultAbstractSynchronizer;
 use CashCarryShop\Sizya\Events\Error;
+use CashCarryShop\Sizya\Exceptions\ValidationException;
+use Symfony\Component\Validator\Constraints as Assert;
 use Throwable;
 
 /**
@@ -29,6 +31,8 @@ use Throwable;
  */
 abstract class AbstractSynchronizer extends DefaultAbstractSynchronizer
 {
+    use InteractsWithValidator;
+
     /**
      * Переменная, отражающая что синхронизатор выполняется
      *
@@ -58,6 +62,15 @@ abstract class AbstractSynchronizer extends DefaultAbstractSynchronizer
     {
         $this->running = true;
         try {
+            $settings = \array_replace($this->defaults(), $settings);
+
+            $violations = $this->getValidator()
+                ->validate($settings, new Assert\Collection($this->rules()));
+
+            if ($violations->count()) {
+                throw new ValidationException(violations: $violations);
+            }
+
             return $this->process($settings);
         } catch (Throwable $exception) {
             $this->running = false;
@@ -65,6 +78,27 @@ abstract class AbstractSynchronizer extends DefaultAbstractSynchronizer
         }
 
         return true;
+    }
+
+    /**
+     * Значение по умолчанию для настроек.
+     *
+     * @return array
+     */
+    protected function defaults(): array
+    {
+        return [];
+    }
+
+    /**
+     * Получить правила валидации настроек
+     * для метода synchronize.
+     *
+     * @return array
+     */
+    protected function rules(): array
+    {
+        return [];
     }
 
     /**

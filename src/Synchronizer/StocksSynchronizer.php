@@ -19,7 +19,7 @@ use CashCarryShop\Sizya\StocksGetterInterface;
 use CashCarryShop\Sizya\StocksUpdaterInterface;
 use CashCarryShop\Sizya\Events\Success;
 use CashCarryShop\Sizya\DTO\StockUpdateDTO;
-use Respect\Validation\Validator as v;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Синхронизатор остатков
@@ -56,10 +56,68 @@ class StocksSynchronizer extends AbstractSynchronizer
         return $target instanceof StocksUpdaterInterface;
     }
 
+
+    /**
+     * Значение по умолчанию для настроек.
+     *
+     * @return array
+     */
+    protected function defaults(): array
+    {
+        return [
+            'default_warehouse' => null,
+            'relations'         => []
+        ];
+    }
+
+    /**
+     * Получить правила валидации настроек
+     * для метода synchronize.
+     *
+     * @return array
+     */
+    protected function rules(): array
+    {
+        return [
+            'default_warehouse' => [
+                new Assert\Type(['string', 'null']),
+                new Assert\Callback(static function ($defaultWarehouse, $context) {
+                    if ($context->getRoot()['relatins']) {
+                        return;
+                    }
+
+                    $context->getValidator()->inContext($context)->validate(
+                        $defaultWarehouse, [new Assert\NotBlank]
+                    );
+                })
+            ],
+            'relations' => [
+                new Assert\Calback(static function ($relations, $context) {
+                    if ($context->getRoot()['default_warehouse']) {
+                        return;
+                    }
+
+                    $context->getvalidator()->inContext($context)->validate(
+                        $relations, [new Assert\NotBlank]
+                    );
+                }),
+                new Assert\All(
+                    new Assert\Collection([
+                        'source' => [new Assert\All(new Assert\Type('string'))],
+                        'target' => [new Assert\Type('string')]
+                    ])
+                )
+            ],
+        ];
+    }
+
     /**
      * Синхронизировать
      *
      * Массив $settings принимает:
+     *
+     * Правила валидацуии и значения по-умаолчанию
+     * смотерть выше. Методы defaults и rules.
      *
      * - optional(default_warehouse): (string) Идентификатор склада по-умолчанию
      * - optional(relations):         (array)  Массив связей между складами
@@ -92,22 +150,6 @@ class StocksSynchronizer extends AbstractSynchronizer
      */
     protected function process(array $settings): bool
     {
-        // todo: Заменить валидацию respect на symfony
-        v::allOf(
-            v::key('default_warehouse', v::stringType(), false),
-            v::key('relations', v::length(1)->each(
-                v::keySet(
-                    v::key('source', v::each(v::stringType())),
-                    v::key('target', v::stringType())
-                )
-            ), false),
-            v::when(
-                v::key('default_warehouse'),
-                v::alwaysValid(),
-                v::key('relations')
-            ),
-        )->assert($settings);
-
         $update = [];
         $stocks = $this->source->getStocks();
 
