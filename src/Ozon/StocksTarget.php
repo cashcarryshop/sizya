@@ -14,6 +14,7 @@
 namespace CashCarryShop\Sizya\Ozon;
 
 use CashCarryShop\Sizya\StocksUpdaterInterface;
+use CashCarryShop\Synchronizer\SynchronizerTargetInterface;
 use CashCarryShop\Sizya\DTO\StockUpdateDTO;
 use CashCarryShop\Sizya\DTO\StockDTO;
 use CashCarryShop\Sizya\DTO\ApiErrorDTO;
@@ -33,8 +34,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @link     https://github.com/cashcarryshop/sizya
  */
 class StocksTarget extends StocksSource
-    implements StocksUpdaterInterface,
-    SynchronizerTargetInterface
+    implements StocksUpdaterInterface, SynchronizerTargetInterface
 {
     /**
      * Обновить остатки
@@ -46,8 +46,8 @@ class StocksTarget extends StocksSource
     public function updateStocks(array $stocks): array
     {
         [
-            $errors,
-            $validated
+            $validated,
+            $errors
         ] = SizyaUtils::splitByValidationErrors(
             $this->getValidator(), $stocks, [
                 new Assert\NotBlank,

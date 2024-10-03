@@ -59,8 +59,6 @@ trait StocksUpdaterTests
                     $violations = $validator->validate($stock);
                     $this->assertCount(0, $violations);
                 }
-
-                $this->resetStocks($updater, $updateStocks);
             }
 
             return;
