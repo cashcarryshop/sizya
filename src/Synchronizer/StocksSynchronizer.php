@@ -18,6 +18,7 @@ use CashCarryShop\Synchronizer\SynchronizerTargetInterface;
 use CashCarryShop\Sizya\StocksGetterInterface;
 use CashCarryShop\Sizya\StocksUpdaterInterface;
 use CashCarryShop\Sizya\Events\Success;
+use CashCarryShop\Sizya\DTO\StockUpdateDTO;
 use Respect\Validation\Validator as v;
 
 /**
@@ -91,6 +92,7 @@ class StocksSynchronizer extends AbstractSynchronizer
      */
     protected function process(array $settings): bool
     {
+        // todo: Заменить валидацию respect на symfony
         v::allOf(
             v::key('default_warehouse', v::stringType(), false),
             v::key('relations', v::length(1)->each(
@@ -116,7 +118,7 @@ class StocksSynchronizer extends AbstractSynchronizer
             if (isset($settings['relations'])) {
                 foreach ($settings['relations'] as $relation) {
                     $sources = $relation['source'];
-                    if (in_array($stock['warehouse_id'], $sources)) {
+                    if (in_array($stock->warehouseId, $sources)) {
                         $target = $relation['target'];
                         break;
                     }
@@ -124,17 +126,17 @@ class StocksSynchronizer extends AbstractSynchronizer
             }
 
             if ($target) {
-                $key = $stock['article'] . '-' . $target;
+                $key = $stock->article . '-' . $target;
                 if (isset($update[$key])) {
-                    $update[$key]['quantity'] += max(0, $stock['quantity']);
+                    $update[$key]->quantity += $stock->quantity;
                     continue;
                 }
 
-                $update[$key] = [
-                    'article' => $stock['article'],
-                    'warehouse_id' => $target,
-                    'quantity' => max(0, $stock['quantity'])
-                ];
+                $update[$key] = StockUpdateDTO::fromArray([
+                    'article'     => $stock->article,
+                    'warehouseId' => $target,
+                    'quantity'    => $stock->quantity
+                ]);
             }
         }
 

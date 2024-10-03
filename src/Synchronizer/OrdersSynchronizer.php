@@ -140,6 +140,7 @@ class OrdersSynchronizer extends AbstractSynchronizer
             $settings
         );
 
+        // todo: Заменить валидацию respect на symfony
         v::allOf(
             v::key('doUpdate', v::boolType(), false),
             v::key('doCreate', v::boolType(), false),
