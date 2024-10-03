@@ -249,7 +249,7 @@ trait InteractsWithOzon
 
                 $options = \array_replace(
                     [
-                        'captureItems' => static fn () => null,
+                        'captureBody' => static fn () => null,
                     ],
                     $options
                 );
@@ -268,6 +268,9 @@ trait InteractsWithOzon
                             ?? \random_int(100000000, 999999999),
                     ];
                 }
+
+                $options['captureBody']($body);
+                $body['result'] = \array_values($body['result']);
 
                 return static::createJsonResponse(body: $body);
             }
