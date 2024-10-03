@@ -98,7 +98,7 @@ class ProductsTest extends TestCase
             ...\array_map(
                  static fn () => static::createMethodResponse(
                     'v2/product/info/list', [
-                        'invalid' => $invalidArticles
+                        'notFound' => $invalidArticles
                     ]
                 ),
                 $articles
