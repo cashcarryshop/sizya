@@ -142,7 +142,7 @@ class StocksSynchronizer extends AbstractSynchronizer
 
         $this->event(
             new Success([
-                'stocks' => $this->target->updateStocksByArticles(
+                'stocks' => $this->target->updateStocks(
                     array_values($update)
                 )
             ])
