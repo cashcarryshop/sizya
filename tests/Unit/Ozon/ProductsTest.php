@@ -39,7 +39,7 @@ class ProductsTest extends TestCase
      *
      * @var ?Products
      */
-    protected static ?Products $entity = null;
+    protected static Products $entity;
 
     public static function setupBeforeClass(): void
     {
@@ -53,7 +53,7 @@ class ProductsTest extends TestCase
 
     protected function createProductsGetter(): ?Products
     {
-        return static::$entity;
+        return static::$entity ?? null;
     }
 
     protected function setUpBeforeTestGetProducts(): void

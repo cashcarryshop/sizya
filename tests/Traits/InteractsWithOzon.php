@@ -238,6 +238,38 @@ trait InteractsWithOzon
                 );
 
                 return static::createJsonResponse(body: $body);
+            },
+            'v2/products/stocks' => function ($request, $options) {
+                $reqBody = \json_decode(
+                    $request->getBody()->getContents(),
+                    true,
+                    512,
+                    JSON_THROW_ON_ERROR,
+                );
+
+                $options = \array_replace(
+                    [
+                        'captureItems' => static fn () => null,
+                    ],
+                    $options
+                );
+
+                $body = static::getResponseData(
+                    'api-seller.ozon.ru/v2/products/stocks'
+                )['body'];
+
+                foreach ($reqBody['stocks'] as $stock) {
+                    $body['result'] = [
+                        'warehouse_id' => $stock['warehouse_id'],
+                        'offer_id'     => $stock['offer_id'] ?? static::fakeArticle(),
+                        'updated'      => true,
+                        'errors'       => [],
+                        'product_id'   => $stock['product_id']
+                            ?? \random_int(100000000, 999999999),
+                    ];
+                }
+
+                return static::createJsonResponse(body: $body);
             }
         ];
 
