@@ -169,8 +169,9 @@ class MockOrdersSource implements
         $orders = [];
         \reset($this->settings['items']);
         foreach ($ordersIds as $orderId) {
-            if (\current($this->settings['items']->id === $orderId)) {
+            if (\current($this->settings['items'])?->id === $orderId) {
                 $orders = $this->settings['items'];
+                \next($this->settings['items']);
                 continue;
             }
 
