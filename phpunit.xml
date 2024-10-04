@@ -8,5 +8,8 @@
         <testsuite name="OZON">
             <directory>tests/Unit/Ozon</directory>
         </testsuite>
+        <testsuite name="SYNCHRONIZER">
+            <directory>tests/Unit/Synchronizer</directory>
+        </testsuite>
     </testsuites>
 </phpunit>
