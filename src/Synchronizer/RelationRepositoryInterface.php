@@ -69,9 +69,9 @@ interface RelationRepositoryInterface
      *
      * @see RelationDTO
      *
-     * @return RelationDTO
+     * @return ?RelationDTO
      */
-    public function getBySourceId(string $sourceId): RelationDTO;
+    public function getBySourceId(string $sourceId): ?RelationDTO;
 
     /**
      * Получить связи по идентификаторам целей
@@ -91,7 +91,7 @@ interface RelationRepositoryInterface
      *
      * @see RelationDTO
      *
-     * @return RelationDTO
+     * @return ?RelationDTO
      */
-    public function getByTargetId(string $targetId): RelationDTO;
+    public function getByTargetId(string $targetId): ?RelationDTO;
 }

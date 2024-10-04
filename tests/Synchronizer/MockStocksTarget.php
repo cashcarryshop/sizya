@@ -140,6 +140,7 @@ class MockStocksTarget extends MockStocksSource
             if ($stock->id === $current?->id) {
                 $current->quantity = $stock->quantity;
                 $items[] = $current;
+                \next($current);
                 continue;
             }
 
