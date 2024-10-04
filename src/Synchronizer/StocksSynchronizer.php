@@ -56,7 +56,6 @@ class StocksSynchronizer extends AbstractSynchronizer
         return $target instanceof StocksUpdaterInterface;
     }
 
-
     /**
      * Значение по умолчанию для настроек.
      *
