@@ -283,10 +283,11 @@ class Products extends AbstractSource implements ProductsGetterInterface
                             'Y-m-d\TH:i:s.up', $item['created_at']
                         );
 
-                        $dtos[]   = ProductDTO::fromArray([
+                        $dtos[] = ProductDTO::fromArray([
                             'id'       => (string) $item['id'],
                             'article'  => $item['offer_id'],
                             'price'    => (float) $item['price'],
+                            'minPrice' => (float) $item['min_price'],
                             'original' => $item,
                             'created'  => $datetime
                                 ? $datetime->format(ProductDTO::DATE_FORMAT)

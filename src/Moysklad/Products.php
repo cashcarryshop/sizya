@@ -41,9 +41,10 @@ class Products extends AbstractSource implements ProductsGetterInterface
     public function __construct(array $settings)
     {
         $defaults = [
-            'limit'     => 100,
-            'groupBy'   => 'consignment',
-            'priceType' => null
+            'limit'        => 100,
+            'groupBy'      => 'consignment',
+            'priceType'    => null,
+            'minPriceType' => null
         ];
 
         parent::__construct(\array_replace($defaults, $settings));
@@ -68,6 +69,10 @@ class Products extends AbstractSource implements ProductsGetterInterface
                     new Assert\Choice(['consignment', 'variant', 'product'])
                 ],
                 'priceType' => [
+                    new Assert\Type(['string', 'null']),
+                    new Assert\Uuid(strict: false)
+                ],
+                'minPriceType' => [
                     new Assert\Type(['string', 'null']),
                     new Assert\Uuid(strict: false)
                 ]
@@ -264,15 +269,35 @@ class Products extends AbstractSource implements ProductsGetterInterface
      */
     private function _convertProduct(array $product): ProductDTO
     {
-        if ($priceType = $this->getSettings('priceType')) {
-            $price = null;
+        $price    = null;
+        $minPrice = null;
+
+        $priceType = $this->getSettings('priceType');
+        $minPriceType = $this->getSettings('minPriceType');
+
+        if ($priceType || $minPriceType) {
+            $break = $minPriceType === null;
+
             foreach ($product['salePrices'] as $salePrice) {
+                if ($salePrice['priceType']['id'] === $minPriceType) {
+                    $minPrice = $salePrice['value'];
+                    $break = true;
+                }
+
                 if ($salePrice['priceType']['id'] === $priceType) {
                     $price = $salePrice['value'];
+                }
+
+                if ($price && $break) {
                     break;
                 }
             }
         }
+        unset($priceType);
+        unset($minPriceType);
+
+        $price    ??= (float) $product['salePrices'][0]['value'] / 100;
+        $minPrice ??= $price;
 
         $article = $product['meta']['type'] === 'variant'
             ? $product['code']
@@ -282,7 +307,8 @@ class Products extends AbstractSource implements ProductsGetterInterface
             'id'       => $product['id'],
             'article'  => $article,
             'created'  => Utils::dateToUtc($product['updated']),
-            'price'    => (float) ($price ?? $product['salePrices'][0]['value'] / 100),
+            'price'    => $price,
+            'minPrice' => $minPrice,
             'original' => $product
         ]);
     }

@@ -30,6 +30,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @property string $article  Артикул товара
  * @property string $created  Дата создания товара
  * @property float  $price    Цена товара
+ * @property float  $minPrice Минимальная цена товара
  * @property mixed  $original Исходные данные
  */
 class ProductDTO extends AbstractDTO
@@ -41,6 +42,7 @@ class ProductDTO extends AbstractDTO
      * @param string $article  Артикул товара
      * @param string $created  Дата создания товара
      * @param float  $price    Цена товара
+     * @param float  $minPrice Минимальная цена товара
      * @param mixed  $original Исходные данные
      */
     public function __construct(
@@ -60,6 +62,10 @@ class ProductDTO extends AbstractDTO
         #[Assert\Type('float')]
         #[Assert\PositiveOrZero]
         public $price = 0.0,
+
+        #[Assert\Type('float')]
+        #[Assert\PositiveOrZero]
+        public $minPrice = 0.0,
 
         #[Assert\NotBlank]
         public $original = null
