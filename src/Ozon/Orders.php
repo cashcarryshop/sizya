@@ -378,6 +378,7 @@ class Orders extends AbstractSource implements OrdersGetterInterface
                 fn ($position) => $this->_convertPosition($position),
                 $order['products']
             ),
+            'externalcode'   => \sha1($order['posting_number']),
             'original' => $order
         ]);
     }

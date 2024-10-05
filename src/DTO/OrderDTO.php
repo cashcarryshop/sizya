@@ -25,22 +25,22 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @link     https://github.com/cashcarryshop/sizya
  *
  * @property string          $id             Идентификатор
+ * @property ?string         $article        Артикул товара
  * @property string          $created        Дата создания заказа
  * @property string          $status         Статус заказа
- * @property mixed           $original       Исходные данные
+ * @property string          $externalCode   Внешний код заказа
  * @property ?string         $shipmentDate   Планируемаая дата отгрузки
- * @property ?string         $article        Артикул товара
  * @property ?string         $deliveringDate Дата передачи заказа в доставку
  * @property ?string         $description    Описание
  * @property AdditionalDTO[] $additionals    Доп. поля заказа
  * @property PositionDTO[]   $positions      Позиции заказа
+ * @property mixed           $original       Исходные данные
  *
  * @see AdditionalDTO
  * @see PositionDTO
  */
 class OrderDTO extends AbstractDTO
 {
-
     /**
      * Создать экземпляр заказа
      *
@@ -50,9 +50,11 @@ class OrderDTO extends AbstractDTO
      * @param ?string         $article        Артикул товара
      * @param string          $created        Дата создания заказа
      * @param string          $status         Статус заказа
+     * @param string          $externalCode   Внешний код заказа
      * @param ?string         $shipmentDate   Планируемаая дата отгрузки
      * @param ?string         $deliveringDate Дата передачи заказа в доставку
      * @param ?string         $description    Описание
+     * @param ?string         $externalCode   Внешний код
      * @param AdditionalDTO[] $additionals    Доп. поля заказа
      * @param PositionDTO[]   $positions      Позиции заказа
      * @param mixed           $original       Исходные данные
@@ -79,6 +81,10 @@ class OrderDTO extends AbstractDTO
         #[Assert\Type('string')]
         #[Assert\NotBlank]
         public $status = null,
+
+        #[Assert\Type('string')]
+        #[Assert\NotBlank]
+        public $externalCode = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(

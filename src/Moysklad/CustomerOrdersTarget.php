@@ -156,6 +156,7 @@ class CustomerOrdersTarget extends CustomerOrdersSource
                             'article'      => $item['name'],
                             'created'      => Utils::dateToUtc($item['created']),
                             'status'       => Utils::guidFromMeta($item['state']['meta']),
+                            'externalCode' => $item['externalCode'],
                             'shipmentDate' => Utils::dateToUtc($item['deliveryPlannedMoment']),
                             'description'  => $item['description'],
                             'additionals'  => \array_map(
@@ -275,9 +276,10 @@ class CustomerOrdersTarget extends CustomerOrdersSource
             SizyaUtils::setIfNotNull('id', $order, $data);
         }
 
-        SizyaUtils::setIfNotNull('article',     $order, $data, 'name');
-        SizyaUtils::setIfNotNull('description', $order, $data);
-        SizyaUtils::setIfNotNull('created',     $order, $data)
+        SizyaUtils::setIfNotNull('externalCode', $order, $data);
+        SizyaUtils::setIfNotNull('article',      $order, $data, 'name');
+        SizyaUtils::setIfNotNull('description',  $order, $data);
+        SizyaUtils::setIfNotNull('created',      $order, $data)
             && $data['created'] = Utils::dateToMoysklad($data['created']);
 
         SizyaUtils::setIfNotNull('status', $order, $data, 'state')

@@ -1,4 +1,4 @@
-<?php declare(strict_types=1);
+x<?php declare(strict_types=1);
 /**
  * Этот файл является частью пакета sizya.
  *
@@ -229,6 +229,7 @@ class CustomerOrdersSource extends CustomerOrders
             'article'   => $order['name'],
             'created'   => Utils::dateToUtc($order['created']),
             'status'    => Utils::guidFromMeta($order['state']['meta']),
+            'externalCode' => $order['externalCode'],
             'positions' => \array_map(
                 fn ($position) => $this->_convertPosition($position),
                 $order['positions']['rows']
