@@ -43,7 +43,7 @@ class MockOrdersSource implements
      *
      * @var array
      */
-    protected array $settings;
+    public array $settings;
 
     /**
      * Создать экземпляр источника заказов.
