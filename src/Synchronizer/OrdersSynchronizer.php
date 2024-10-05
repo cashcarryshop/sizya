@@ -215,23 +215,23 @@ class OrdersSynchronizer extends AbstractSynchronizer
             $notFoundIds[$idx] = $sourceId;
         }
 
-        $targets = $this->_prepareForAdditionals([
+        $targets = $this->_prepareForExternalCodes([
             'settings'    => $settings,
             'notFound'    => &$notFound,
-            'notFoundIds' => $notFoundIds,
             'relations'   => &$relations,
             'targetsIds'  => &$targetsIds,
         ]);
-        unset($notFoundIds);
 
         $targets = \array_merge(
-            $targets, $this->_prepareForExternalCodes([
+            $targets, $this->_prepareForAdditionals([
                 'settings'    => $settings,
                 'notFound'    => &$notFound,
+                'notFoundIds' => $notFoundIds,
                 'relations'   => &$relations,
                 'targetsIds'  => &$targetsIds,
             ])
         );
+        unset($notFoundIds);
 
         $forCreate = [];
         $forUpdate = [];
@@ -347,7 +347,12 @@ class OrdersSynchronizer extends AbstractSynchronizer
 
         \asort($xternalCodes, SORT_STRING);
         \array_multisort(
-            \array_column($targets, 'externalCode'),
+            \array_map(
+                static fn ($target) => $target instanceof OrderDTO
+                    ? $target->externalCode
+                    : 'null',
+                $targets
+            ),
             SORT_STRING,
             $targets
         );
@@ -410,6 +415,10 @@ class OrdersSynchronizer extends AbstractSynchronizer
 
             $targetsSourcesIds = \array_map(
                 static function ($target) use ($settings) {
+                    if (!$target instanceof OrderDTO) {
+                        return 'null';
+                    }
+
                     foreach ($target->additionals as $idx => $additional) {
                         if ($additional->id === $settings['additional']) {
                             return $target->additionals[$idx]['value'];
