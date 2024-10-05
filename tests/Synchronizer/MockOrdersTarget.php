@@ -34,10 +34,9 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @link     https://github.com/cashcarryshop/sizya
  */
 class MockOrdersTarget extends MockOrdersSource
-    implements
-    SynchronizerTargetInterface,
-    OrdersUpdaterInterface,
-    OrdersCreatorInterface
+    implements SynchronizerTargetInterface,
+               OrdersUpdaterInterface,
+               OrdersCreatorInterface
 {
     /**
      * Массово создать заказы

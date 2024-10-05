@@ -31,10 +31,10 @@ use CashCarryShop\Synchronizer\SynchronizerSourceInterface;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-class MockOrdersSource implements
-    SynchronizerSourceInterface,
-    OrdersGetterInterface,
-    OrdersGetterByAdditionalInterface
+class MockOrdersSource
+    implements SynchronizerSourceInterface,
+               OrdersGetterInterface,
+               OrdersGetterByAdditionalInterface
 {
     use InteractsWithFakeData;
 
