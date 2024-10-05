@@ -32,7 +32,7 @@ class MockRelationRepository implements RelationRepositoryInterface
      *
      * @var array
      */
-    protected array $relations;
+    public array $relations;
 
     /**
      * Создать репозиторий отношений.
