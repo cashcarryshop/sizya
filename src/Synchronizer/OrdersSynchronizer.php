@@ -17,6 +17,7 @@ use CashCarryShop\Synchronizer\SynchronizerSourceInterface;
 use CashCarryShop\Synchronizer\SynchronizerTargetInterface;
 use CashCarryShop\Sizya\OrdersGetterInterface;
 use CashCarryShop\Sizya\OrdersGetterByAdditionalInterface;
+use CashCarryShop\Sizya\OrdersGetterByExternalCodesInterface;
 use CashCarryShop\Sizya\OrdersCreatorInterface;
 use CashCarryShop\Sizya\OrdersUpdaterInterface;
 use CashCarryShop\Sizya\Events\Success;
@@ -198,8 +199,9 @@ class OrdersSynchronizer extends AbstractSynchronizer
         \asort($sourcesIds,         SORT_STRING);
         \asort($relationsSourceIds, SORT_STRING);
 
-        $targetIds = [];
-        $notFound  = [];
+        $targetsIds  = [];
+        $notFound    = [];
+        $notFoundIds = [];
 
         \reset($relationsSourceIds);
         foreach ($sourcesIds as $idx => $sourceId) {
@@ -220,8 +222,16 @@ class OrdersSynchronizer extends AbstractSynchronizer
             'relations'   => &$relations,
             'targetsIds'  => &$targetsIds,
         ]);
-
         unset($notFoundIds);
+
+        $targets = \array_merge(
+            $targets, $this->_prepareForExternalCodes([
+                'settings'    => $settings,
+                'notFound'    => &$notFound,
+                'relations'   => &$relations,
+                'targetsIds'  => &$targetsIds,
+            ])
+        );
 
         $forCreate = [];
         $forUpdate = [];
@@ -292,11 +302,8 @@ class OrdersSynchronizer extends AbstractSynchronizer
         if ($this->target instanceof OrdersCreatorInterface) {
             // todo: Сделать добавление данных в репозиторий
             // отношений идентификаторов источников и целей.
-            $this->event(
-                new OrdersCreated(
-                    $this->target->massCreateOrders($forCreate)
-                )
-            );
+            $updated = $this->target->massCreateOrders($forCreate);
+            $this->event(new OrdersCreated($updated));
         }
 
         if ($this->target instanceof OrdersUpdaterInterface) {
@@ -306,6 +313,65 @@ class OrdersSynchronizer extends AbstractSynchronizer
                 )
             );
         }
+    }
+
+    /**
+     * Получить и обработать данные при получении заказов
+     * оп внешнему коду.
+     *
+     * Массив $data принимает:
+     *
+     * - settings:  (array)  Настройки
+     * - notFound:  (&array) Ссылка на массив с не найденными заказами
+     * - relations: (array)  Отношения источников и целей
+     *
+     * @param array $data Данные
+     *
+     * @return array
+     */
+    private function _prepareForExternalCodes(array $data): array
+    {
+        if (!$this->target instanceof OrdersGetterByExternalCodesInterface) {
+            return [];
+        }
+
+        [
+            'settings'    => $settings,
+            'notFound'    => &$notFound,
+            'relations'   => &$relations,
+            'targetsIds'  => &$targetsIds
+        ] = $data;
+
+        $externalCodes = \array_column($notFound, 'externalCode');
+        $targets = $this->target->getOrdersByExternalCodes($externalCodes);
+
+        \asort($xternalCodes, SORT_STRING);
+        \array_multisort(
+            \array_column($targets, 'externalCode'),
+            SORT_STRING,
+            $targets
+        );
+
+        \reset($targets);
+        foreach ($externalCodes as $idx => $externalCode) {
+            $current = \current($targets);
+            if ($current->externalCode === $externalCode) {
+                $settings['repository']->create(
+                    $relation = RelationDTO::fromArray([
+                        'sourceId' => $notFound[$idx]->id,
+                        'targetId' => $current->id
+                    ])
+                );
+
+                $relations[]  = $relation;
+                $targetsIds[$idx] = $relation->targetId;
+
+                unset($notFound[$idx]);
+                \next($targets);
+            }
+        }
+
+        return $targets;
     }
 
     /**
@@ -320,10 +386,6 @@ class OrdersSynchronizer extends AbstractSynchronizer
      * - relations:   (array)  Отношения источников и целей
      *
      * @param array $data Данные
-     *
-     * @param array $settings    Настройки
-     * @param array $notFound    Ссылка на массив с не найденными заказами
-     * @param array $notFoundIds Массив с не найденными идентификаторами заказов
      *
      * @return array
      */
@@ -361,7 +423,7 @@ class OrdersSynchronizer extends AbstractSynchronizer
                         ));
                     }
                 },
-                $targetsByAdditional
+                $targets
             );
 
             \asort($targetsSourcesIds, SORT_STRING);
@@ -383,7 +445,11 @@ class OrdersSynchronizer extends AbstractSynchronizer
                     \next($targetsSourcesIds);
                 }
             }
+
+            return $targets;
         }
+
+        return [];
     }
 
     /**
@@ -429,6 +495,7 @@ class OrdersSynchronizer extends AbstractSynchronizer
             $data = [
                 'created'        => $source->created,
                 'article'        => $source->article,
+                'externalCode'   => $source->externalCode,
                 'shipmentDate'   => $source->shipmentDate,
                 'deliveringDate' => $source->deliveringDate
             ];
