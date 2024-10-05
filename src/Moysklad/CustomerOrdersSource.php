@@ -15,6 +15,7 @@ namespace CashCarryShop\Sizya\Moysklad;
 
 use CashCarryShop\Sizya\OrdersGetterInterface;
 use CashCarryShop\Sizya\OrdersGetterByAdditionalInterface;
+use CashCarryShop\Sizya\OrdersGetterByExternalCodesInterface;
 use CashCarryShop\Sizya\DTO\OrderDTO;
 use CashCarryShop\Sizya\DTO\PositionDTO;
 use CashCarryShop\Sizya\DTO\AdditionalDTO;
@@ -32,7 +33,9 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @link     https://github.com/cashcarryshop/sizya
  */
 class CustomerOrdersSource extends CustomerOrders
-    implements OrdersGetterInterface, OrdersGetterByAdditionalInterface
+    implements OrdersGetterInterface,
+               OrdersGetterByAdditionalInterface,
+               OrdersGetterByExternalCodesInterface
 {
     /**
      * Получить заказы
@@ -148,6 +151,41 @@ class CustomerOrdersSource extends CustomerOrders
 
                 return $order->additionals[$additionalKey];
             }
+        );
+    }
+
+    /**
+     * Получить заказы по внешним кодам.
+     *
+     * Количество возвращаемых элементов должно
+     * соответствовать переданным.
+     *
+     * @param string[] $codes Внешние коды
+     *
+     * @see OrderDTO
+     * @see ByErrorDTO
+     *
+     * @return array<int, OrderDTO|ByErrorDTO>
+     */
+    public function getOrdersByExternalCodes(array $codes): array
+    {
+        [
+            $validated,
+            $errors
+        ] = SizyaUtils::splitByValidationErrors(
+            $this->getValidator(), $codes, [
+                new Assert\Type('string'),
+                new Assert\NotBlank
+            ]
+        );
+
+        return \array_merge(
+            $this->_getByFilter(
+                'externalCode',
+                $validated,
+                static fn ($order) => $order->externalCode
+            ),
+            $errors
         );
     }
 
