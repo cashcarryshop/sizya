@@ -78,8 +78,9 @@ class MockOrdersSource
 
         $this->settings = \array_replace(
             [
-                'statuses' => $statuses,
-                'products' => $products,
+                'statuses'       => $statuses,
+                'products'       => $products,
+                'additionalsIds' => $additionalsIds,
                 'items' => \array_map(
                     fn () => OrderDTO::fromArray([
                         'id'           => $id = static::guidv4(),
@@ -108,7 +109,7 @@ class MockOrdersSource
 
                                 $product = PositionDTO::fromArray([
                                     'id'        => static::guidv4(),
-                                    'productId' => $produc['id'],
+                                    'productId' => $product['id'],
                                     'article'   => $product['article'],
                                     'quantity'  => $quantity,
                                     'reserve'   => \random_int(0, $quantity),

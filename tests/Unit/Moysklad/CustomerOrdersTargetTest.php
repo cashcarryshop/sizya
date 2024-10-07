@@ -222,14 +222,15 @@ class CustomerOrdersTargetTest extends TestCase
             'description'    => static::fakeString(),
             'additionals'    => [
                 $additionalClass::fromArray($additionalData)
-            ],
-            'positions' => [
-                $positionClass::fromArray($positionData)
             ]
         ];
 
         if ($isUpdate) {
             $orderData['id'] = static::guidv4();
+        } else {
+            $orderData['positions'] = [
+                $positionClass::fromArray($positionData)
+            ];
         }
 
         return $orderClass::fromArray($orderData);
@@ -284,7 +285,7 @@ class CustomerOrdersTargetTest extends TestCase
             return $dto;
         }
 
-        if ($randInt === 1) {
+        if ($randInt === 1 && $dto instanceof OrderCreateDTO) {
             $dto->positions[0]->id = \random_int(-1000, 100000);
             return $dto;
         }

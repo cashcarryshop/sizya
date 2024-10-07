@@ -31,10 +31,8 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @property ?string               $deliveringDate Дата передачи заказа в доставку
  * @property ?string               $description    Описание
  * @property AdditionalUpdateDTO[] $additionals    Доп. поля заказа
- * @property PositionUpdateDTO[]   $positions      Позиции заказа
  *
  * @see AdditionalDTO
- * @see PositionDTO
  */
 class OrderUpdateDTO extends AbstractDTO
 {
@@ -50,10 +48,8 @@ class OrderUpdateDTO extends AbstractDTO
      * @param ?string               $deliveringDate Дата передачи заказа в доставку
      * @param ?string               $description    Описание
      * @param AdditionalUpdateDTO[] $additionals    Доп. поля заказа
-     * @param PositionUpdateDTO[]   $positions      Позиции заказа
      *
      * @see AdditionaUpdatelDTO
-     * @see PositionUpdateDTO
      */
     public function __construct(
         #[Assert\Type('string')]
@@ -94,9 +90,5 @@ class OrderUpdateDTO extends AbstractDTO
         #[Assert\Type('array')]
         #[Assert\All(new Assert\Type(AdditionalUpdateDTO::class))]
         public $additionals = [],
-
-        #[Assert\Type('array')]
-        #[Assert\All(new Assert\Type(PositionUpdateDTO::class))]
-        public $positions = []
     ) {}
 }

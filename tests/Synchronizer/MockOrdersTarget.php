@@ -193,6 +193,8 @@ class MockOrdersTarget extends MockOrdersSource
             $validated
         );
 
+        $countProducts = \count($this->settings['products']);
+
         \reset($this->settings['items']);
         foreach ($validated as $order) {
             if ($order->id === \current($this->settings['items'])?->id) {

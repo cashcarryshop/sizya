@@ -119,7 +119,9 @@ class CustomerOrdersTarget extends CustomerOrdersSource
             $validated,
             $errors
         ] = SizyaUtils::splitByValidationErrors(
-            $this->getValidator(), $firstStepValidated, [new Assert\Valid]
+            $this->getValidator(),
+            $firstStepValidated,
+            [new Assert\Valid]
         );
         unset($firstStepValidated);
 
@@ -205,6 +207,10 @@ class CustomerOrdersTarget extends CustomerOrdersSource
         // Собираем артикулы товаров для их получения
         $articles = [];
         foreach ($validated as $oIdx => $order) {
+            if ($order instanceof OrderUpdateDTO) {
+                continue;
+            }
+
             foreach ($order->positions as $pIdx => $position) {
                 if ($position->productId) {
                     continue;
@@ -275,7 +281,19 @@ class CustomerOrdersTarget extends CustomerOrdersSource
             SizyaUtils::setIfNotNull('id', $order, $data);
         }
 
-        SizyaUtils::setIfNotNull('externalCode', $order, $data);
+        if (\property_exists($order, 'externalCode')) {
+            SizyaUtils::setIfNotNull('externalCode', $order, $data);
+        }
+
+
+        if (\property_exists($order, 'positions')) {
+            SizyaUtils::setIfNotNull('positions', $order, $data)
+                && $data['positions'] = \array_map(
+                    fn ($position) => $this->_convertPosition($position),
+                    $data['positions']
+                );
+        }
+
         SizyaUtils::setIfNotNull('description',  $order, $data);
         SizyaUtils::setIfNotNull('created',      $order, $data)
             && $data['created'] = Utils::dateToMoysklad($data['created']);
@@ -297,12 +315,6 @@ class CustomerOrdersTarget extends CustomerOrdersSource
             && $data['attributes'] = \array_map(
                 fn ($additional) => $this->_convertAdditional($additional),
                 $data['attributes']
-            );
-
-        SizyaUtils::setIfNotNull('positions', $order, $data)
-            && $data['positions'] = \array_map(
-                fn ($position) => $this->_convertPosition($position),
-                $data['positions']
             );
 
         return $data;

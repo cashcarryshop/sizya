@@ -107,7 +107,7 @@ class MockRelationRepository implements RelationRepositoryInterface
         \reset($this->relations);
         foreach ($sourceIds as $sourceId) {
             $current = \current($this->relations);
-            if ($current === null) {
+            if ($current === false) {
                 break;
             }
 

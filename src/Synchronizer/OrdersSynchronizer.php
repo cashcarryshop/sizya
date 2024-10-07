@@ -544,7 +544,7 @@ class OrdersSynchronizer extends AbstractSynchronizer
      *
      * @return array
      */
-    private function _makeForUpdate(array $settings): array
+    private function _makeForUpdate(array $data): array
     {
         [
             'settings'             => $settings,

@@ -18,9 +18,6 @@ use Symfony\Component\Validator\Constraints as Assert;
 /**
  * DTO для обновления позиций.
  *
- * Если передать `productId` вместе с `article`,
- * `productId` будет приоритетнее.
- *
  * @category DTO
  * @package  Sizya
  * @author   TheWhatis <anton-gogo@mail.ru>
@@ -40,7 +37,6 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 class PositionUpdateDTO extends AbstractDTO
 {
-
     /**
      * Создать экземпляр позиции
      *
