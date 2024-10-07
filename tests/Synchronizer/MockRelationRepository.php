@@ -94,27 +94,17 @@ class MockRelationRepository implements RelationRepositoryInterface
      */
     public function getBySourceIds(array $sourceIds): array
     {
-        \array_multisort(
-            \array_column($this->relations, 'sourceId'),
-            SORT_STRING,
-            $this->relations
-        );
-
-        \asort($sourceIds, SORT_STRING);
+        $ids = \array_column($this->relations, 'sourceId');
 
         $items = [];
-
-        \reset($this->relations);
         foreach ($sourceIds as $sourceId) {
-            $current = \current($this->relations);
-            if ($current === false) {
-                break;
+            $key = \array_search($sourceId, $ids);
+
+            if ($key === false) {
+                continue;
             }
 
-            if ($sourceId === $current->sourceId) {
-                $items[] = $current;
-                \next($current);
-            }
+            $items[] = $this->relations[$key];
         }
 
         return $items;
@@ -145,27 +135,17 @@ class MockRelationRepository implements RelationRepositoryInterface
      */
     public function getByTargetIds(array $targetIds): array
     {
-        \array_multisort(
-            \array_column($this->relations, 'targetId'),
-            SORT_STRING,
-            $this->relations
-        );
-
-        \asort($targetIds);
+        $ids = \array_column($this->relations, 'targetId');
 
         $items = [];
-
-        \reset($this->relations);
         foreach ($targetIds as $targetId) {
-            $current = \current($this->relations);
-            if ($current === null) {
-                break;
+            $key = \array_search($targetId, $ids);
+
+            if ($key === false) {
+                continue;
             }
 
-            if ($targetId === $current->targetId) {
-                $items[] = $current;
-                \next($current);
-            }
+            $items[] = $this->relations[$key];
         }
 
         return $items;
