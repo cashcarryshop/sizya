@@ -15,6 +15,7 @@ namespace CashCarryShop\Sizya\Tests\Synchronizer;
 
 use CashCarryShop\Sizya\OrdersGetterInterface;
 use CashCarryShop\Sizya\OrdersGetterByAdditionalInterface;
+use CashCarryShop\Sizya\OrdersGetterByExternalCodesInterface;
 use CashCarryShop\Sizya\DTO\OrderDTO;
 use CashCarryShop\Sizya\DTO\AdditionalDTO;
 use CashCarryShop\Sizya\DTO\PositionDTO;
@@ -34,7 +35,8 @@ use CashCarryShop\Synchronizer\SynchronizerSourceInterface;
 class MockOrdersSource
     implements SynchronizerSourceInterface,
                OrdersGetterInterface,
-               OrdersGetterByAdditionalInterface
+               OrdersGetterByAdditionalInterface,
+               OrdersGetterByExternalCodesInterface
 {
     use InteractsWithFakeData;
 
@@ -81,7 +83,7 @@ class MockOrdersSource
                 'statuses'       => $statuses,
                 'products'       => $products,
                 'additionalsIds' => $additionalsIds,
-                'items' => \array_map(
+                'items'          => \array_map(
                     fn () => OrderDTO::fromArray([
                         'id'           => $id = static::guidv4(),
                         'created'      => static::fakeDtoDate(),
@@ -160,26 +162,19 @@ class MockOrdersSource
      */
     public function getOrdersByIds(array $ordersIds): array
     {
-        \asort($ordersIds, SORT_STRING);
-        \array_multisort(
-            \array_column($this->settings['items'], 'id'),
-            SORT_STRING,
-            $this->settings['items']
-        );
-
         $orders = [];
-        \reset($this->settings['items']);
-        foreach ($ordersIds as $orderId) {
-            if (\current($this->settings['items'])?->id === $orderId) {
-                $orders = $this->settings['items'];
-                \next($this->settings['items']);
+        $itemsIds = \array_column($this->settings['items'], 'id');
+        foreach ($ordersIds as $id) {
+            $key = \array_search($id, $itemsIds);
+            if ($key === false) {
+                $orders[] = ByErrorDTO::fromArray([
+                    'type'  => ByErrorDTO::NOT_FOUND,
+                    'value' => $id
+                ]);
                 continue;
             }
 
-            $orders = ByErrorDTO::fromArray([
-                'type'  => ByErrorDTO::NOT_FOUND,
-                'value' => $orderId
-            ]);
+            $orders[] = $this->settings['items'][$key];
         }
 
         return $orders;
@@ -230,6 +225,39 @@ class MockOrdersSource
                 'type'  => ByErrorDTO::NOT_FOUND,
                 'value' => $value
             ]);
+        }
+
+        return $orders;
+    }
+
+    /**
+     * Получить заказы по внешним кодам.
+     *
+     * Количество возвращаемых элементов должно
+     * соответствовать переданным.
+     *
+     * @param string[] $codes Внешние коды
+     *
+     * @see OrderDTO
+     * @see ByErrorDTO
+     *
+     * @return array<int, OrderDTO|ByErrorDTO>
+     */
+    public function getOrdersByExternalCodes(array $codes): array
+    {
+        $orders = [];
+        $itemsCodes = \array_column($this->settings['items'], 'externalCode');
+        foreach ($codes as $code) {
+            $key = \array_search($code, $itemsCodes);
+            if ($key === false) {
+                $orders[] = ByErrorDTO::fromArray([
+                    'type'  => ByErrorDTO::NOT_FOUND,
+                    'value' => $code
+                ]);
+                continue;
+            }
+
+            $orders[] = $this->settings['items'][$key];
         }
 
         return $orders;

@@ -151,6 +151,10 @@ class MockOrdersTarget extends MockOrdersSource
      */
     public function massUpdateOrders(array $orders): array
     {
+        if (!$orders) {
+            return [];
+        }
+
         [
             $firstStepValidated,
             $firstStepErrors
@@ -193,19 +197,20 @@ class MockOrdersTarget extends MockOrdersSource
             $validated
         );
 
+
         $countProducts = \count($this->settings['products']);
 
         \reset($this->settings['items']);
         foreach ($validated as $order) {
-            if ($order->id === \current($this->settings['items'])?->id) {
-                $data = \array_replace(
-                    \current($this->settings['items'])->toArray(),
-                    $order->toArray()
-                );
+            $current = \current($this->settings['items']);
+
+            if ($current !== false && $order->id === $current->id) {
+                $data = \array_replace($current->toArray(), $order->toArray());
 
                 $idx = \key($this->settings['items']);
 
                 $items[] = $this->settings['items'][$idx] = OrderDTO::fromArray($data);
+                \next($this->settings['items']);
                 continue;
             }
 

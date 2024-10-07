@@ -215,15 +215,15 @@ class OrdersSynchronizer extends AbstractSynchronizer
             $notFoundIds[$idx] = $sourceId;
         }
 
-        $targets = $this->_prepareForExternalCodes([
-            'settings'    => $settings,
-            'notFound'    => &$notFound,
-            'relations'   => &$relations,
-            'targetsIds'  => &$targetsIds,
-        ]);
-
         $targets = \array_merge(
-            $targets, $this->_prepareForAdditionals([
+            $this->target->getOrdersByIds($targetsIds),
+            $this->_prepareForExternalCodes([
+                'settings'    => $settings,
+                'notFound'    => &$notFound,
+                'relations'   => &$relations,
+                'targetsIds'  => &$targetsIds,
+            ]),
+            $this->_prepareForAdditionals([
                 'settings'    => $settings,
                 'notFound'    => &$notFound,
                 'notFoundIds' => $notFoundIds,
@@ -249,11 +249,6 @@ class OrdersSynchronizer extends AbstractSynchronizer
             'sources'         => $notFound,
             'statusRelations' => $statusRelations
         ]);
-
-        $targets = \array_merge(
-            $this->target->getOrdersByIds($targetsIds),
-            $targets
-        );
 
         \asort($targetsIds, SORT_STRING);
         \array_multisort(\array_column($targets, 'id'), SORT_STRING, $targets);
@@ -342,17 +337,19 @@ class OrdersSynchronizer extends AbstractSynchronizer
             'targetsIds'  => &$targetsIds
         ] = $data;
 
-        $externalCodes = \array_column($notFound, 'externalCode');
-        $targets = $this->target->getOrdersByExternalCodes($externalCodes);
+        $externalCodes = \array_combine(
+            \array_keys($notFound),
+            \array_column($notFound, 'externalCode')
+        );
 
-        \asort($xternalCodes, SORT_STRING);
+        $targets = \array_filter(
+            $this->target->getOrdersByExternalCodes($externalCodes),
+            static fn ($item) => $item instanceof OrderDTO
+        );
+
+        \asort($externalCodes, SORT_STRING);
         \array_multisort(
-            \array_map(
-                static fn ($target) => $target instanceof OrderDTO
-                    ? $target->externalCode
-                    : 'null',
-                $targets
-            ),
+            \array_column($targets, 'externalCode'),
             SORT_STRING,
             $targets
         );
@@ -360,6 +357,11 @@ class OrdersSynchronizer extends AbstractSynchronizer
         \reset($targets);
         foreach ($externalCodes as $idx => $externalCode) {
             $current = \current($targets);
+
+            if ($current === false) {
+                break;
+            }
+
             if ($current->externalCode === $externalCode) {
                 $settings['repository']->create(
                     $relation = RelationDTO::fromArray([
@@ -368,7 +370,7 @@ class OrdersSynchronizer extends AbstractSynchronizer
                     ])
                 );
 
-                $relations[]  = $relation;
+                $relations[]      = $relation;
                 $targetsIds[$idx] = $relation->targetId;
 
                 unset($notFound[$idx]);
@@ -562,8 +564,8 @@ class OrdersSynchronizer extends AbstractSynchronizer
 
         $forUpdate = [];
         \reset($targets);
-        foreach ($associatedTargetsIds as $associatedId => $targetId) {
-            $source = $sources[$associatedId];
+        foreach ($associatedTargetsIds as $associatedIdx => $targetId) {
+            $source = $sources[$associatedIdx];
             $target = \current($targets);
 
             $data = [
@@ -581,10 +583,14 @@ class OrdersSynchronizer extends AbstractSynchronizer
             }
 
             if ($source->deliveringDate !== $target->deliveringDate) {
-                $date['deliveringDate'] = $target->deliveringDate;
+                $data['deliveringDate'] = $source->deliveringDate;
             }
 
-            $forUpdate[$associatedId] = OrderUpdateDTO::fromArray($data);
+            if ($source->created !== $target->created) {
+                $data['created'] = $source->created;
+            }
+
+            $forUpdate[$associatedIdx] = OrderUpdateDTO::fromArray($data);
 
             \next($targets);
         }
