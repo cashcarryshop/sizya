@@ -82,15 +82,16 @@ class MockOrdersSource
                 'products' => $products,
                 'items' => \array_map(
                     fn () => OrderDTO::fromArray([
-                        'id'      => $id = static::guidv4(),
-                        'created' => static::fakeDtoDate(),
-                        'status'  => $statuses[\random_int(0, $countStatuses)],
+                        'id'           => $id = static::guidv4(),
+                        'created'      => static::fakeDtoDate(),
+                        'status'       => $statuses[\random_int(0, $countStatuses)],
+                        'externalCode' => \sha1($id),
                         'shipmentDate' => \random_int(0, 3) === 3
-                            ? static::fakeDtoDate()
-                            : null,
+                            ? null
+                            : static::fakeDtoDate(),
                         'deliveringDate' => \random_int(0, 3) === 3
-                            ? static::fakeDtoDate()
-                            : null,
+                            ? null
+                            : static::fakeDtoDate(),
                         'additionals' => \array_map(
                             fn ($id) => AdditionalDTO::fromArray([
                                 'id'       => $id,

@@ -16,6 +16,7 @@ namespace CashCarryShop\Sizya\Tests\Synchronizer;
 use CashCarryShop\Sizya\OrdersCreatorInterface;
 use CashCarryShop\Sizya\OrdersUpdaterInterface;
 use CashCarryShop\Sizya\DTO\OrderDTO;
+use CashCarryShop\Sizya\DTO\PositionDTO;
 use CashCarryShop\Sizya\DTO\OrderUpdateDTO;
 use CashCarryShop\Sizya\DTO\OrderCreateDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
@@ -64,7 +65,7 @@ class MockOrdersTarget extends MockOrdersSource
             $orders,
             [
                 new Assert\NotBlank,
-                new Assert\Type(OrderUpdateDTO::class)
+                new Assert\Type(OrderCreateDTO::class)
             ]
 
         );
@@ -84,40 +85,38 @@ class MockOrdersTarget extends MockOrdersSource
         );
         unset($firstStepValidated);
 
-        $errors = \array_merge($firstStepErrors, $errors);
-
         $items = [];
-
-        foreach ($orders as $order) {
+        foreach ($validated as $order) {
+            $positions = [];
             foreach ($order->positions as $position) {
-                $found = false;
                 foreach ($this->settings['products'] as $product) {
-                    if ($product->id === $position->productId) {
-                        $found = true;
-                        break;
-                    }
+                    if ($product['id'] === $position->productId
+                        || $product['article'] === $position->article
+                    ) {
+                        $posData         = $position->toArray();
+                        $posData['id']   = $posData['id'] ?? static::guidv4();
+                        $posData['type'] = $posData['type'] ?? 'product';
+                        $positions[] = PositionDTO::fromArray($posData);
 
-                    if ($product->article === $position->article) {
-                        $found = true;
-                        break;
+                        continue 2;
                     }
                 }
 
-                if (!$found) {
-                    $items[] = ByErrorDTO::fromArray([
-                        'type'  => ByErrorDTO::NOT_FOUND,
-                        'value' => $order
-                    ]);
-                    continue 2;
-                }
+                $items[] = ByErrorDTO::fromArray([
+                    'type'  => ByErrorDTO::NOT_FOUND,
+                    'value' => $order
+                ]);
+                break 2;
             }
 
-            $data       = $order->toArray();
-            $data['id'] = static::guidv4();
+            $data              = $order->toArray();
+            $data['id']        = static::guidv4();
+            $data['original']  = $data;
+            $data['positions'] = $positions;
 
             $items[] = $this->settings['items'][] = OrderDTO::fromArray($data);                }
 
-        return \array_merge($items, $errors);
+        return \array_merge($items, $firstStepErrors, $errors);
     }
 
     /**
@@ -182,75 +181,29 @@ class MockOrdersTarget extends MockOrdersSource
         );
         unset($firstStepValidated);
 
-        $errors = \array_merge($firstStepErrors, $errors);
-
-        $byIds = [];
-        $byArticles = [];
-
-        foreach ($validated as $item) {
-            if ($item->id) {
-                $byIds[] = $item;
-                continue;
-            }
-
-            $byArticles[] = $item;
-        }
-
         $items = [];
-        \array_multisort(
-            \array_column($this->settings['items'], 'article'),
-            SORT_STRING,
-            $this->settings['items']
-        );
-
-        \array_multisort(
-            \array_column($byArticles, 'article'),
-            SORT_STRING,
-            $byArticles
-        );
-
-        \reset($this->settings['items']);
-        foreach ($byArticles as $order) {
-            if ($order->article === \current($this->settings['items'])?->article) {
-                $data = \array_replace(
-                    \current($this->settings['items'])->toArray(),
-                    $order->toArray()
-                );
-
-                $items[] = $this->settings['items'][
-                    \key($this->settings['items'])
-                ] = OrderDTO::fromArray($data);
-                continue;
-            }
-
-            $items[] = ByErrorDTO::fromArray([
-                'type'  => ByErrorDTO::NOT_FOUND,
-                'value' => $order
-            ]);
-        }
-
         \array_multisort(
             \array_column($this->settings['items'], 'id'),
             SORT_STRING,
             $this->settings['items']
         );
         \array_multisort(
-            \array_column($byIds, 'id'),
+            \array_column($validated, 'id'),
             SORT_STRING,
-            $byIds
+            $validated
         );
 
         \reset($this->settings['items']);
-        foreach ($byIds as $order) {
+        foreach ($validated as $order) {
             if ($order->id === \current($this->settings['items'])?->id) {
                 $data = \array_replace(
                     \current($this->settings['items'])->toArray(),
                     $order->toArray()
                 );
 
-                $items[] = $this->settings['items'][
-                    \key($this->settings['items'])
-                ] = OrderDTO::fromArray($data);
+                $idx = \key($this->settings['items']);
+
+                $items[] = $this->settings['items'][$idx] = OrderDTO::fromArray($data);
                 continue;
             }
 
@@ -260,7 +213,7 @@ class MockOrdersTarget extends MockOrdersSource
             ]);
         }
 
-        return \array_merge($items, $errors);
+        return \array_merge($items, $firstStepErrors, $errors);
     }
 
     /**

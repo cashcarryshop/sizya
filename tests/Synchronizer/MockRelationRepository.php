@@ -100,7 +100,7 @@ class MockRelationRepository implements RelationRepositoryInterface
             $this->relations
         );
 
-        \asort($targetIds);
+        \asort($sourceIds, SORT_STRING);
 
         $items = [];
 
