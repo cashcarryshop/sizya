@@ -503,7 +503,6 @@ class OrdersSynchronizer extends AbstractSynchronizer
         foreach ($sources as $idx => $source) {
             $data = [
                 'created'        => $source->created,
-                'article'        => $source->article,
                 'externalCode'   => $source->externalCode,
                 'shipmentDate'   => $source->shipmentDate,
                 'deliveringDate' => $source->deliveringDate

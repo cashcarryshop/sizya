@@ -25,7 +25,6 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @link     https://github.com/cashcarryshop/sizya
  *
  * @property string          $id             Идентификатор
- * @property ?string         $article        Артикул товара
  * @property string          $created        Дата создания заказа
  * @property string          $status         Статус заказа
  * @property string          $externalCode   Внешний код заказа
@@ -47,7 +46,6 @@ class OrderDTO extends AbstractDTO
      * Все даты должны быть в формате UTC `Y-m-d\TH:i:s\Z`
      *
      * @param string          $id             Идентификатор
-     * @param ?string         $article        Артикул товара
      * @param string          $created        Дата создания заказа
      * @param string          $status         Статус заказа
      * @param string          $externalCode   Внешний код заказа
@@ -66,13 +64,6 @@ class OrderDTO extends AbstractDTO
         #[Assert\Type('string')]
         #[Assert\NotBlank]
         public $id = null,
-
-        #[Assert\Type(['string', 'null'])]
-        #[Assert\When(
-            expression: 'value !== null',
-            constraints: [new Assert\NotBlank]
-        )]
-        public $article = null,
 
         #[Assert\NotBlank]
         #[Assert\DateTime(OrderDTO::DATE_FORMAT)]

@@ -28,7 +28,6 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @property ?string               $created        Дата создания заказа
  * @property ?string               $status         Статус заказа
  * @property ?string               $shipmentDate   Планируемаая дата отгрузки
- * @property ?string               $article        Артикул товара
  * @property ?string               $deliveringDate Дата передачи заказа в доставку
  * @property ?string               $description    Описание
  * @property AdditionalCreateDTO[] $additionals    Доп. поля заказа
@@ -45,7 +44,6 @@ class OrderCreateDTO extends AbstractDTO
      * Все даты должны быть в формате UTC `Y-m-d\TH:i:s\Z`
      *
      * @param ?string               $externalCode   Внешний код заказа
-     * @param ?string               $article        Артикул товара
      * @param ?string               $created        Дата создания заказа
      * @param ?string               $status         Статус заказа
      * @param ?string               $shipmentDate   Планируемаая дата отгрузки
@@ -64,13 +62,6 @@ class OrderCreateDTO extends AbstractDTO
             constraints: [new Assert\NotBlank]
         )]
         public $externalCode = null,
-
-        #[Assert\Type(['string', 'null'])]
-        #[Assert\When(
-            expression: 'value !== null',
-            constraints: [new Assert\NotBlank]
-        )]
-        public $article = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(

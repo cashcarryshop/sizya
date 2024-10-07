@@ -153,7 +153,6 @@ class CustomerOrdersTarget extends CustomerOrdersSource
                     'dtos'   => \array_map(
                         static fn ($item) => OrderDTO::fromArray([
                             'id'           => $item['id'],
-                            'article'      => $item['name'],
                             'created'      => Utils::dateToUtc($item['created']),
                             'status'       => Utils::guidFromMeta($item['state']['meta']),
                             'externalCode' => $item['externalCode'],
@@ -277,7 +276,6 @@ class CustomerOrdersTarget extends CustomerOrdersSource
         }
 
         SizyaUtils::setIfNotNull('externalCode', $order, $data);
-        SizyaUtils::setIfNotNull('article',      $order, $data, 'name');
         SizyaUtils::setIfNotNull('description',  $order, $data);
         SizyaUtils::setIfNotNull('created',      $order, $data)
             && $data['created'] = Utils::dateToMoysklad($data['created']);

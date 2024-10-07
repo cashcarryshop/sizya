@@ -83,13 +83,12 @@ class MockOrdersSource
                 'items' => \array_map(
                     fn () => OrderDTO::fromArray([
                         'id'      => $id = static::guidv4(),
-                        'article' => static::fakeArticle(),
                         'created' => static::fakeDtoDate(),
                         'status'  => $statuses[\random_int(0, $countStatuses)],
                         'shipmentDate' => \random_int(0, 3) === 3
                             ? static::fakeDtoDate()
                             : null,
-                        'delivefingDate' => \random_int(0, 3) === 3
+                        'deliveringDate' => \random_int(0, 3) === 3
                             ? static::fakeDtoDate()
                             : null,
                         'additionals' => \array_map(
@@ -122,7 +121,7 @@ class MockOrdersSource
 
                                 return $product;
                             },
-                            \array_fill(1, 5)
+                            \array_fill(1, 5, null)
                         )
                     ]),
                     \array_fill(0, 100, null)
