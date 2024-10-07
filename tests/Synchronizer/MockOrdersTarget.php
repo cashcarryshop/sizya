@@ -197,7 +197,6 @@ class MockOrdersTarget extends MockOrdersSource
             $validated
         );
 
-
         $countProducts = \count($this->settings['products']);
 
         \reset($this->settings['items']);

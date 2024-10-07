@@ -89,6 +89,7 @@ class MockOrdersSource
                         'created'      => static::fakeDtoDate(),
                         'status'       => $statuses[\random_int(0, $countStatuses)],
                         'externalCode' => \sha1($id),
+                        'testKey'      => \sha1(static::guidv4()),
                         'shipmentDate' => \random_int(0, 3) === 3
                             ? null
                             : static::fakeDtoDate(),

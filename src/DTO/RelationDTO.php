@@ -46,7 +46,7 @@ class RelationDTO extends AbstractDTO
 
         #[Assert\Type('string')]
         #[Assert\NotBlank]
-            public $targetId = null,
+        public $targetId = null,
 
         #[Assert\Type(['string', 'null'])]
         #[Assert\When(

@@ -507,7 +507,8 @@ class OrdersSynchronizer extends AbstractSynchronizer
                 'created'        => $source->created,
                 'externalCode'   => $source->externalCode,
                 'shipmentDate'   => $source->shipmentDate,
-                'deliveringDate' => $source->deliveringDate
+                'deliveringDate' => $source->deliveringDate,
+                'testKey'        => $source->testKey
             ];
 
             if (isset($statusRelations[$source->status])) {
