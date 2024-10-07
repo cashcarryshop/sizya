@@ -307,7 +307,7 @@ class OrdersSynchronizer extends AbstractSynchronizer
         }
 
         if ($this->target instanceof OrdersUpdaterInterface) {
-            $this->evnet(
+            $this->event(
                 new OrdersUpdated(
                     $this->target->massUpdateOrders($forUpdate)
                 )
@@ -617,7 +617,7 @@ class OrdersSynchronizer extends AbstractSynchronizer
             'targets'   => $targets
         ] = $data;
 
-        if ($settings['middleware']) {
+        if (!$settings['middleware']) {
             return [$forCreate, $forUpdate];
         }
 
