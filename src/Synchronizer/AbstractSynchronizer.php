@@ -62,10 +62,23 @@ abstract class AbstractSynchronizer extends DefaultAbstractSynchronizer
     {
         $this->running = true;
         try {
-            $settings = \array_replace($this->defaults(), $settings);
+            $settings = \array_replace(
+                \array_merge(
+                    $this->defaults(), [
+                        'throw' => false
+                    ]
+                ),
+                $settings
+            );
 
             $violations = $this->getValidator()
-                ->validate($settings, new Assert\Collection($this->rules()));
+                ->validate($settings, new Assert\Collection(
+                    \array_merge(
+                        $this->rules(), [
+                            'throw' => new Assert\Type('bool')
+                        ]
+                    )
+                ));
 
             if ($violations->count()) {
                 throw new ValidationException(violations: $violations);
@@ -75,6 +88,10 @@ abstract class AbstractSynchronizer extends DefaultAbstractSynchronizer
         } catch (Throwable $exception) {
             $this->running = false;
             $this->event(new Error($exception));
+
+            if ($settings['throw']) {
+                throw $exception;
+            }
         }
 
         return true;
