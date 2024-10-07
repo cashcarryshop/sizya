@@ -135,6 +135,9 @@ class MockOrdersSource
             ],
             $settings
         );
+
+        $this->settings['items']    = \array_values($this->settings['items']);
+        $this->settings['products'] = \array_values($this->settings['products']);
     }
 
     /**

@@ -111,7 +111,9 @@ class MockOrdersTarget extends MockOrdersSource
 
             $data              = $order->toArray();
             $data['id']        = static::guidv4();
-            $data['original']  = $data;
+            $data['original']  = [
+                'order' => $order
+            ];
             $data['positions'] = $positions;
 
             $items[] = $this->settings['items'][] = OrderDTO::fromArray($data);                }
@@ -186,61 +188,55 @@ class MockOrdersTarget extends MockOrdersSource
         unset($firstStepValidated);
 
         $items = [];
-        \array_multisort(
-            \array_column($this->settings['items'], 'id'),
-            SORT_STRING,
-            $this->settings['items']
-        );
-        \array_multisort(
-            \array_column($validated, 'id'),
-            SORT_STRING,
-            $validated
-        );
-
         $countProducts = \count($this->settings['products']);
+        $itemsIds = \array_column($this->settings['items'], 'id');
 
-        \reset($this->settings['items']);
         foreach ($validated as $order) {
-            $current = \current($this->settings['items']);
+            $key = \array_search($order->id, $itemsIds);
 
-            if ($current !== false && $order->id === $current->id) {
-                $data = $current->toArray();
+            if ($key === false) {
+                $items[] = ByErrorDTO::fromArray([
+                    'type'  => ByErrorDTO::NOT_FOUND,
+                    'value' => $order
+                ]);
 
-                if ($order->created) {
-                    $data['created'] = $order->created;
-                }
-
-                if ($order->status) {
-                    $data['status'] = $order->status;
-                }
-
-                if ($order->shipmentDate) {
-                    $data['shipmentDate'] = $order->shipmentDate;
-                }
-
-                if ($order->deliveringDate) {
-                    $data['deliveringDate'] = $order->deliveringDate;
-                }
-
-                if ($order->description) {
-                    $data['description'] = $order->description;
-                }
-
-                if (\count($order->additionals)) {
-                    $data['additionals'] = $order->additionals;
-                }
-
-                $idx = \key($this->settings['items']);
-
-                $items[] = $this->settings['items'][$idx] = OrderDTO::fromArray($data);
-                \next($this->settings['items']);
                 continue;
             }
 
-            $items[] = ByErrorDTO::fromArray([
-                'type'  => ByErrorDTO::NOT_FOUND,
-                'value' => $order
-            ]);
+            $current = $this->settings['items'][$key];
+
+            $data = $current->toArray();
+
+            if ($order->created) {
+                $data['created'] = $order->created;
+            }
+
+            if ($order->status) {
+                $data['status'] = $order->status;
+            }
+
+            if ($order->shipmentDate) {
+                $data['shipmentDate'] = $order->shipmentDate;
+            }
+
+            if ($order->deliveringDate) {
+                $data['deliveringDate'] = $order->deliveringDate;
+            }
+
+            if ($order->description) {
+                $data['description'] = $order->description;
+            }
+
+            if (\count($order->additionals)) {
+                $data['additionals'] = $order->additionals;
+            }
+
+            $data['original'] = [
+                'previous' => $current,
+                'new'      => $order
+            ];
+
+            $items[] = $this->settings['items'][$key] = OrderDTO::fromArray($data);
         }
 
         return \array_merge($items, $firstStepErrors, $errors);
