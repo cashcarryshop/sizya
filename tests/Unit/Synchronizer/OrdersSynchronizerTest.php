@@ -37,7 +37,7 @@ use PHPUnit\Framework\Attributes\Depends;
 #[CoversClass(OrdersSynchronizer::class)]
 class OrdersSynchronizerTest extends TestCase
 {
-    public function testSynchronizeCreateCorrectData(): void
+    public function testSynchronizeCreate(): void
     {
         $source = new MockOrdersSource([
             'statuses' => [
@@ -94,7 +94,7 @@ class OrdersSynchronizerTest extends TestCase
         );
     }
 
-    public function testSynchronizeUpdateCorrectData(): void
+    public function testSynchronizeUpdate(): void
     {
         $source = new MockOrdersSource([
             'statuses' => [
@@ -223,9 +223,9 @@ class OrdersSynchronizerTest extends TestCase
         );
     }
 
-    #[Depends('testSynchronizeCreateCorrectData')]
-    #[Depends('testSynchronizeUpdateCorrectData')]
-    public function testSynchronizeCreateAndUpdateCorrectData(): void
+    #[Depends('testSynchronizeCreate')]
+    #[Depends('testSynchronizeUpdate')]
+    public function testSynchronizeCreateAndUpdate(?callable $middleware = null): void
     {
         $source = new MockOrdersSource([
             'statuses' => [
@@ -332,6 +332,7 @@ class OrdersSynchronizerTest extends TestCase
             'doCreate'   => true,
             'repository' => $repository,
             'additional' => $additionalId,
+            'middleware' => $middleware,
             'status'     => [
                 [
                     'source' => 'process',
@@ -353,6 +354,18 @@ class OrdersSynchronizerTest extends TestCase
             $target->settings['items'],
             $repository->relations,
             $additionalId
+        );
+    }
+
+    public function testSynchronizeCreateAndUpdateWithMiddleware(): void
+    {
+        $this->testSynchronizeCreateAndUpdate(
+            function (&$forCreate, &$forUpdate) {
+                $forCreate[0] = 'string';
+                $forUpdate[0] = 'string';
+
+                $forUpdate[1]->id = 123321;
+            }
         );
     }
 
