@@ -57,7 +57,7 @@ class ForUpdateValidationError
      *
      * @var ConstraintViolationListInterface
      */
-    public ConstraintViolationInterface $violations;
+    public ConstraintViolationListInterface $violations;
 
     /**
      * Создание события

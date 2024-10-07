@@ -625,8 +625,14 @@ class OrdersSynchronizer extends AbstractSynchronizer
             return [$forCreate, $forUpdate];
         }
 
-        $cloneForUpdate = $forUpdate;
-        $cloneforCreate = $forCreate;
+        $cloneForUpdate = \array_map(
+            static fn ($item) => clone $item,
+            $forUpdate
+        );
+        $cloneForCreate = \array_map(
+            static fn ($item) => clone $item,
+            $forCreate
+        );
 
         $settings['middleware']($cloneForCreate, $cloneForUpdate);
 

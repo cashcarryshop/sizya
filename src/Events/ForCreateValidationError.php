@@ -50,7 +50,7 @@ class ForCreateValidationError
      *
      * @var ConstraintViolationListInterface
      */
-    public ConstraintViolationInterface $violations;
+    public ConstraintViolationListInterface $violations;
 
     /**
      * Создание события
