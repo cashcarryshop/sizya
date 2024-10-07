@@ -33,7 +33,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @property ?string         $description    Описание
  * @property AdditionalDTO[] $additionals    Доп. поля заказа
  * @property PositionDTO[]   $positions      Позиции заказа
- * @property mixed           $original       Исходные данные
+ * @property ?string         $testKey        Тестовый ключ для сопоставления данных
  *
  * @see AdditionalDTO
  * @see PositionDTO
@@ -56,6 +56,7 @@ class OrderDTO extends AbstractDTO
      * @param AdditionalDTO[] $additionals    Доп. поля заказа
      * @param PositionDTO[]   $positions      Позиции заказа
      * @param mixed           $original       Исходные данные
+     * @param ?string         $testKey        Тестовый ключ для сопоставления данных
      *
      * @see AdditionalDTO
      * @see PositionDTO
@@ -105,6 +106,13 @@ class OrderDTO extends AbstractDTO
         public $positions = null,
 
         #[Assert\NotBlank]
-        public $original = null
+        public $original = null,
+
+        #[Assert\Type(['string', 'null'])]
+        #[Assert\When(
+            expression: 'value !== null',
+            constraints: [new Assert\NotBlank]
+        )]
+        public $testKey = null
     ) {}
 }

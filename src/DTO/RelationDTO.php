@@ -26,16 +26,18 @@ use Symfony\Component\Validator\Constraints as Assert;
  *
  * @see DTOInterface
  *
- * @property string $sourceId Идентификатор источника
- * @property string $targetId Идентфикатор цели
+ * @property string  $sourceId Идентификатор источника
+ * @property string  $targetId Идентфикатор цели
+ * @property ?string $testKey  Тестовый ключ для сопоставления данных
  */
 class RelationDTO extends AbstractDTO
 {
     /**
      * Создать экземпляр позиции
      *
-     * @param string $sourceId Идентификатор источника
-     * @param string $targetId Идентификатор цели
+     * @param string  $sourceId Идентификатор источника
+     * @param string  $targetId Идентификатор цели
+     * @param ?string $testKey  Тестовый ключ для сопоставления данных
      */
     public function __construct(
         #[Assert\Type('string')]
@@ -44,6 +46,13 @@ class RelationDTO extends AbstractDTO
 
         #[Assert\Type('string')]
         #[Assert\NotBlank]
-        public $targetId = null
+            public $targetId = null,
+
+        #[Assert\Type(['string', 'null'])]
+        #[Assert\When(
+            expression: 'value !== null',
+            constraints: [new Assert\NotBlank]
+        )]
+        public $testKey = null
     ) {}
 }
