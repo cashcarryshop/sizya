@@ -52,7 +52,6 @@ class OrderDTO extends AbstractDTO
      * @param ?string         $shipmentDate   Планируемаая дата отгрузки
      * @param ?string         $deliveringDate Дата передачи заказа в доставку
      * @param ?string         $description    Описание
-     * @param ?string         $externalCode   Внешний код
      * @param AdditionalDTO[] $additionals    Доп. поля заказа
      * @param PositionDTO[]   $positions      Позиции заказа
      * @param mixed           $original       Исходные данные

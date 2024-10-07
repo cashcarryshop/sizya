@@ -411,28 +411,25 @@ class OrdersSynchronizer extends AbstractSynchronizer
         ] = $data;
 
         if ($settings['additional']) {
-            $targets = $this->target->getOrdersByAdditional(
-                $settings['additional'], $notFoundIds
+            $targets = \array_filter(
+                $this->target->getOrdersByAdditional(
+                    $settings['additional'], $notFoundIds
+                ),
+                static fn ($item) => $item instanceof OrderDTO
             );
 
             $targetsSourcesIds = \array_map(
                 static function ($target) use ($settings) {
-                    if (!$target instanceof OrderDTO) {
-                        return 'null';
-                    }
-
                     foreach ($target->additionals as $idx => $additional) {
                         if ($additional->id === $settings['additional']) {
-                            return $target->additionals[$idx]['value'];
+                            return $target->additionals[$idx]->value;
                         }
                     }
 
-                    if (!$additionalIndex) {
-                        throw new \RuntimException(sprintf(
-                            'Additional with [%s] id not found',
-                            $settings['additional']
-                        ));
-                    }
+                    throw new \RuntimeException(sprintf(
+                        'Additional with [%s] id not found',
+                        $settings['additional']
+                    ));
                 },
                 $targets
             );

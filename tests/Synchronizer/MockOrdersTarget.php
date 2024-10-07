@@ -204,7 +204,31 @@ class MockOrdersTarget extends MockOrdersSource
             $current = \current($this->settings['items']);
 
             if ($current !== false && $order->id === $current->id) {
-                $data = \array_replace($current->toArray(), $order->toArray());
+                $data = $current->toArray();
+
+                if ($order->created) {
+                    $data['created'] = $order->created;
+                }
+
+                if ($order->status) {
+                    $data['status'] = $order->status;
+                }
+
+                if ($order->shipmentDate) {
+                    $data['shipmentDate'] = $order->shipmentDate;
+                }
+
+                if ($order->deliveringDate) {
+                    $data['deliveringDate'] = $order->deliveringDate;
+                }
+
+                if ($order->description) {
+                    $data['description'] = $order->description;
+                }
+
+                if (\count($order->additionals)) {
+                    $data['additionals'] = $order->additionals;
+                }
 
                 $idx = \key($this->settings['items']);
 

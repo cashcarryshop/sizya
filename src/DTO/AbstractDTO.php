@@ -56,7 +56,7 @@ abstract class AbstractDTO implements DTOInterface
      */
     public function toArray(): array
     {
-        return (array) $this;
+       return (array) $this;
     }
 
     /**

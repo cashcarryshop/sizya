@@ -63,7 +63,7 @@ class MockOrdersSource
 
         $countStatuses = \count($statuses) - 1;
 
-        $additionalsIds = \array_map(
+        $additionalsIds = $settings['additionalsIds'] ?? \array_map(
             fn () => static::guidv4(),
             \array_fill(0, 3, null)
         );
@@ -112,6 +112,7 @@ class MockOrdersSource
 
                                 $product = PositionDTO::fromArray([
                                     'id'        => static::guidv4(),
+                                    'type'      => 'product',
                                     'productId' => $product['id'],
                                     'article'   => $product['article'],
                                     'quantity'  => $quantity,
