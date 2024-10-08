@@ -43,7 +43,7 @@ class MockStocksSource implements SynchronizerSourceInterface, StocksGetterInter
      *
      * @param array $settings Настройки
      */
-    public function __construct(array $settings)
+    public function __construct(array $settings = [])
     {
         $warehouses = $settings['warehouses'] ?? \array_map(
             fn () => ['id' => static::guidv4()],
@@ -72,7 +72,7 @@ class MockStocksSource implements SynchronizerSourceInterface, StocksGetterInter
                         'warehouseId' => $warehouses[\random_int(0, $countWarehouses)]['id'],
                         'quantity'    => \random_int(0, 10)
                     ]),
-                    \array_fill(0, 1000, null)
+                    \array_fill(0, 200, null)
                 )
             ],
             $settings

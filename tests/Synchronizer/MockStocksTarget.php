@@ -126,7 +126,7 @@ class MockStocksTarget extends MockStocksSource
             $data             = $item['stock']->toArray();
             $data['quantity'] = $stock->quantity;
             $data['original'] = [
-                'previous' => $item,
+                'previous' => $item['stock'],
                 'new'      => $stock
             ];
 
