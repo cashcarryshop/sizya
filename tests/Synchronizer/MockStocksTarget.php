@@ -81,75 +81,60 @@ class MockStocksTarget extends MockStocksSource
         );
         unset($firstStepValidated);
 
-        $byIds      = [];
-        $byArticles = [];
+        $items = \array_map(
+            static fn ($stock, $key) => [
+                'key'   => $key,
+                'stock' => $stock
+            ],
+            $this->settings['items'],
+            \array_keys($this->settings['items'])
+        );
 
-        foreach ($validated as $stock) {
-            if ($stock->id) {
-                $byIds = $stock;
-                continue;
-            }
+        $byIds = \array_combine(
+            \array_map(
+                static fn ($stock) => $stock->id . $stock->warehouseId,
+                $this->settings['items']
+            ),
+            $items
+        );
 
-            $byArticles = $stock;
-        }
+        $byArticles = \array_combine(
+            \array_map(
+                static fn ($stock) => $stock->article . $stock->warehouseId,
+                $this->settings['items']
+            ),
+            $items
+        );
 
         $items = [];
-        \array_multisort(
-            \array_column($this->settings['items'], 'article'),
-            SORT_STRING,
-            $this->settings['items']
-        );
+        foreach ($validated as $stock) {
+            if ($stock->id) {
+                $item = $byIds[$stock->id . $stock->warehouseId] ?? false;
+            } else {
+                $item = $byArticles[$stock->article . $stock->warehouseId] ?? false;
+            }
 
-        \array_multisort(
-            \array_column($byArticles, 'article'),
-            SORT_STRING,
-            $byArticles
-        );
+            if ($item === false) {
+                $items[] = ByErrorDTO::fromArray([
+                    'type'  => ByErrorDTO::NOT_FOUND,
+                    'value' => $stock
+                ]);
 
-        \reset($this->settings['items']);
-        foreach ($byArticles as $stock) {
-            $current = \current($this->settings['items']);
-            if ($stock->article === $current?->article) {
-                $current->quantity = $stock->quantity;
-                $items[] = $current;
                 continue;
             }
 
-            $items[] = ByErrorDTO::fromArray([
-                'type'  => ByErrorDTO::NOT_FOUND,
-                'value' => $stock
-            ]);
+            $data             = $item['stock']->toArray();
+            $data['quantity'] = $stock->quantity;
+            $data['original'] = [
+                'previous' => $item,
+                'new'      => $stock
+            ];
+
+            $items[]
+                = $this->settings['items'][$item['key']]
+                = StockDTO::fromArray($data);
         }
 
-
-        \array_multisort(
-            \array_column($this->settings['items'], 'id'),
-            SORT_STRING,
-            $this->settings['items']
-        );
-
-        \array_multisort(
-            \array_column($byIds, 'id'),
-            SORT_STRING,
-            $byIds
-        );
-
-        \reset($this->settings['items']);
-        foreach ($byIds as $stock) {
-            $current = \current($this->settings['items']);
-            if ($stock->id === $current?->id) {
-                $current->quantity = $stock->quantity;
-                $items[] = $current;
-                \next($current);
-                continue;
-            }
-
-            $items[] = ByErrorDTO::fromArray([
-                'type'  => ByErrorDTO::NOT_FOUND,
-                'value' => $stock
-            ]);
-        }
-
-        return \array_merge($items, $errors);
+        return \array_merge($items, $firstStepErrors, $errors);
     }
 }
