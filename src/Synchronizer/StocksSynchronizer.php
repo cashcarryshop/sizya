@@ -81,7 +81,7 @@ class StocksSynchronizer extends AbstractSynchronizer
             'default_warehouse' => [
                 new Assert\Type(['string', 'null']),
                 new Assert\Callback(static function ($defaultWarehouse, $context) {
-                    if ($context->getRoot()['relatins']) {
+                    if ($context->getRoot()['relations']) {
                         return;
                     }
 
@@ -91,7 +91,7 @@ class StocksSynchronizer extends AbstractSynchronizer
                 })
             ],
             'relations' => [
-                new Assert\Calback(static function ($relations, $context) {
+                new Assert\Callback(static function ($relations, $context) {
                     if ($context->getRoot()['default_warehouse']) {
                         return;
                     }
@@ -183,9 +183,7 @@ class StocksSynchronizer extends AbstractSynchronizer
 
         $this->event(
             new Success([
-                'stocks' => $this->target->updateStocks(
-                    array_values($update)
-                )
+                'stocks' => $this->target->updateStocks($update)
             ])
         );
 
