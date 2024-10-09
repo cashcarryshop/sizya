@@ -15,7 +15,7 @@ namespace CashCarryShop\Sizya\Tests\Traits;
 
 use CashCarryShop\Sizya\StocksUpdaterInterface;
 use CashCarryShop\Sizya\DTO\StockDTO;
-use CashCarryShop\Sizya\DTO\ByErrorDTO;
+use CashCarryShop\Sizya\DTO\StockUpdateDTO;
 
 /**
  * Трейт с тестами для обновления остатков.
@@ -30,42 +30,46 @@ use CashCarryShop\Sizya\DTO\ByErrorDTO;
  */
 trait StocksUpdaterTests
 {
-    use CreateValidatorTrait;
+    use InteractsWithFakeData;
+    use StocksAssertions;
 
     public function testUpdateStocks(): void
     {
         $updater = $this->createStocksUpdater();
 
-        if ($updater) {
-            foreach ($this->updateStocksProvider() as $updateStocks) {
-                $results = $updater->updateStocks($updateStocks);
+        $expected = \array_map(
+            fn () => StockDTO::fromArray([
+                'id'          => static::guidv4(),
+                'article'     => static::fakeArticle(),
+                'warehouseId' => static::guidv4(),
+                'quantity'    => \random_int(0, 25)
+            ]),
+            \array_fill(0, 10, null)
+        );
 
-                $this->assertSameSize($updateStocks, $results);
+        $forUpdate = \array_map(
+            fn ($stock) => StockUpdateDTO::fromArray([
+                'id'      => $id = \random_int(0, 3) === 3 ? $stock->id : null,
+                'article' => $id
+                    ? (\random_int(0, 2) === 2 ? $stock->article : null)
+                    : $stock->article,
+                'warehouseId' => $stock->warehouseId,
+                'quantity'    => $stock->quantity
+            ]),
+            $expected
+        );
 
-                foreach ($results as $result) {
-                    $this->assertThat(
-                        $result,
-                        $this->logicalOr(
-                            $this->isInstanceOf(StockDTO::class),
-                            $this->isInstanceOf(ByErrorDTO::class)
-                        )
-                    );
-                }
+        $this->setUpBeforeTestUpdateStocks($expected, $forUpdate);
 
-                $validator = $this->createValidator();
-                foreach ($results as $stock) {
-                    $violations = $validator->validate($stock);
-                    $this->assertCount(0, $violations);
-                }
-            }
-
-            return;
-        }
-
-        $this->markTestIncomplete('Stocks updater is null');
+        $this->assertStocks($expected, $updater->updateStocks($forUpdate));
     }
 
-    abstract protected function createStocksUpdater(): ?StocksUpdaterInterface;
+    abstract protected function createStocksUpdater(): StocksUpdaterInterface;
 
-    abstract protected function updateStocksProvider(): array;
+    protected function setUpBeforeTestUpdateStocks(
+        array $expected,
+        array $forUpdate
+    ): void {
+        // ...
+    }
 }

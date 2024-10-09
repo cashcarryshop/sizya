@@ -16,6 +16,7 @@ namespace CashCarryShop\Sizya\Tests\Traits;
 use CashCarryShop\Sizya\OrdersUpdaterInterface;
 use CashCarryShop\Sizya\DTO\OrderDTO;
 use CashCarryShop\Sizya\DTO\OrderUpdateDTO;
+use CashCarryShop\Sizya\DTO\AdditionalUpdateDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
 
 /**
@@ -31,68 +32,83 @@ use CashCarryShop\Sizya\DTO\ByErrorDTO;
  */
 trait OrdersUpdaterTests
 {
-    use CreateValidatorTrait;
+    use InteractsWithFakeData;
+    use OrdersAssertions;
 
     public function testMassUpdateOrders(): void
     {
-        $creator = $this->createOrdersUpdater();
+        $updater = $this->createOrdersUpdater();
 
-        if ($creator) {
-            foreach ($this->ordersUpdateProvider() as $forUpdate) {
-                $updated = $creator->massUpdateOrders($forUpdate);
+        $expected = \array_map(
+            fn () => static::fakeOrderDto(),
+            \array_fill(0, 10, null)
+        );
 
-                $this->assertSameSize($forUpdate, $updated);
+        $forUpdate = \array_map(
+            fn ($order) => OrderUpdateDTO::fromArray([
+                'id'             => $order->id,
+                'created'        => $order->created,
+                'status'         => $order->status,
+                'shipmentDate'   => $order->shipmentDate,
+                'deliveringDate' => $order->deliveringDate,
+                'description'    => $order->description,
+                'additionals'    => \array_map(
+                    fn ($additional) => AdditionalUpdateDTO::fromArray([
+                        'id'       => $additional->id,
+                        'entityId' => $additional->entityId,
+                        'value'    => $additional->value
+                    ]),
+                    $order->additionals
+                )
+            ]),
+            $expected
+        );
 
-                $validator = $this->createValidator();
-                foreach ($updated as $order) {
-                    $this->assertThat(
-                        $order,
-                        $this->logicalOr(
-                            $this->isInstanceOf(OrderDTO::class),
-                            $this->isInstanceOf(ByErrorDTO::class)
-                        )
-                    );
+        $this->setUpBeforeTestMassUpdateOrders($expected, $forUpdate);
 
-                    $violations = $validator->validate($order);
-                    $this->assertCount(0, $violations, (string) $violations);
-                }
-            }
-
-            return;
-        }
-
-        $this->markTestIncomplete('Orders creator is null');
+        $this->assertOrders($expected, $updater->massUpdateOrders($forUpdate));
     }
 
     public function testUpdateOrder(): void
     {
-        $creator = $this->createOrdersUpdater();
+        $updater = $this->createOrdersUpdater();
 
-        if ($creator) {
-            $forUpdate = $this->orderUpdateProvider();
-            $updated   = $creator->updateOrder($forUpdate);
+        $expected  = static::fakeOrderDto();
+        $forUpdate = OrderUpdateDTO::fromArray([
+            'id'             => $expected->id,
+            'created'        => $expected->created,
+            'status'         => $expected->status,
+            'shipmentDate'   => $expected->shipmentDate,
+            'deliveringDate' => $expected->deliveringDate,
+            'description'    => $expected->description,
+            'additionals'    => \array_map(
+                fn ($additional) => AdditionalUpdateDTO::fromArray([
+                    'id'       => $additional->id,
+                    'entityId' => $additional->entityId,
+                    'value'    => $additional->value
+                ]),
+                $expected->additionals
+            )
+        ]);
 
-            $validator = $this->createValidator();
-            $this->assertThat(
-                $updated,
-                $this->logicalOr(
-                    $this->isInstanceOf(OrderDTO::class),
-                    $this->isInstanceOf(ByErrorDTO::class)
-                )
-            );
+        $this->setUpBeforeTestUpdateOrder($expected, $forUpdate);
 
-            $violations = $validator->validate($updated);
-            $this->assertCount(0, $violations, (string) $violations);
-
-            return;
-        }
-
-        $this->markTestIncomplete('Orders creator is null');
+        $this->assertOrders([$expected], [$updater->updateOrder($forUpdate)]);
     }
 
-    abstract protected function createOrdersUpdater(): ?OrdersUpdaterInterface;
+    protected function setUpBeforeTestMassUpdateOrders(
+        array $expected,
+        array $forUpdate
+    ): void {
+        // ...
+    }
 
-    abstract protected function ordersUpdateProvider(): array;
+    protected function setUpBeforeTestUpdateOrder(
+        OrderDTO       $expected,
+        OrderUpdateDTO $forUpdate
+    ): void {
+        // ...
+    }
 
-    abstract protected function orderUpdateProvider(): OrderUpdateDTO;
+    abstract protected function createOrdersUpdater(): OrdersUpdaterInterface;
 }

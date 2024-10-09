@@ -16,7 +16,7 @@ namespace CashCarryShop\Sizya\Tests\Unit\Moysklad;
 use CashCarryShop\Sizya\Moysklad\ShortStocks;
 use CashCarryShop\Sizya\Tests\Traits\StocksGetterTests;
 use CashCarryShop\Sizya\Tests\Traits\InteractsWithMoysklad;
-use CashCarryShop\Sizya\Tests\TestCase;
+use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
@@ -34,38 +34,33 @@ class ShortStocksTest extends TestCase
     use InteractsWithMoysklad;
     use StocksGetterTests;
 
-    /**
-     * Сущность.
-     *
-     * @var ?CustomerOrdersSource
-     */
-    protected static ?ShortStocks $entity = null;
-
-    public static function setUpBeforeClass(): void
+    protected function createStocksGetter(): ShortStocks
     {
-        static::$entity = new ShortStocks([
+        return new ShortStocks([
             'credentials' => ['login', 'password'],
             'client'      => static::createHttpClient(static::$handler),
             'stockType'   => 'quantity'
         ]);
     }
 
-    protected function createStocksGetter(): ?ShortStocks
+    protected function setUpBeforeTestGetStocks(array $expected): void
     {
-        return static::$entity;
-    }
+        $products = [];
+        foreach ($expected as $stock) {
+            if (isset($products[$stock->id])) {
+                continue;
+            }
 
-    protected function setUpBeforeTestGetStocks(): void
-    {
+            $products[$stock->id] = static::fakeProductDto(['id' => $stock->id]);
+        }
+
         static::$handler->append(
-            static::createMethodResponse('1.2/report/stock/bystore/current'),
-            static::createMethodResponse('1.2/entity/assortment'),
-            static::createMethodResponse('1.2/entity/assortment')
+            static::createMethodResponse('1.2/report/stock/bystore/current', [
+                'expected' => $expected
+            ]),
+            static::createMethodResponse('1.2/entity/assortment', [
+                'expected' => $products
+            ]),
         );
-    }
-
-    public static function tearDownAfterClass(): void
-    {
-        static::$entity = null;
     }
 }

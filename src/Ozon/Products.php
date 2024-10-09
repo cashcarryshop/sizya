@@ -280,16 +280,14 @@ class Products extends AbstractSource implements ProductsGetterInterface
                     foreach ($this->decodeResponse($response)['result']['items'] as $item) {
                         $values[] = (string) $item[$key];
 
-                        $datetime = \date_create_from_format(
-                            'Y-m-d\TH:i:s.up', $item['created_at']
-                        );
+                        $datetime = Utils::dateToUtc($item['created_at']);
 
                         $dtos[] = ProductDTO::fromArray([
                             'id'       => (string) $item['id'],
                             'article'  => $item['offer_id'],
                             'created'  => $datetime
                                 ? $datetime->format(ProductDTO::DATE_FORMAT)
-                                : $item['cretted_at'],
+                                : $item['created_at'],
                             'prices' => [
                                 PriceDTO::fromArray([
                                     'id'       => 'price',

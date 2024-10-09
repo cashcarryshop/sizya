@@ -14,9 +14,11 @@
 namespace CashCarryShop\Sizya\Tests\Unit\Ozon;
 
 use CashCarryShop\Sizya\Ozon\Orders;
+use CashCarryShop\Sizya\DTO\OrderDTO;
+use CashCarryShop\Sizya\DTO\ByErrorDTO;
 use CashCarryShop\Sizya\Tests\Traits\InteractsWithOzon;
 use CashCarryShop\Sizya\Tests\Traits\OrdersGetterTests;
-use CashCarryShop\Sizya\Tests\TestCase;
+use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
@@ -34,16 +36,9 @@ class OrdersTest extends TestCase
     use InteractsWithOzon;
     use OrdersGetterTests;
 
-    /**
-     * Используемыая сущность.
-     *
-     * @var ?Orders
-     */
-    protected static ?Orders $entity = null;
-
-    public static function setUpbeforeClass(): void
+    protected function createOrdersGetter(): Orders
     {
-        static::$entity = new Orders([
+        return new Orders([
             'token'       => 'token',
             'clientId'    => 123321,
             'unfulfilled' => true,
@@ -52,68 +47,97 @@ class OrdersTest extends TestCase
         ]);
     }
 
-    protected function createOrdersGetter(): ?Orders
+    protected function setUpBeforeTestGetOrders(array $expected): void
     {
-        return static::$entity;
-    }
+        $this->_prepareOrders($expected);
 
-    protected function setUpBeforeTestGetOrders(): void
-    {
-        $productSku = \random_int(100000000, 999999999);
-        static::$handler->append(static::createMethodResponse('v3/posting/fbs/unfulfilled/list', [
-            'items' => \array_map(
-                static fn () => ['productSku' => $productSku],
-                \array_fill(0, 100, null)
-            )
-        ]));
+        static::$handler->append(
+            static::createMethodResponse('v3/posting/fbs/unfulfilled/list', [
+                'expected' => $expected
+            ])
+        );
 
-        $productId = \random_int(100000000, 999999999);
-        static::$handler->append(static::createMethodResponse('v2/product/info/list', [
-            'captureItem' => static function (&$item) use ($productSku, $productId) {
-                $item['sku'] = $productSku;
-                $item['id']  = $productId;
-            }
-        ]));
-    }
-
-    protected function ordersIdsProvider(): array
-    {
-        [
-            'provides' => $provides,
-            'invalid'  => $invalidIds
-        ] = static::generateProvideData();
-
-        $productSku = static::guidv4();
-        foreach ($provides as $ids) {
-            foreach ($ids as $id) {
-                if (\in_array($id, $invalidIds)) {
-                    static::$handler->append(static::createResponse(code: 404));
+        $products = [];
+        foreach ($expected as $order) {
+            foreach ($order->positions as $position) {
+                if (isset($products[$position->productId])) {
                     continue;
                 }
 
-                static::$handler->append(
-                    static::createMethodResponse('v3/posting/fbs/get', [
-                        'captureItem' => static function (&$result) use ($productSku) {
-                            $result['products'][0]['sku'] = $productSku;
-                        }
-                    ])
-                );
+                $products[$position->productId] = static::fakeProductDto([
+                    'id'      => $position->productId,
+                    'article' => $position->article
+                ]);
             }
-
-            static::$handler->append(
-                static::createMethodResponse('v2/product/info/list', [
-                    'captureItem' => static function (&$item) use ($productSku) {
-                        $item['sku'] = $productSku;
-                    }
-                ])
-            );
         }
 
-        return $provides;
+        static::$handler->append(
+            static::createMethodResponse('v2/product/info/list', [
+                'expected' => \array_values($products)
+            ])
+        );
     }
 
-    public static function tearDownAfterClass(): void
+    protected function setUpBeforeTestGetOrdersByIds(
+        array $expectedOrders,
+        array $expectedErrors,
+        array $expected
+    ): void {
+        $this->_prepareOrders($expectedOrders);
+
+        $products = [];
+        foreach ($expected as $item) {
+            if ($item instanceof OrderDTO) {
+                static::$handler->append(
+                    static:createMethodResponse(
+                        'v3/posting/fbs/get', [
+                            'expected' => $item
+                        ]
+                    )
+                );
+
+                foreach ($item->positions as $position) {
+                    if (isset($products[$position->productId])) {
+                        continue;
+                    }
+
+                    $products[$position->productId] = static::fakeProductDto([
+                        'id'      => $position->productId,
+                        'article' => $position->article
+                    ]);
+                }
+
+                continue;
+            }
+
+            if ($item->type === ByErrorDTO::NOT_FOUND) {
+                static::$handler->append(static::createResponse(code: 404));
+            }
+        }
+
+        static::$handler->append(
+            static::createMethodResponse('v2/product/info/list', [
+                'expected' => \array_values($products)
+            ])
+        );
+    }
+
+    /**
+     * Обработать заказы
+     *
+     * @param OrderDTO[] $orders
+     *
+     * @return void
+     */
+    private function _prepareOrders(array $orders): void
     {
-        static::$entity = null;
+        foreach ($orders as $order) {
+            $order->additionals = [];
+
+            foreach ($order->positions as $position) {
+                $position->type      = 'product';
+                $position->productId = (string) \random_int(100000000, 999998888);
+            }
+        }
     }
 }

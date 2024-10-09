@@ -16,6 +16,8 @@ namespace CashCarryShop\Sizya\Tests\Traits;
 use CashCarryShop\Sizya\OrdersGetterByAdditionalInterface;
 use CashCarryShop\Sizya\DTO\OrderDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
+use CashCarryShop\Sizya\DTO\AdditionalDTO;
+use CashCarryShop\Sizya\DTO\PositionDTO;
 
 /**
  * Трейт с тестами получения заказов по доп. полям.
@@ -30,44 +32,77 @@ use CashCarryShop\Sizya\DTO\ByErrorDTO;
  */
 trait OrdersGetterByAdditionalTests
 {
-    use CreateValidatorTrait;
+    use InteractsWithFakeData;
+    use OrdersAssertions;
 
     public function testGetOrdersByAdditional(): void
     {
+        [
+            'values'  => $values,
+            'valid'   => $valid,
+            'invalid' => $invalid
+        ] = static::generateFakeData();
+
+        $entityId = static::guidv4();
+
         $getter = $this->createOrdersGetterByAdditional();
 
-        if ($getter) {
-            foreach ($this->ordersAdditionalProvider() as [$entityId, $values]) {
-                $orders = $getter->getOrdersByAdditional($entityId, $values);
-
-                $this->assertGreaterThanOrEqual(
-                    \count($values),
-                    \count($orders),
-                    'The number of orders must be equal to or greater than passed values'
-                );
-
-                $validator = $this->createValidator();
-                foreach ($orders as $order) {
-                    $this->assertThat(
-                        $order,
-                        $this->logicalOr(
-                            $this->isInstanceOf(OrderDTO::class),
-                            $this->isInstanceOf(ByErrorDTO::class)
-                        )
-                    );
-
-                    $violations = $validator->validate($order);
-                    $this->assertCount(0, $violations);
+        $expectedOrders = [];
+        $expectedErrors = [];
+        $expected       = \array_map(
+            function ($value) use (
+                $invalid,
+                $entityId,
+                &$expectedOrders,
+                &$expectedErrors
+            ) {
+                if (\in_array($value, $invalid)) {
+                    return $expectedErrors[] = ByErrorDTO::fromArray([
+                        'type'  => ByErrorDTO::NOT_FOUND,
+                        'value' => $value
+                    ]);
                 }
-            }
 
-            return;
-        }
+                $order = static::fakeOrderDto();
+                $order->additionals = [
+                    AdditionalDTO::fromArray([
+                        'id'       => static::guidv4(),
+                        'entityId' => static::guidv4(),
+                        'name'     => static::fakeArticle(),
+                        'value'    => static::fakeString()
+                    ]),
+                    AdditionalDTO::fromArray([
+                        'id'       => static::guidv4(),
+                        'entityId' => $entityId,
+                        'name'     => \sha1($entityId),
+                        'value'    => $value
+                    ])
+                ];
 
-        $this->markTestIncomplete('Orders additional getter is null');
+                return $expectedOrders[] = $order;
+            },
+            $values
+        );
+
+        $this->setUpBeforeTestGetOrdersByAdditional(
+            $expectedOrders,
+            $expectedErrors,
+            $expected
+        );
+
+        $this->assertOrders(
+            $expected,
+            $getter->getOrdersByAdditional($entityId, $values)
+        );
     }
 
     abstract protected function createOrdersGetterByAdditional(): ?OrdersGetterByAdditionalInterface;
 
-    abstract protected function ordersAdditionalProvider(): array;
+    protected function setUpBeforeTestGetOrdersByAdditional(
+        array $expectedOrders,
+        array $expectedErrors,
+        array $expected
+    ): void {
+        // ...
+    }
 }

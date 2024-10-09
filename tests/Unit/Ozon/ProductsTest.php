@@ -16,7 +16,7 @@ namespace CashCarryShop\Sizya\Tests\Unit\Ozon;
 use CashCarryShop\Sizya\Ozon\Products;
 use CashCarryShop\Sizya\Tests\Traits\InteractsWithOzon;
 use CashCarryShop\Sizya\Tests\Traits\ProductsGetterTests;
-use CashCarryShop\Sizya\Tests\TestCase;
+use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
@@ -34,16 +34,55 @@ class ProductsTest extends TestCase
     use InteractsWithOzon;
     use ProductsGetterTests;
 
-    /**
-     * Используемыая сущность.
-     *
-     * @var ?Products
-     */
-    protected static Products $entity;
-
-    public static function setupBeforeClass(): void
+    protected function setUpBeforeTestGetProducts(array $expected): void
     {
-        static::$entity = new Products([
+        $this->_prepareProducts($expected);
+
+        static::$handler->append(
+            static::createMethodResponse('v2/product/list', [
+                'expected' => $expected
+            ]),
+            static::createMethodResponse('v2/product/info/list', [
+                'expected' => $expected
+            ])
+        );
+    }
+
+    protected function setUpBeforeTestGetProductsByIds(
+        array $expectedProducts,
+        array $expectedErrors,
+        array $expected
+    ): void {
+        $this->_prepareProducts($expectedProducts);
+
+        static::$handler->append(
+            static fn () => static::createMethodResponse(
+                'v2/product/info/list', [
+                    'expected' => $expectedProducts
+                ]
+            )
+        );
+    }
+
+    protected function setUpBeforeTestGetProductsByArticles(
+        array $expectedProducts,
+        array $expectedErrors,
+        array $expected
+    ): void {
+        $this->_prepareProducts($expectedProducts);
+
+        static::$handler->append(
+            static fn () => static::createMethodResponse(
+                'v2/product/info/list', [
+                    'expected' => $expectedProducts
+                ]
+            )
+        );
+    }
+
+    protected function createProductsGetter(): Products
+    {
+        return new Products([
             'token'    => 'token',
             'clientId' => 123321,
             'limit'    => 100,
@@ -51,65 +90,24 @@ class ProductsTest extends TestCase
         ]);
     }
 
-    protected function createProductsGetter(): ?Products
+    /**
+     * Обработать объект ожидаемых товаров.
+     *
+     * @param array $products Товары
+     *
+     * @return void
+     */
+    private function _prepareProducts(array $products): void
     {
-        return static::$entity ?? null;
-    }
+        foreach ($products as $product) {
+            $product->id = (string) \random_int(100000000, 999999999);
+            $product->prices = \array_slice($product->prices, 1, 2);
 
-    protected function setUpBeforeTestGetProducts(): void
-    {
-        static::$handler->append(
-            static::createMethodResponse('v2/product/list', ['limit' => 100]),
-            static::createMethodResponse('v2/product/info/list')
-        );
-    }
+            $product->prices[0]->id   = 'price';
+            $product->prices[0]->name = 'Price';
 
-    protected function productsIdsProvider(): array
-    {
-        [
-            'provides' => $ids,
-            'invalid'  => $invalidIds
-        ] = static::generateProvideData();
-
-        static::$handler->append(
-            ...\array_map(
-                static fn () => static::createMethodResponse(
-                    'v2/product/info/list', [
-                        'notFound' => $invalidIds
-                    ]
-                ),
-                $ids
-            )
-        );
-
-        return $ids;
-    }
-
-    protected function productsArticlesProvider(): array
-    {
-        [
-            'provides' => $articles,
-            'invalid'  => $invalidArticles
-        ] = static::generateProvideData([
-            'validGenerator' => fn () => static::fakeArticle()
-        ]);
-
-        static::$handler->append(
-            ...\array_map(
-                 static fn () => static::createMethodResponse(
-                    'v2/product/info/list', [
-                        'notFound' => $invalidArticles
-                    ]
-                ),
-                $articles
-            )
-        );
-
-        return $articles;
-    }
-
-    public static function tearDownAfterClass(): void
-    {
-        static::$entity = null;
+            $product->prices[1]->id   = 'minPrice';
+            $product->prices[1]->name = 'Min price';
+        }
     }
 }

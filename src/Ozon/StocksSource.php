@@ -71,8 +71,8 @@ class StocksSource extends AbstractStocks implements StocksGetterInterface
             $items
         );
 
-        asort($skus,      SORT_REGULAR);
-        asort($itemsSkus, SORT_REGULAR);
+        \asort($skus,      SORT_REGULAR);
+        \asort($itemsSkus, SORT_REGULAR);
 
         $stocks = [];
         \reset($itemsSkus);

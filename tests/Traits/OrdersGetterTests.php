@@ -15,6 +15,8 @@ namespace CashCarryShop\Sizya\Tests\Traits;
 
 use CashCarryShop\Sizya\OrdersGetterInterface;
 use CashCarryShop\Sizya\DTO\OrderDTO;
+use CashCarryShop\Sizya\DTO\AdditionalDTO;
+use CashCarryShop\Sizya\DTO\PositionDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
 
 /**
@@ -30,85 +32,74 @@ use CashCarryShop\Sizya\DTO\ByErrorDTO;
  */
 trait OrdersGetterTests
 {
-    use CreateValidatorTrait;
+    use InteractsWithFakeData;
+    use OrdersAssertions;
 
     public function testGetOrders(): void
     {
         $getter = $this->createOrdersGetter();
 
-        if ($getter) {
-            $this->setUpBeforeTestGetOrders();
+        $expected = \array_map(
+            fn () => static::fakeOrderDto(),
+            \array_fill(0, 10, null)
+        );
 
-            $orders = $getter->getOrders();
+        $this->setUpBeforeTestGetOrders($expected);
 
-            if (\count($orders) === 0) {
-                $this->markTestIncomplete(
-                    'No orders were found for '
-                        . \get_class($getter)
-                );
-            }
-
-            $this->assertContainsOnlyInstancesOf(OrderDTO::class, $orders);
-
-            $validator = $this->createValidator();
-            foreach ($orders as $order) {
-                $violations = $validator->validate($order);
-                $this->assertCount(0, $violations, (string) $violations);
-            }
-
-            return;
-        }
-
-        $this->markTestIncomplete('Orders getter is null');
+        $this->assertOrders($expected, $getter->getOrders());
     }
 
     public function testGetOrdersByIds(): void
     {
+        [
+            'values'  => $ids,
+            'valid'   => $validIds,
+            'invalid' => $invalidIds
+        ] = static::generateFakeData();
+
         $getter = $this->createOrdersGetter();
 
-        if ($getter) {
-            foreach ($this->ordersIdsProvider() as $ids) {
-                $orders = $getter->getOrdersByIds($ids);
-
-                $this->assertSameSize($ids, $orders);
-
-                $validator = $this->createValidator();
-                foreach ($orders as $order) {
-                    $this->assertThat(
-                        $order,
-                        $this->logicalOr(
-                            $this->isInstanceOf(OrderDTO::class),
-                            $this->isInstanceOf(ByErrorDTO::class)
-                        )
-                    );
-
-                    $violations = $validator->validate($order);
-                    $this->assertCount(0, $violations, (string) $violations);
+        $expectedOrders = [];
+        $expectedErrors = [];
+        $expected       = \array_map(
+            function ($id) use (
+                $invalidIds,
+                &$expectedOrders,
+                &$expectedErrors
+            ) {
+                if (\in_array($id, $invalidIds)) {
+                    return $expectedErrors[] = ByErrorDTO::fromArray([
+                        'type'  => ByErrorDTO::NOT_FOUND,
+                        'value' => $id
+                    ]);
                 }
-            }
 
-            return;
-        }
-
-        $this->markTestIncomplete('Orders getter is null');
-    }
-
-    protected static function generateIds(array $ids): array
-    {
-        \shuffle($ids);
-
-        return \array_map(
-            static fn ($chunk) => [$chunk],
-            \array_chunk($ids, 30)
+                return $expectedOrders[] = static::fakeOrderDto(['id' => $id]);
+            },
+            $ids
         );
+
+        $this->setUpBeforeTestGetOrders(
+            $expectedOrders,
+            $expectedErrors,
+            $expected
+        );
+
+        $this->assertOrders($expected, $getter->getOrders());
     }
 
-    abstract protected function createOrdersGetter(): ?OrdersGetterInterface;
+    abstract protected function createOrdersGetter(): OrdersGetterInterface;
 
-    abstract protected function ordersIdsProvider(): array;
-
-    protected function setUpBeforeTestGetOrders(): void
+    protected function setUpBeforeTestGetOrders(array $expected): void
     {
+        // ...
+    }
+
+    protected function setUpBeforeTestGetOrdersByIds(
+        array $expectedOrders,
+        array $expectedErrors,
+        array $expected
+    ): void {
         // ...
     }
 }

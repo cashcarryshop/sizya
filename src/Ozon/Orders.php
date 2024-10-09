@@ -396,6 +396,7 @@ class Orders extends AbstractSource implements OrdersGetterInterface
             'id'        => (string) $position['sku'],
             'productId' => (string) $position['sku'],
             'article'   => $position['offer_id'],
+            'type'      => 'product',
             'quantity'  => $position['quantity'],
             'reserve'   => $position['quantity'],
             'currency'  => $position['currency_code'],
@@ -467,7 +468,6 @@ class Orders extends AbstractSource implements OrdersGetterInterface
         unset($chunks);
         unset($promises);
         unset($builder);
-
 
         $productSkus = \array_map(
             static function ($data) {

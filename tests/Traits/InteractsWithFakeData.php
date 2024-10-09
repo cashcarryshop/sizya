@@ -14,7 +14,11 @@
 namespace CashCarryShop\Sizya\Tests\Traits;
 
 use CashCarryShop\Sizya\DTO\DTOInterface;
-
+use CashCarryShop\Sizya\DTO\ProductDTO;
+use CashCarryShop\Sizya\DTO\PriceDTO;
+use CashCarryShop\Sizya\DTO\OrderDTO;
+use CashCarryShop\Sizya\DTO\AdditionalDTO;
+use CashCarryShop\Sizya\DTO\PositionDTO;
 
 /**
  * Трейт с методами для генерации фейковых данных.
@@ -27,7 +31,135 @@ use CashCarryShop\Sizya\DTO\DTOInterface;
  */
 trait InteractsWithFakeData
 {
-        /**
+    /**
+     * Сгенерировать массивы с данными для dataProvider.
+     *
+     * Массив $options принимает:
+     *
+     * - validSize:         (int)      Размер валидных значений (по-умолчанию 30)
+     * - invalidSize        (int)      Размер неверных значений (по-умолчанию 30)
+     * - validGenerator:    (callable) Генератор валидных значений
+     *                                 (по-умаолчанию через static::guidv4)
+     * - invalidGenerator:  (callable) Генератор неверных значений
+     *                                 (по-умаолчанию устанавливается validGenerator)
+     *
+     * @param array $options Опции
+     *
+     * @return array<mixed[], mixed[]> Возвращает общий массив и неверные значения
+     */
+    protected static function generateFakeData(array $options = []): array
+    {
+        $options = \array_replace(
+            [
+                'validSize'         => 10,
+                'invalidSize'       => 10,
+                'validGenerator'    => fn () => static::guidv4(),
+                'invalidGenerator'  => $options['validGenerator'] ?? fn () => static::guidv4(),
+            ], $options
+        );
+
+        $validValues = \array_map(
+            $options['validGenerator'],
+            \array_fill(0, $options['validSize'], null)
+        );
+
+        $invalidValues = \array_map(
+            $options['invalidGenerator'],
+            \array_fill(0, $options['invalidSize'], null)
+        );
+
+        $values = \array_merge($validValues, $invalidValues);
+        \shuffle($values);
+
+        return [
+            'values'   => $values,
+            'valid'    => $validValues,
+            'invalid'  => $invalidValues,
+        ];
+    }
+
+    /**
+     * Создать фейковый DTO товара.
+     *
+     * @param array $options Опции
+     *
+     * @return ProductDTO
+     */
+    protected static function fakeProductDto($options = []): ProductDTO
+    {
+        return ProductDTO::fromArray([
+            'id'      => $options['id'] ?? static::guidv4(),
+            'article' => $options['article'] ?? static::fakeArticle(),
+            'created' => static::fakeDtoDate(),
+            'prices'  => [
+                PriceDTO::fromArray([
+                    'id'    => static::guidv4(),
+                    'name'  => static::fakeArticle(),
+                    'value' => (float) \random_int(0, 10000)
+                ]),
+                PriceDTO::fromArray([
+                    'id'    => static::guidv4(),
+                    'name'  => static::fakeArticle(),
+                    'value' => (float) \random_int(0, 10000)
+                ]),
+                PriceDTO::fromArray([
+                    'id'    => 'minPrice',
+                    'name'  => 'Min price',
+                    'value' => (float) \random_int(0, 10000)
+                ])
+            ]
+        ]);
+    }
+
+    /**
+     * Создать фейковый DTO заказа.
+     *
+     * @param array $options Опции
+     *
+     * @return OrderDTO
+     */
+    protected static function fakeOrderDto($options = []): OrderDTO
+    {
+        return OrderDTO::fromArray([
+            'id'             => $options['id'] ?? static::guidv4(),
+            'created'        => static::fakeDtoDate(),
+            'status'         => static::guidv4(),
+            'externalCode'   => \sha1(static::guidv4()),
+            'shipmentDate'   => \random_int(0, 3) === 3
+                ? null
+                : static::fakeDtoDate(),
+            'deliveringDate' => \random_int(0, 3) === 3
+                ? null
+                : static::fakeDtoDate(),
+            'description' => static::fakeString(),
+            'additionals' => \array_map(
+                fn () => AdditionalDTO::fromArray([
+                    'id'       => static::guidv4(),
+                    'entityId' => static::guidv4(),
+                    'name'     => static::fakeArticle(),
+                    'value'    => static::fakeString()
+                ]),
+                \array_fill(0, 3, null)
+            ),
+            'positions' => \array_map(
+                fn () => PositionDTO::fromArray([
+                    'id'        => static::guidv4(),
+                    'productId' => static::guidv4(),
+                    'article'   => static::fakeArticle(),
+                    'type'      => \random_int(0, 3) === 3 ? 'product' : 'variant',
+                    'quantity'  => $quantity = \random_int(0, 10),
+                    'reserve'   => \random_int(0, $quantity),
+                    'price'     => (float) \random_int(0, 10000),
+                    'discount'  => (float) \random_int(0, 50),
+                    'currency'  => 'RUB',
+                    'vat'       => \random_int(0, 3) === 1
+                ]),
+                \array_fill(0, 3, null)
+            )
+        ]);
+    }
+
+    /**
      * Сгенерировать guidv4
      *
      * @param ?string $data Битовые данные длинной 128 битов

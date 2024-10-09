@@ -21,7 +21,8 @@ use CashCarryShop\Sizya\DTO\RelationDTO;
 use CashCarryShop\Sizya\DTO\OrderDTO;
 use CashCarryShop\Sizya\DTO\PositionDTO;
 use CashCarryShop\Sizya\DTO\AdditionalDTO;
-use CashCarryShop\Sizya\Tests\TestCase;
+use CashCarryShop\Sizya\Tests\Traits\InteractsWithFakeData;
+use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Depends;
 
@@ -37,6 +38,8 @@ use PHPUnit\Framework\Attributes\Depends;
 #[CoversClass(OrdersSynchronizer::class)]
 class OrdersSynchronizerTest extends TestCase
 {
+    use InteractsWithFakeData;
+
     public function testSynchronizeCreate(): void
     {
         $source = new MockOrdersSource([

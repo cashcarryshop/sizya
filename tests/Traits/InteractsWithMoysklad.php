@@ -14,7 +14,7 @@
 namespace CashCarryShop\Sizya\Tests\Traits;
 
 use CashCarryShop\Sizya\Moysklad\Enums\FilterSign;
-use GuzzleHttp\Exception\RequestException;
+use CashCarryShop\Sizya\Moysklad\Utils;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -47,433 +47,192 @@ trait InteractsWithMoysklad
 
         $methods ??= [
             'get@1.2/report/stock/bystore/current' => function ($request, $options) {
-                $options = \array_replace(
-                    [
-                        'captureItem'  => static fn () => null,
-                        'captureItems' => static fn () => null
-                    ],
-                    $options
+                return static::createJsonResponse(
+                    body: \array_map(
+                        static fn ($stock) => [
+                            'assortmentId' => $stock->id,
+                            'storeId'      => $stock->warehouseId,
+                            'quantity'     => $stock->quantity
+                        ],
+                        $options['expected']
+                    )
+                );
+            },
+            'get@1.2/entity/customerorder' => function ($request, $options) {
+                $body = static::getResponseData(
+                    'api.moysklad.ru/api/remap/1.2/entity/customerorder'
+                )['body'];
+
+                $item = $body['rows'][0];
+
+                $body['rows'] = \array_map(
+                    function ($order) use ($item) {
+                        $replaces = [
+                            '$id'      => $order->id,
+                            '$orderId' => $order->id
+                        ];
+
+                        $item['id'] = $order->id;
+
+                        $item['meta']['href'] = \strtr(
+                            $item['meta']['href'], $replaces
+                        );
+
+                        $item['positions']['meta']['href'] = \strtr(
+                            $item['positions']['meta']['href'],
+                            $replaces
+                        );
+
+                        $item['attributes'] = \array_map(
+                            fn ($additional) => static::makeAttribute([
+                                'id'       => $additional->id,
+                                'name'     => $additional->name,
+                                'type'     => \gettype($additional->value),
+                                'value'    => $additional->value,
+                                'category' => 'customerorder'
+                            ]),
+                            $order->additionals
+                        );
+
+                        $item['positions']['rows'] = \array_map(
+                            fn ($position) => static::makePosition([
+                                'id'       => $position->id,
+                                'entityId' => $order->id,
+                                'category' => 'customerorder'
+                            ]),
+                            $order->positions
+                        );
+
+                        return $item;
+                    },
+                    $options['expected']
                 );
 
-                \parse_str($request->getUri()->getQuery(), $query);
+                $body['meta']['size'] = \count($body['rows']);
+                $body['meta']['href'] = (string) $request->getUri();
 
-                $field = $options['field'] ?? $query['stockType'] ?? 'quantity';
-
-                if (!isset($options['items'])) {
-                    $options['items'] = \array_map(
-                        fn () => [
-                            'assortmentId' => static::guidv4(),
-                            'storeId'      => static::guidv4(),
-                            $field         => \random_int(-15, 30)
-                        ],
-                        \array_fill(0, 200, null)
-                    );
-                }
-
-                foreach ($options['items'] as $item) {
-                    $options['captureItem']($item);
-                }
-
-                $options['captureItems']($options['items']);
-
-                return static::createJsonResponse(body: $options['items']);
+                return static::createJsonResponse(body: $body);
             },
             'get@1.2/entity/assortment' => function ($request, $options) {
-                \parse_str($request->getUri()->getQuery(), $query);
-
-                $options = \array_replace(
-                    [
-                        'captureItem' => static fn () => null,
-                        'captureItems' => static fn () => null
-                    ],
-                    $options
-                );
-
-                $filters = static::parseFilters($query);
-                $limit   = $query['limit'] ?? $options['limit'] ?? 100;
-
-                $available = ['id', 'article', 'code'];
-                $filtItems = [];
-                foreach ($filters as $filter) {
-                    if ($filter['sign'] === FilterSign::EQ) {
-                        if (\in_array($filter['name'], $available)) {
-                            $filtItems[] = [
-                                'name'  => $filter['name'],
-                                'value' => $filter['value']
-                            ];
-                        }
-                    }
-                }
-                unset($available);
-
-                $filtItems = \array_unique($filtItems, SORT_REGULAR);
-
                 $body = static::getResponseData(
                     'api.moysklad.ru/api/remap/1.2/entity/assortment'
                 )['body'];
                 $item = $body['rows'][0];
 
-                $makeItem = function () use ($item, $options) {
-                    $type = \random_int(0, 3) === 3
-                        ? 'product' : 'variant';
+                $body['rows'] = \array_map(
+                    function ($expected) use ($item) {
+                        $type = \random_int(0, 3) === 3 ? 'product' : 'variant';
 
-                    $item['id']   = $id = static::guidv4();
-                    $item['type'] = $type;
+                        $item['id']      = $expected->id;
+                        $item['type']    = $type;
+                        $item['created'] = Utils::dateToMoysklad($expected->created);
 
-                    $item[
-                        $type === 'product'
-                            ? 'article'
-                            : 'variant'
-                    ] = static::fakeArticle();
+                        $item[
+                            $type === 'product'
+                                ? 'article'
+                                : 'code'
+                        ] = $expected->article;
 
-                    $replaces = [
-                        '$id'   => $id,
-                        '$type' => $type
-                    ];
+                        $item['minPrice']['value'] = $expected->prices[2]->value;
 
-                    $item['meta']['href'] = \strtr(
-                        $item['meta']['href'],
-                        $replaces
-                    );
+                        $salePrice = $item['salePrices'][0];
+                        $salePrices = \array_map(
+                            static function ($price) use ($salePrice) {
+                                $salePrice['value']             = $price->value;
+                                $salePrice['priceType']['name'] = $price->name;
 
-                    $item['meta']['metadataHref'] = \strtr(
-                        $item['meta']['metadataHref'],
-                        $replaces
-                    );
+                                $salePrice['priceType']['meta']['href'] = \strtr(
+                                    $salePrice['priceType']['meta']['href'], [
+                                        '$priceId' => $price->id
+                                    ]
+                                );
 
-                    $item['images']['meta']['href'] = \strtr(
-                        $item['images']['meta']['href'],
-                        $replaces
-                    );
-
-                    return $item;
-                };
-
-                if ($filtItems) {
-                    $items =  \array_map(
-                        function ($data) use ($makeItem, $options) {
-                            $item = $makeItem();
-                            $item[$data['name']] = $data['value'];
-                            $options['captureItem']($item);
-                            return $item;
-                        },
-                        $filtItems
-                    );
-                } else {
-                    if (isset($options['items'])) {
-                        $items = $options['items'];
-                        if (\count($items) > $limit) {
-                            $items = \array_slice($items, 0, $limit);
-                        }
-                    } else {
-                        $items = \array_unique(
-                            \array_map(
-                                function () use ($makeItem, $options) {
-                                    $item = $makeItem();
-                                    $options['captureItem']($item);
-                                    return $item;
-                                },
-                                \array_fill(0, 100, null)
-                            ),
-                            SORT_REGULAR
+                                return $salePrice;
+                            },
+                            \array_slice($expected->prices, 0, 2)
                         );
-                    }
-                }
 
-                $options['captureItems']($items);
+                        $replaces = [
+                            '$id'   => $expected->id,
+                            '$type' => $type
+                        ];
 
-                $body['rows']         = \array_values($items);
-                $body['meta']['size'] = \count($items);
+                        $item['meta']['href'] = \strtr(
+                            $item['meta']['href'],
+                            $replaces
+                        );
 
-                $body['meta']['href'] = (string) $request->getUri();
+                        $item['meta']['metadataHref'] = \strtr(
+                            $item['meta']['metadataHref'],
+                            $replaces
+                        );
 
-                return static::createJsonResponse(body: $body);
-            },
-            'get@1.2/entity/customerorder' => function ($request, $options) {
-                \parse_str($request->getUri()->getQuery(), $query);
+                        $item['images']['meta']['href'] = \strtr(
+                            $item['images']['meta']['href'],
+                            $replaces
+                        );
 
-                $options = \array_replace(
-                    [
-                        'captureItem' => static fn () => null,
-                        'captureItems' => static fn () => null
-                    ],
-                    $options
+                        return $item;
+                    },
+                    $options['expected']
                 );
 
-                $filters = static::parseFilters($query);
-
-                $available = ['id', 'name'];
-                $filtItems = [];
-                foreach ($filters as $filter) {
-                    if ($filter['sign'] === FilterSign::EQ) {
-                        if (\in_array($filter['name'], $available)) {
-                            $filtItems[] = [
-                                'name'  => $filter['name'],
-                                'value' => $filter['value']
-                            ];
-                            continue;
-                        }
-
-                        if (\strpos($filter['name'], 'metadata/attributes')) {
-                            $parsed = \explode('/', $filter['name']);
-
-                            $filtItems[] = [
-                                'name'   => 'attribute',
-                                'attrId' => \end($parsed),
-                                'value'  => $filter['value']
-                            ];
-                        }
-                    }
-                }
-                unset($available);
-
-                $filtItems = \array_unique($filtItems, SORT_REGULAR);
-
-                $body = static::getResponseData(
-                    'api.moysklad.ru/api/remap/1.2/entity/customerorder'
-                )['body'];
-
-                $item       = $body['rows'][0];
-                $attribute  = $item['attributes'][0];
-                $expand     = [
-                    'positions'  => false,
-                    'assortment' => false
-                ];
-
-                if (isset($query['expand'])) {
-                    $exp = \explode('.', $query['expand']);
-
-                    $expand = [
-                        'positions'  => $exp[0] === 'positions',
-                        'assortment' => isset($exp[1]) && $exp[1] === 'assortment'
-                    ];
-                }
-
-                $makeItem = function ($opts = []) use ($item, $expand) {
-                    $replaces = [
-                        '$id'      => $id = static::guidv4(),
-                        '$orderId' => $id
-                    ];
-
-                    $item['id']   = $id;
-                    $item['name'] = static::fakeArticle();
-
-                    $item['meta']['href'] = \strtr(
-                        $item['meta']['href'], $replaces
-                    );
-
-                    $item['positions']['meta']['href'] = \strtr(
-                        $item['positions']['meta']['href'],
-                        $replaces
-                    );
-
-                    $item['attributes'][0] = static::makeAttribute([
-                        'id'       => $opts['attrId'] ?? static::guidv4(),
-                        'category' => 'customerorder',
-                        'type'     => 'string',
-                        'value'    => $opts['attrValue'] ?? static::fakeString()
-                    ]);
-
-                    if ($expand['positions']) {
-                        $position = static::makePosition([
-                            'entityId' => $id,
-                            'category' => 'customerorder'
-                        ]);
-
-                        if ($expand['assortment']) {
-                            $position['assortment'] = static::makeAssortmentItem();
-                        }
-
-                        $item['positions'] = ['rows' => [$position]];
-                    }
-
-                    return $item;
-                };
-
-                if ($filtItems) {
-                    $items = \array_map(
-                        function ($data) use ($makeItem, $options) {
-                            if ($data['name'] === 'attribute') {
-                                $item = $makeItem([
-                                    'attrId'    => $data['attrId'],
-                                    'attrValue' => $data['value']
-                                ]);
-
-                                $options['captureItem']($item);
-                                return $item;
-                            }
-
-                            $item = $makeItem();
-                            $item[$data['name']] = $data['value'];
-
-                            $options['captureItem']($item);
-                            return $item;
-                        },
-                        $filtItems
-                    );
-                } else {
-                    $items = \array_map(
-                        function () use ($makeItem, $options) {
-                            $item = $makeItem();
-                            $options['captureItem']($item);
-                            return $item;
-                        }, \array_fill(0, 100, null)
-                    );
-                }
-
-                $options['captureItems']($items);
-
-                $body['rows'] = array_values($items);
-
-                $body['meta']['size'] = \count($items);
+                $body['meta']['size'] = \count($body['rows']);
                 $body['meta']['href'] = (string) $request->getUri();
 
                 return static::createJsonResponse(body: $body);
             },
             'post@1.2/entity/customerorder' => function ($request, $options) {
-                \parse_str($request->getUri()->getQuery(), $query);
-                $reqBody = \json_decode(
-                    $request->getBody()->getContents(),
-                    true,
-                    512,
-                    JSON_THROW_ON_ERROR,
-                );
-
-                $options = \array_replace(
-                    [
-                        'captureItem' => static fn () => null,
-                        'captureBody' => static fn () => null
-                    ],
-                    $options
-                );
-
                 $body = static::getResponseData(
                     'post@api.moysklad.ru/api/remap/1.2/entity/customerorder'
                 )['body'];
 
-                $item      = $body[0];
-                $attribute = $item['attributes'][0];
-                $expand    = [
-                    'positions'  => false,
-                    'assortment' => false
-                ];
+                $item = $body[0];
 
-                if (isset($query['expand'])) {
-                    $exp = \explode('.', $query['expand']);
+                $body = \array_map(
+                    function ($order) use ($item) {
+                        $replaces = [
+                            '$id'      => $order->id,
+                            '$orderId' => $order->id
+                        ];
 
-                    $expand = [
-                        'positions'  => $exp[0] === 'positions',
-                        'assortment' => isset($exp[1]) && $exp[1] === 'assortment'
-                    ];
-                }
+                        $item['id'] = $order->id;
 
-                $makeItem = function ($received) use ($item) {
-                    $replaces = [
-                        '$id' => $id = $received['id'] ?? static::guidv4()
-                    ];
+                        $item['meta']['href'] = \strtr(
+                            $item['meta']['href'], $replaces
+                        );
 
-                    $item['id']      = $id;
-                    $item['meta']['href'] = \strtr(
-                        $item['meta']['href'], [
-                            '$id' => $id
-                        ]
-                    );
+                        $item['positions']['meta']['href'] = \strtr(
+                            $item['positions']['meta']['href'],
+                            $replaces
+                        );
 
-                    $item['updated']      = $received['updated'] ?? static::fakeDate();
-                    $item['name']         = $received['name'] ?? static::fakeArticle();
-                    $item['moment']       = $received['moment'] ?? static::fakeDate();
-                    $item['created']      = $received['created'] ?? static::fakeDate();
-                    $item['applicable']   = $received['applicable'] ?? true;
-                    $item['vatEnabled']   = $received['vatEnabled'] ?? false;
-                    $item['vatInvaluded'] = $received['vatIncluded'] ?? false;
-                    $item['published']    = $received['published'] ?? true;
-                    $item['printed']      = $received['printed'] ?? false;
-                    $item['organization'] = $received['organization'];
-                    $item['agent']        = $received['agent'];
-
-                    if (isset($received['state'])) {
-                        $item['state'] = $received['state'];
-                    }
-
-                    $item['positions']['meta']['href'] = \strtr(
-                        $item['positions']['meta']['href'],
-                        $replaces
-                    );
-
-                    $issetPositions = isset($received['positions']);
-
-                    $item['positins']['size'] = $issetPositions
-                        ? \count($received['positions'])
-                        : 0;
-
-                    if ($issetPositions && $expand['positions']) {
-                        $positions = [];
-                        foreach ($received['positions'] as $position) {
-                            $created = static::makePosition([
-                                'id'       => $position['id'] ?? static::guidv4(),
-                                'entityId' => $id,
+                        $item['attributes'] = \array_map(
+                            fn ($additional) => static::makeAttribute([
+                                'id'       => $additional->id,
+                                'name'     => $additional->name,
+                                'type'     => \gettype($additional->value),
+                                'value'    => $additional->value,
                                 'category' => 'customerorder'
-                            ]);
+                            ]),
+                            $order->additionals
+                        );
 
-                            if ($expand['assortment']) {
-                                $created['assortment'] = static::makeAssortmentItem([
-                                    'id' => static::guidFromHref(
-                                        $position['assortment']['meta']['href']
-                                    ),
-                                    'type' => $position['assortment']['meta']['type']
-                                ]);
-                            }
+                        $item['positions'] = \array_map(
+                            fn ($position) => static::makePosition([
+                                'id'       => $position->id,
+                                'entityId' => $order->id,
+                                'category' => 'customerorder'
+                            ]),
+                            $additional->positions
+                        );
 
-                            $created['quantity'] = $position['quantity'] ?? 1;
-                            $created['price']    = $position['price']
-                                ?? (float) \random_int(10, 10000);
-
-                            $created['discount']   = $position['discount'] ?? 0.0;
-                            $created['vat']        = $position['vat'] ?? 0;
-                            $created['vatEnabled'] = $position['vatEnabled'] ?? false;
-
-                            $created['reserve'] = $created['quantity'];
-                            if ($position['reserve']) {
-                                $created['reserve'] = $position['reserve'];
-                            }
-
-                            $positions[] = $position;
-                        }
-
-                        $item['positions'] = ['rows' => $positions];
-                    }
-
-                    $item['attributes'] = [];
-
-                    if (isset($received['attributes'])) {
-                        foreach ($received['attributes'] as $attribute) {
-                            $item['attributes'][] = static::makeAttribute([
-                                'id'    => static::guidFromHref(
-                                    $attribute['meta']['href']
-                                ),
-                                'value' => $attribute['value']
-                            ]);
-                        }
-                    }
-
-                    $options['captureItem']($item);
-
-                    return $item;
-                };
-
-                $isSingle = isset($reqBody[0]);
-
-                $body = $isSingle
-                    ? $makeItem($reqBody)
-                    : \array_map($makeItem, $reqBody);
-
-                $options['captureBody']($body);
-
-                return static::createJsonResponse(
-                    body: $isSingle
-                        ? $body
-                        : \array_values($body)
+                        return $item;
+                    },
+                    $options['expected']
                 );
+
+                return static::createJsonResponse(body: $body);
             }
         ];
 

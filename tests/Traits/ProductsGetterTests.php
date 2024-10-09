@@ -14,7 +14,6 @@
 namespace CashCarryShop\Sizya\Tests\Traits;
 
 use CashCarryShop\Sizya\ProductsGetterInterface;
-use CashCarryShop\Sizya\DTO\ProductDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
 
 /**
@@ -30,157 +29,125 @@ use CashCarryShop\Sizya\DTO\ByErrorDTO;
  */
 trait ProductsGetterTests
 {
-    use CreateValidatorTrait;
+    use InteractsWithFakeData;
+    use ProductsAssertions;
 
     public function testGetProducts(): void
     {
         $getter = $this->createProductsGetter();
 
-        if ($getter) {
-            $this->setUpBeforeTestGetProducts();
-            $products = $getter->getProducts();
+        $expected = \array_map(
+            fn () => static::fakeProductDto(),
+            \array_fill(0, 10, null)
+        );
 
-            if (\count($products) === 0) {
-                $this->markTestIncomplete(
-                    'No products were found for '
-                        . \get_class($getter)
-                );
-            }
+        $this->setUpBeforeTestGetProducts($expected);
 
-            $this->assertContainsOnlyInstancesOf(ProductDTO::class, $products);
-
-            $validator = $this->createValidator();
-            foreach ($products as $product) {
-                $violations = $validator->validate($product);
-                $this->assertCount(0, $violations, (string) $violations);
-            }
-
-            return;
-        }
-
-        $this->markTestIncomplete('Products getter is null');
+        $this->assertProducts($expected, $getter->getProducts());
     }
 
     public function testGetProductsByIds(): void
     {
+        [
+            'values'  => $ids,
+            'valid'   => $validIds,
+            'invalid' => $invalidIds
+        ] = static::generateFakeData();
+
         $getter = $this->createProductsGetter();
 
-        if ($getter) {
-            foreach ($this->productsIdsProvider() as $ids) {
-                $products = $getter->getProductsByIds($ids);
-
-                if (\count($products) === 0) {
-                    $this->markTestIncomplete(
-                        'No products were found for '
-                            . \get_class($getter)
-                    );
+        $expectedProducts = [];
+        $expectedErrors   = [];
+        $expected         = \array_map(
+            function ($id) use (
+                $invalidIds,
+                &$expectedProducts,
+                &$expectedErrors
+            ) {
+                if (\in_array($id, $invalidIds)) {
+                    return $expectedErrors[] = ByErrorDTO::fromArray([
+                        'type'  => ByErrorDTO::NOT_FOUND,
+                        'value' => $id
+                    ]);
                 }
 
-                $validator = $this->createValidator();
-                foreach ($products as $product) {
-                    $this->assertThat(
-                        $product,
-                        $this->logicalOr(
-                            $this->isInstanceOf(ProductDTO::class),
-                            $this->isInstanceOf(ByErrorDTO::class)
-                        )
-                    );
+                return $expectedProducts[] =
+                    static::fakeProductDto(['id' => $id]);
+            },
+            $ids
+        );
 
-                    $violations = $validator->validate($product);
-                    $this->assertCount(0, $violations, (string) $violations);
-                }
+        $this->setUpBeforeTestGetProductsByIds(
+            $expectedProducts,
+            $expectedErrors,
+            $expected
+        );
 
-                $this->assertSameSize($ids, $products);
-            }
-
-            return;
-        }
-
-        $this->markTestIncomplete('Products getter is null');
+        $this->assertProducts($expected, $getter->getProductsByIds($ids));
     }
 
     public function testGetProductsByArticles(): void
     {
+        [
+            'values'  => $articles,
+            'valid'   => $validArticles,
+            'invalid' => $invalidArticles
+        ] = static::generateFakeData([
+            'validGenerator' => static fn () => static::fakeArticle()
+        ]);
+
         $getter = $this->createProductsGetter();
 
-        if ($getter) {
-            foreach ($this->productsArticlesProvider() as $articles) {
-                $products = $getter->getProductsByArticles($articles);
-
-                if (\count($products) === 0) {
-                    $this->markTestIncomplete(
-                        'No products were found for '
-                            . \get_class($getter)
-                    );
+        $expectedProducts = [];
+        $expectedErrors   = [];
+        $expected         = \array_map(
+            function ($article) use (
+                $invalidArticles,
+                &$expectedProducts,
+                &$expectedErrors
+            ) {
+                if (\in_array($article, $invalidArticles)) {
+                    return $expectedErrors[] = ByErrorDTO::fromArray([
+                        'type'  => ByErrorDTO::NOT_FOUND,
+                        'value' => $article
+                    ]);
                 }
 
-                $validator = $this->createValidator();
-                foreach ($products as $product) {
-                    $this->assertThat(
-                        $product,
-                        $this->logicalOr(
-                            $this->isInstanceOf(ProductDTO::class),
-                            $this->isInstanceOf(ByErrorDTO::class)
-                        )
-                    );
+                return $expectedProducts[] =
+                    static::fakeProductDto(['article' => $article]);
+            },
+            $articles
+        );
 
-                    $violations = $validator->validate($product);
-                    $this->assertCount(0, $violations, (string) $violations);
-                }
+        $this->setUpBeforeTestGetProductsByArticles(
+            $expectedProducts,
+            $expectedErrors,
+            $expected
+        );
 
-                $this->assertSameSize($articles, $products);
-            }
-
-            return;
-        }
-
-        $this->markTestIncomplete('Products getter is null');
+        $this->assertProducts($expected, $getter->getProductsByArticles($articles));
     }
 
-    protected static function generateIds(array $products, array $invalidIds): array
+    abstract protected function createProductsGetter(): ProductsGetterInterface;
+
+    protected function setUpBeforeTestGetProducts(array $expected): void
     {
-        $ids = \array_merge(
-            \array_map(
-                static fn ($product) => $product->id,
-                $products
-            ),
-            $invalidIds
-        );
-
-        \shuffle($ids);
-
-        return \array_map(
-            static fn ($chunk) => [$chunk],
-            \array_chunk($ids, 30)
-        );
+        // ...
     }
 
-    protected static function generateArticles(array $products, array $invalidArticles): array
-    {
-        $ids = \array_merge(
-            \array_map(
-                static fn ($product) => $product->article,
-                $products
-            ),
-            $invalidArticles
-        );
-
-        \shuffle($ids);
-
-        return \array_map(
-            static fn ($chunk) => [$chunk],
-            \array_chunk($ids, 30)
-        );
+    protected function setUpBeforeTestGetProductsByIds(
+        array $expectedProducts,
+        array $expectedErrors,
+        array $expected
+    ): void {
+        // ...
     }
 
-
-    abstract protected function createProductsGetter(): ?ProductsGetterInterface;
-
-    abstract protected function productsIdsProvider(): array;
-    abstract protected function productsArticlesProvider(): array;
-
-    protected function setUpBeforeTestGetProducts(): void
-    {
+    protected function setUpBeforeTestGetProductsByArticles(
+        array $expectedProducts,
+        array $expectedErrors,
+        array $expected
+    ): void {
         // ...
     }
 }

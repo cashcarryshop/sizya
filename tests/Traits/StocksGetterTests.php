@@ -29,33 +29,31 @@ use CashCarryShop\Sizya\DTO\StockDTO;
  */
 trait StocksGetterTests
 {
-    use CreateValidatorTrait;
+    use InteractsWithFakeData;
+    use StocksAssertions;
 
     public function testGetStocks(): void
     {
         $getter = $this->createStocksGetter();
 
-        if ($getter) {
-            $this->setUpBeforeTestGetStocks();
-            $stocks = $getter->getStocks();
+        $expected = \array_map(
+            fn () => StockDTO::fromArray([
+                'id'          => static::guidv4(),
+                'article'     => static::fakeArticle(),
+                'warehouseId' => static::guidv4(),
+                'quantity'    => \random_int(0, 25)
+            ]),
+            \array_fill(0, 10, null)
+        );
 
-            $this->assertContainsOnlyInstancesOf(StockDTO::class, $stocks);
+        $this->setUpBeforeTestGetStocks($expected);
 
-            $validator = $this->createValidator();
-            foreach ($stocks as $stock) {
-                $violations = $validator->validate($stock);
-                $this->assertCount(0, $violations, (string) $violations);
-            }
-
-            return;
-        }
-
-        $this->markTestIncomplete('Stocks getter is null');
+        $this->assertStocks($expected, $getter->getStocks());
     }
 
-    abstract protected function createStocksGetter(): ?StocksGetterInterface;
+    abstract protected function createStocksGetter(): StocksGetterInterface;
 
-    protected function setUpBeforeTestGetStocks(): void
+    protected function setUpBeforeTestGetStocks(array $expected): void
     {
         // ...
     }

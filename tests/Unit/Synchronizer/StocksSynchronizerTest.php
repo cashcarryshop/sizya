@@ -16,8 +16,9 @@ namespace CashCarryShop\Sizya\Tests\Unit\Synchronizer;
 use CashCarryShop\Sizya\Synchronizer\StocksSynchronizer;
 use CashCarryShop\Sizya\Tests\Synchronizer\MockStocksSource;
 use CashCarryShop\Sizya\Tests\Synchronizer\MockStocksTarget;
-use CashCarryShop\Sizya\Tests\TestCase;
 use CashCarryShop\Sizya\DTO\StockDTO;
+use CashCarryShop\Sizya\Tests\Traits\InteractsWithFakeData;
+use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
@@ -32,6 +33,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 #[CoversClass(StocksSynchronizer::class)]
 class StocksSynchronizerTest extends TestCase
 {
+    use InteractsWithFakeData;
+
     public function testSynchronize(): void
     {
         $sourceWarehouses = \array_map(
