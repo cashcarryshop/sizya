@@ -16,7 +16,7 @@ namespace CashCarryShop\Sizya\DTO;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * DTO для позиций.
+ * DTO для товаров.
  *
  * @category DTO
  * @package  Sizya
@@ -36,7 +36,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 class ProductDTO extends AbstractDTO
 {
     /**
-     * Создать экземпляр позиции
+     * Создать экземпляр товара.
      *
      * @param string $id       Идентификатор товара
      * @param string $article  Артикул товара

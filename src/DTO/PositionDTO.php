@@ -39,7 +39,9 @@ use Symfony\Component\Validator\Constraints as Assert;
 class PositionDTO extends AbstractDTO
 {
     /**
-     * Создать экземпляр позиции
+     * Создать экземпляр позиции.
+     *
+     * Параметр $price отображает цену без скидки ($discount).
      *
      * @param string  $id         Идентификатор позиции
      * @param string  $productId  Идентификатор товара

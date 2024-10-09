@@ -18,9 +18,6 @@ use Symfony\Component\Validator\Constraints as Assert;
 /**
  * DTO для дополнительных полей.
  *
- * Свойства article и productId взаимозаменяемые,
- * но обязательные.
- *
  * @category DTO
  * @package  Sizya
  * @author   TheWhatis <anton-gogo@mail.ru>
@@ -40,7 +37,9 @@ use Symfony\Component\Validator\Constraints as Assert;
 class PositionCreateDTO extends AbstractDTO
 {
     /**
-     * Создать экземпляр позиции
+     * Создать экземпляр позиции.
+     *
+     * Параметр $price отображает цену без скидки ($discount).
      *
      * @param ?string $productId Идентификатор товара
      * @param ?string $article   Артикул товара
