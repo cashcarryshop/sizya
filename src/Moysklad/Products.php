@@ -15,6 +15,7 @@ namespace CashCarryShop\Sizya\Moysklad;
 
 use CashCarryShop\Sizya\ProductsGetterInterface;
 use CashCarryShop\Sizya\DTO\ProductDTO;
+use CashCarryShop\Sizya\DTO\PriceDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
 use CashCarryShop\Sizya\Utils as SizyaUtils;
 use GuzzleHttp\Promise\Utils as PromiseUtils;
@@ -42,9 +43,7 @@ class Products extends AbstractSource implements ProductsGetterInterface
     {
         $defaults = [
             'limit'        => 100,
-            'groupBy'      => 'consignment',
-            'priceType'    => null,
-            'minPriceType' => null
+            'groupBy'      => 'consignment'
         ];
 
         parent::__construct(\array_replace($defaults, $settings));
@@ -67,14 +66,6 @@ class Products extends AbstractSource implements ProductsGetterInterface
                 'groupBy' => [
                     new Assert\Type('string'),
                     new Assert\Choice(['consignment', 'variant', 'product'])
-                ],
-                'priceType' => [
-                    new Assert\Type(['string', 'null']),
-                    new Assert\Uuid(strict: false)
-                ],
-                'minPriceType' => [
-                    new Assert\Type(['string', 'null']),
-                    new Assert\Uuid(strict: false)
                 ]
             ]
         );
@@ -269,36 +260,6 @@ class Products extends AbstractSource implements ProductsGetterInterface
      */
     private function _convertProduct(array $product): ProductDTO
     {
-        $price    = null;
-        $minPrice = null;
-
-        $priceType = $this->getSettings('priceType');
-        $minPriceType = $this->getSettings('minPriceType');
-
-        if ($priceType || $minPriceType) {
-            $break = $minPriceType === null;
-
-            foreach ($product['salePrices'] as $salePrice) {
-                if ($salePrice['priceType']['id'] === $minPriceType) {
-                    $minPrice = $salePrice['value'];
-                    $break = true;
-                }
-
-                if ($salePrice['priceType']['id'] === $priceType) {
-                    $price = $salePrice['value'];
-                }
-
-                if ($price && $break) {
-                    break;
-                }
-            }
-        }
-        unset($priceType);
-        unset($minPriceType);
-
-        $price    ??= (float) $product['salePrices'][0]['value'] / 100;
-        $minPrice ??= $price;
-
         $article = $product['meta']['type'] === 'variant'
             ? $product['code']
             : $product['article'];
@@ -307,8 +268,23 @@ class Products extends AbstractSource implements ProductsGetterInterface
             'id'       => $product['id'],
             'article'  => $article,
             'created'  => Utils::dateToUtc($product['updated']),
-            'price'    => $price,
-            'minPrice' => $minPrice,
+            'prices'   => \array_merge(
+                \array_map(
+                    static fn ($salePrice) => PriceDTO::fromArray([
+                        'id' => Utils::guidFromMeta($salePrice['priceType']['meta']),
+                        'name' => $salePrice['priceType']['name'],
+                        'value' => (float) ($salePrice['value'] / 100),
+                        'original' => $salePrice
+                    ]),
+                    $product['salePrices']
+                ),
+                [PriceDTO::fromArray([
+                    'id'       => 'minPrice',
+                    'name'     => 'Min price',
+                    'value'    => (float) ($product['minPrice']['value'] / 100),
+                    'original' => $product['minPrice']
+                ])]
+            ),
             'original' => $product
         ]);
     }

@@ -15,6 +15,7 @@ namespace CashCarryShop\Sizya\Ozon;
 
 use CashCarryShop\Sizya\ProductsGetterInterface;
 use CashCarryShop\Sizya\DTO\ProductDTO;
+use CashCarryShop\Sizya\DTO\PriceDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
 use CashCarryShop\Sizya\Utils as SizyaUtils;
 use GuzzleHttp\Promise\Utils as PromiseUtils;
@@ -286,12 +287,24 @@ class Products extends AbstractSource implements ProductsGetterInterface
                         $dtos[] = ProductDTO::fromArray([
                             'id'       => (string) $item['id'],
                             'article'  => $item['offer_id'],
-                            'price'    => (float) $item['price'],
-                            'minPrice' => (float) $item['min_price'],
-                            'original' => $item,
                             'created'  => $datetime
                                 ? $datetime->format(ProductDTO::DATE_FORMAT)
                                 : $item['cretted_at'],
+                            'prices' => [
+                                PriceDTO::fromArray([
+                                    'id'       => 'price',
+                                    'name'     => 'Price',
+                                    'value'    => (float) $item['price'],
+                                    'original' => $item['price']
+                                ]),
+                                PriceDTO::fromArray([
+                                    'id'       => 'minPrice',
+                                    'name'     => 'Min price',
+                                    'value'    => (float) $item['min_price'],
+                                    'original' => $item['min_price']
+                                ])
+                            ],
+                            'original' => $item,
                         ]);
                     }
 
