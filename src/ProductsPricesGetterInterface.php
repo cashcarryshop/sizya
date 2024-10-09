@@ -42,6 +42,7 @@ interface ProductsPricesGetterInterface
      * Получить цены товаров по идентификаторам товаров.
      *
      * @param string[] $productsIds Идентификаторы товаров
+     * @param string[] $pricesIds   Фильтры по идентификаторам цен
      *
      * @see ProductPriceDTO
      * @see ByErrorDTO
