@@ -27,6 +27,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @see DTOInterface
  *
  * @property string $id        Идентификатор цены
+ * @property string $name      Название цены
  * @property float  $value     Значение цены
  * @property mixed  $original  Исходные данные
  */
@@ -36,6 +37,7 @@ class PriceDTO extends AbstractDTO
      * Создать экземпляр цены.
      *
      * @param string $id        Идентификатор цены
+     * @param string $name      Название цены
      * @param float  $value     Значение цены
      * @param mixed  $original  Исходные данные
      */
@@ -43,6 +45,10 @@ class PriceDTO extends AbstractDTO
         #[Assert\Type('string')]
         #[Assert\NotBlank]
         public $id = null,
+
+        #[Assert\Type('string')]
+        #[Assert\NotBlank]
+        public $name = null,
 
         #[Assert\Type('float')]
         #[Assert\PositiveOrZero]

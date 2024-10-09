@@ -26,24 +26,22 @@ use Symfony\Component\Validator\Constraints as Assert;
  *
  * @see DTOInterface
  *
- * @property string $id       Идентификатор товара
- * @property string $article  Артикул товара
- * @property string $created  Дата создания товара
- * @property float  $price    Цена товара
- * @property float  $minPrice Минимальная цена товара
- * @property mixed  $original Исходные данные
+ * @property string     $id       Идентификатор товара
+ * @property string     $article  Артикул товара
+ * @property string     $created  Дата создания товара
+ * @property PriceDTO[] $prices   Цены товара
+ * @property mixed      $original Исходные данные
  */
 class ProductDTO extends AbstractDTO
 {
     /**
      * Создать экземпляр товара.
      *
-     * @param string $id       Идентификатор товара
-     * @param string $article  Артикул товара
-     * @param string $created  Дата создания товара
-     * @param float  $price    Цена товара
-     * @param float  $minPrice Минимальная цена товара
-     * @param mixed  $original Исходные данные
+     * @param string     $id       Идентификатор товара
+     * @param string     $article  Артикул товара
+     * @param string     $created  Дата создания товара
+     * @param PriceDTO[] $prices   Цены товара
+     * @param mixed      $original Исходные данные
      */
     public function __construct(
         #[Assert\Type('string')]
@@ -59,13 +57,9 @@ class ProductDTO extends AbstractDTO
         #[Assert\DateTime(ProductDTO::DATE_FORMAT)]
         public $created = null,
 
-        #[Assert\Type('float')]
-        #[Assert\PositiveOrZero]
-        public $price = 0.0,
-
-        #[Assert\Type('float')]
-        #[Assert\PositiveOrZero]
-        public $minPrice = 0.0,
+        #[Assert\Type('array')]
+        #[Assert\All(new Assert\Type(PriceDTO::class))]
+        public $prices = [],
 
         #[Assert\NotBlank]
         public $original = null
