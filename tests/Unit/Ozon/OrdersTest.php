@@ -20,7 +20,7 @@ use CashCarryShop\Sizya\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
- * Тестирования класса для получения заказов Ozon..
+ * Тестирования класса для получения заказов Ozon.
  *
  * @category UnitTests
  * @package  Sizya

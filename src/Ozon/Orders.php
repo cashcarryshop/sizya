@@ -22,7 +22,7 @@ use Psr\Http\Message\RequestInterface;
 use DateTimeZone;
 
 /**
- * Класс для работы с заказами Ozon
+ * Класс для работы с заказами Ozon.
  *
  * @category Ozon
  * @package  Sizya

@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 /**
- * Этот файл является частью пакета sizya
+ * Этот файл является частью пакета sizya.
  *
  * PHP version 8
  *
@@ -18,7 +18,7 @@ use CashCarryShop\Sizya\DTO\StockDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
 
 /**
- * Интерфейс с методами для обновления остатков
+ * Интерфейс с методами для обновления остатков.
  *
  * @category Stocks
  * @package  Sizya

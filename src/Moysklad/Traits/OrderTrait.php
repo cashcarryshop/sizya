@@ -16,7 +16,7 @@ namespace CashCarryShop\Sizya\Moysklad\Traits;
 use CashCarryShop\Sizya\Moysklad\Enums\Order;
 
 /**
- * Трейт с реализацией для сборки сортировки МойСклад
+ * Трейт с реализацией для сборки сортировки МойСклад.
  *
  * @category Moysklad
  * @package  Sizya

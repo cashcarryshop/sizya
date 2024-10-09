@@ -16,7 +16,7 @@ namespace CashCarryShop\Sizya\Ozon;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * Абстрактный класс для заказов покупателей МойСклад
+ * Абстрактный класс остатков Ozon.
  *
  * Содержит правила валидации для настроек, необходимых
  * для работы с остатками Ozon, как

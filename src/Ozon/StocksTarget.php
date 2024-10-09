@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 /**
- * Элемент для синхронизации остатков Ozon
+ * Этот файл является частью пакета sizya.
  *
  * PHP version 8
  *
@@ -25,7 +25,7 @@ use GuzzleHttp\Promise\Utils as PromiseUtils;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * Элемент для синхронизации остатков Ozon
+ * Элемент для синхронизации остатков Ozon.
  *
  * @category Ozon
  * @package  Sizya

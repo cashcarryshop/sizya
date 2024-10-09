@@ -19,7 +19,7 @@ use JsonException;
 
 /**
  * Трейт с методами для взаимодействия с
- * Ozon Seller Api
+ * Ozon Seller Api.
  *
  * @category Ozon
  * @package  Sizya

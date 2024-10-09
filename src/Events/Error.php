@@ -16,7 +16,7 @@ namespace CashCarryShop\Sizya\Events;
 use Throwable;
 
 /**
- * Общее событие на ошибки
+ * Общее событие на ошибки.
  *
  * PHP version 8
  *

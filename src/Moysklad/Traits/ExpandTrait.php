@@ -15,7 +15,7 @@ namespace CashCarryShop\Sizya\Moysklad\Traits;
 
 /**
  * Трейт для работы с разворачиванием
- * полей при запросе к МойСклад
+ * полей при запросе к МойСклад.
  *
  * @category Moysklad
  * @package  Sizya

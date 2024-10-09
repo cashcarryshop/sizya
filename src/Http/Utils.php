@@ -14,12 +14,10 @@
 namespace CashCarryShop\Sizya\Http;
 
 use Psr\Http\Message\StreamInterface;
-use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\Stream;
-use Throwable;
 
 /**
- * Вспомогательный класс для работы с Http
+ * Вспомогательный класс для работы с Http.
  *
  * @category Http
  * @package  Sizya

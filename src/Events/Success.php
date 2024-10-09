@@ -14,7 +14,7 @@
 namespace CashCarryShop\Sizya\Events;
 
 /**
- * Общее событие на успешное выполнение
+ * Общее событие на успешное выполнение.
  *
  * PHP version 8
  *

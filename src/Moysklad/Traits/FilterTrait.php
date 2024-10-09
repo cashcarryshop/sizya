@@ -18,7 +18,7 @@ use CashCarryShop\Sizya\Moysklad\Utils;
 use InvalidArgumentException;
 
 /**
- * Трейт с реализацией для сборки фильтров МойСклад
+ * Трейт с реализацией для сборки фильтров МойСклад.
  *
  * @category Moysklad
  * @package  Sizya

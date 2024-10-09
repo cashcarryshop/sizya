@@ -15,12 +15,10 @@ namespace CashCarryShop\Sizya\Tests\Traits;
 
 use CashCarryShop\Sizya\StocksUpdaterInterface;
 use CashCarryShop\Sizya\DTO\StockDTO;
-use CashCarryShop\Sizya\DTO\StockUpdateDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
-use Throwable;
 
 /**
- * Трейт с тестами для получения остатков.
+ * Трейт с тестами для обновления остатков.
  *
  * @category TestTraits
  * @package  Sizya

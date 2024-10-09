@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 /**
- * Этот файл является частью пакета sizya
+ * Этот файл является частью пакета sizya.
  *
  * PHP version 8
  *
@@ -14,7 +14,7 @@
 namespace CashCarryShop\Sizya\Moysklad;
 
 /**
- * Конструктор метаданных МойСклад
+ * Конструктор метаданных МойСклад.
  *
  * PHP version 8
  *

@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 /**
- * Этот файл является частью пакета sizya
+ * Этот файл является частью пакета sizya.
  *
  * PHP version 8
  *
@@ -19,7 +19,7 @@ use CashCarryShop\Sizya\DTO\ProductDTO;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * Элемент для синхронизации остатков МойСклад
+ * Элемент для синхронизации остатков МойСклад.
  *
  * Передает остатки из "краткого отчета"
  *

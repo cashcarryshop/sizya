@@ -14,7 +14,7 @@
 namespace CashCarryShop\Sizya\Moysklad\Traits;
 
 /**
- * Трейт с реализацией сборки отступа для МойСклад
+ * Трейт с реализацией сборки отступа для МойСклад.
  *
  * @category Moysklad
  * @package  Sizya

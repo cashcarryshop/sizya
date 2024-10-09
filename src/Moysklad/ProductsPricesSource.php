@@ -4,28 +4,30 @@
  *
  * PHP version 8
  *
- * @category Products
+ * @category Moysklad
  * @package  Sizya
  * @author   TheWhatis <anton-gogo@mail.ru>
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
 
-namespace CashCarryShop\Sizya;
+namespace CashCarryShop\Sizya\Moysklad;
 
+use CashCarryShop\Sizya\ProductsPricesGetterInterface;
 use CashCarryShop\Sizya\DTO\ProductPricesDTO;
+use CashCarryShop\Sizya\DTO\PriceDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
 
 /**
- * Интерфейс с методам для получения цен товаров.
+ * Класс для работы с ценами товаров МойСклад.
  *
- * @category Products
+ * @category Moysklad
  * @package  Sizya
  * @author   TheWhatis <anton-gogo@mail.ru>
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  */
-interface ProductsPricesGetterInterface
+class ProductsPricesSource extends Products implements ProductsPricesGetterInterface
 {
     /**
      * Получить цены товаров.
@@ -36,7 +38,10 @@ interface ProductsPricesGetterInterface
      *
      * @return ProductPricesDTO[]
      */
-    public function getProductsPrices(array $pricesIds = []): array;
+    public function getProductsPrices(array $pricesIds = []): array
+    {
+        return $this->_convert($this->getProducts(), $pricesIds);
+    }
 
     /**
      * Получить цены товаров по идентификаторам товаров.
@@ -49,7 +54,10 @@ interface ProductsPricesGetterInterface
      *
      * @return array<int, ProductPricesDTO|ByErrorDTO>
      */
-    public function getProductsPricesByIds(array $productsIds, array $pricesIds = []): array;
+    public function getProductsPricesByIds(array $productsIds, array $pricesIds = []): array
+    {
+        return $this->_convert($this->getProductsByIds($productsIds), $pricesIds);
+    }
 
     /**
      * Получить цены товаров по идентификаторам товаров.
@@ -67,7 +75,9 @@ interface ProductsPricesGetterInterface
     public function getProductPricesById(
         string $productId,
         array  $pricesIds = []
-    ): ProductPricesDTO|ByErrorDTO;
+    ): ProductPricesDTO|ByErrorDTO {
+        return $this->_convert($this->getProductById($productId), $pricesIds);
+    }
 
     /**
      * Получить цены товаров по артикулам товаров.
@@ -80,7 +90,10 @@ interface ProductsPricesGetterInterface
      *
      * @return array<int, ProductPriceDTO|ByErrorDTO>
      */
-    public function getProductsPricesByArticles(array $articles, array $pricesIds = []): array;
+    public function getProductsPricesByArticles(array $articles, array $pricesIds = []): array
+    {
+        return $this->_convert($this->getProductsByArticles($articles), $pricesIds);
+    }
 
     /**
      * Получить цены товаров по идентификаторам товаров.
@@ -98,5 +111,58 @@ interface ProductsPricesGetterInterface
     public function getProductPricesByArticle(
         string $article,
         array  $pricesIds = []
-    ): ProductPricesDTO|ByErrorDTO;
+    ): ProductPricesDTO|ByErrorDTO {
+        return $this->_convert($this->getProductByArticle($article), $pricesIds);
+    }
+
+    /**
+     * Конвертировать данные из Products
+     *
+     * @param array<int, ProductDTO|ByErrorDTO> $items     Элементы
+     * @param string[]                          $pricesIds Идентификаторы цен
+     *
+     * @return ProductPricesDTO[]
+     */
+    private function _convert(array $items, array $pricesIds): array
+    {
+        return \array_map(
+            function ($item) use ($pricesIds) {
+                if ($item instanceof ByErrorDTO) {
+                    $item->value = [
+                        'value'     => $item->value,
+                        'pricesIds' => $pricesIds
+                    ];
+
+                    return $item;
+                }
+
+                return ProductPricesDTO::fromArray([
+                    'id'      => $product->id,
+                    'article' => $product->article,
+                    'prices'  => $this->_filtPrices($product->prices, $pricesIds)
+                ]);
+            },
+            $items
+        );
+    }
+
+    /**
+     * Отфильтровать цены
+     *
+     * @param PriceDTO[] $prices    Цены
+     * @param string[]   $pricesIds По каким ценам фильтровать
+     *
+     * @return PriceDTO[]
+     */
+    private function _filtPrices(array $prices, array $pricesIds): array
+    {
+        if ($pricesIds) {
+            return \array_filter(
+                static fn ($price) => \in_array($price->id, $pricesIds),
+                $prices
+            );
+        }
+
+        return $prices;
+    }
 }

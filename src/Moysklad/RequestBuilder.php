@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 /**
- * Этот файл является частью пакета sizya
+ * Этот файл является частью пакета sizya.
  *
  * PHP version 8
  *
@@ -27,7 +27,7 @@ use GuzzleHttp\Psr7\Request;
 use InvalidArgumentException;
 
 /**
- * Конструктор запросов для МойСклад
+ * Конструктор запросов для МойСклад.
  *
  * @category Moysklad
  * @package  Sizya

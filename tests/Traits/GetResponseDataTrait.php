@@ -14,7 +14,8 @@
 namespace CashCarryShop\Sizya\Tests\Traits;
 
 /**
- * Трейт с методом для получения
+ * Трейт с методом для получения данных ответов
+ * от стороннего api.
  *
  * @category TestTraits
  * @package  Sizya

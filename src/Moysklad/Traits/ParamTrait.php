@@ -16,7 +16,7 @@ namespace CashCarryShop\Sizya\Moysklad\Traits;
 use CashCarryShop\Sizya\Moysklad\Utils;
 
 /**
- * Трейт с реализацией для сборки параметров МойСклад
+ * Трейт с реализацией для сборки параметров МойСклад.
  *
  * @category Moysklad
  * @package  Sizya

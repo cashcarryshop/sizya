@@ -26,7 +26,7 @@ use CashCarryShop\Sizya\Utils as SizyaUtils;
 use GuzzleHttp\Promise\Utils as PromiseUtils;
 
 /**
- * Класс для работы с заказами покупателей МойСклад
+ * Класс для работы с заказами покупателей МойСклад.
  *
  * @category Moysklad
  * @package  Sizya

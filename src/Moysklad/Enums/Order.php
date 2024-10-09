@@ -14,7 +14,7 @@
 namespace CashCarryShop\Sizya\Moysklad\Enums;
 
 /**
- * Перечисление доступных методов сортировки
+ * Перечисление доступных методов сортировки.
  *
  * @category Moysklad
  * @package  Sizya

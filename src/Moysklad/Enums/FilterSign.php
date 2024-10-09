@@ -15,7 +15,7 @@ namespace CashCarryShop\Sizya\Moysklad\Enums;
 
 /**
  * Перечисление доступных знаков сравнения
- * для фильтров МойСклад
+ * для фильтров МойСклад.
  *
  * @category Moysklad
  * @package  Sizya

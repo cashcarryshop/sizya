@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 /**
- * Элемент для синхронизации остатков Ozon
+ * Этот файл является частью пакета sizya.
  *
  * PHP version 8
  *
@@ -14,14 +14,8 @@
 namespace CashCarryShop\Sizya\Ozon;
 
 use CashCarryShop\Sizya\StocksGetterInterface;
-use CashCarryShop\Sizya\DTO\StockUpdateDTO;
 use CashCarryShop\Sizya\DTO\StockDTO;
-use CashCarryShop\Sizya\DTO\ApiErrorDTO;
-use CashCarryShop\Sizya\DTO\ApiErrorsDTO;
-use CashCarryShop\Sizya\DTO\ByErrorDTO;
-use CashCarryShop\Sizya\Utils as SizyaUtils;
 use GuzzleHttp\Promise\Utils as PromiseUtils;
-use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Элемент для синхронизации остатков Ozon
@@ -102,10 +96,7 @@ class StocksSource extends AbstractStocks implements StocksGetterInterface
                 continue;
             }
 
-            // $stocks[] = ByErrorDTO::fromArray([
-                // 'type'  => ByErrorDTO::NOT_FOUND,
-                // 'value' => ['product' => $products[$idx]]
-            // ]);
+            // todo: Здесь должна быть какая-то обработка ошибок
         }
 
         return $stocks;

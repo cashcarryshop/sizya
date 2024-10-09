@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 /**
- * Этот файл является частью пакета sizya
+ * Этот файл является частью пакета sizya.
  *
  * PHP version 8
  *
@@ -21,7 +21,7 @@ use JsonException;
 
 /**
  * Трейт с методами для взаимодействия с
- * МойСклад API
+ * МойСклад API.
  *
  * @category Moysklad
  * @package  Sizya

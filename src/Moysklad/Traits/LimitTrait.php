@@ -15,7 +15,7 @@ namespace CashCarryShop\Sizya\Moysklad\Traits;
 
 /**
  * Трейт с реализацией для сборки ограничения
- * по количеству элементов МойСклад
+ * по количеству элементов МойСклад.
  *
  * @category Moysklad
  * @package  Sizya

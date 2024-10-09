@@ -14,7 +14,7 @@
 namespace CashCarryShop\Sizya\Http\Enums;
 
 /**
- * Перечисление доступных методов HTTP
+ * Перечисление доступных методов HTTP.
  *
  * @category Http
  * @package  Sizya

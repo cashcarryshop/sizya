@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 /**
- * Этот файл является частью пакета sizya
+ * Этот файл является частью пакета sizya.
  *
  * PHP version 8
  *
@@ -18,7 +18,7 @@ use CashCarryShop\Sizya\Exceptions\ValidationException;
 
 /**
  * Трейт с реализацией методов для
- * взаимодействия с настройками
+ * взаимодействия с настройками.
  *
  * @category Synchronizer
  * @package  Sizya

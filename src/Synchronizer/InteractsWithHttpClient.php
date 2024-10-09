@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 /**
- * Этот файл является частью пакета sizya
+ * Этот файл является частью пакета sizya.
  *
  * PHP version 8
  *
@@ -20,7 +20,7 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Client;
 
 /**
- * Трейт с методами для работы с клиентом GuzzleHttp
+ * Трейт с методами для работы с клиентом GuzzleHttp.
  *
  * @category Synchronizer
  * @package  Sizya

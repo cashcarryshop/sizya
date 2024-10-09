@@ -24,7 +24,7 @@ use CashCarryShop\Sizya\Utils as SizyaUtils;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * Класс для работы с заказами покупателей МойСклад
+ * Класс для работы с заказами покупателей МойСклад.
  *
  * @category Moysklad
  * @package  Sizya
