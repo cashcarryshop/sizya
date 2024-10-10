@@ -16,9 +16,9 @@ namespace CashCarryShop\Sizya\Tests\Traits;
 use CashCarryShop\Sizya\DTO\DTOInterface;
 use CashCarryShop\Sizya\DTO\ProductDTO;
 use CashCarryShop\Sizya\DTO\PriceDTO;
-use CashCarryShop\Sizya\DTO\OrderDTO;
-use CashCarryShop\Sizya\DTO\AdditionalDTO;
-use CashCarryShop\Sizya\DTO\PositionDTO;
+use CashCarryShop\Sizya\DTO\{OrderDTO, OrderCreateDTO, OrderUpdateDTO};
+use CashCarryShop\Sizya\DTO\{AdditionalDTO, AdditionalCreateDTO, AdditionalUpdateDTO};
+use CashCarryShop\Sizya\DTO\{PositionDTO, PositionCreateDTO};
 
 /**
  * Трейт с методами для генерации фейковых данных.
@@ -90,6 +90,8 @@ trait InteractsWithFakeData
         return ProductDTO::fromArray([
             'id'      => $options['id'] ?? static::guidv4(),
             'article' => $options['article'] ?? static::fakeArticle(),
+            'type'    => $options['type'] ??
+                \random_int(0, 3) === 3 ? 'product' : 'variant',
             'created' => static::fakeDtoDate(),
             'prices'  => [
                 PriceDTO::fromArray([
@@ -155,6 +157,79 @@ trait InteractsWithFakeData
                     'vat'       => \random_int(0, 3) === 1
                 ]),
                 \array_fill(0, 3, null)
+            )
+        ]);
+    }
+
+    /**
+     * Создать OrderCreateDTO из OrderDTO
+     *
+     * @param OrderDTO $order Заказ
+     *
+     * @return OrderCreateDTO
+     */
+    protected static function fakeOrderCreateDtoFromOrder(OrderDTO $order): OrderCreateDTO
+    {
+        return OrderCreateDTO::fromArray([
+            'created'        => $order->created,
+            'status'         => $order->status,
+            'shipmentDate'   => $order->shipmentDate,
+            'deliveringDate' => $order->deliveringDate,
+            'description'    => $order->description,
+            'additionals'    => \array_map(
+                fn ($additional) => AdditionalCreateDTO::fromArray([
+                    'entityId' => $additional->entityId,
+                    'value'    => $additional->value
+                ]),
+                $order->additionals
+            ),
+            'positions' => \array_map(
+                fn ($position) => PositionCreateDTO::fromArray([
+                    'productId' => $id = (
+                        \random_int(0, 3) === 3
+                            ? $position->productId
+                            : null
+                    ),
+                    'article'  => $id ? (
+                        \random_int(0, 3) === 3
+                            ? $position->article
+                            : null
+                    ) : $position->article,
+                    'type'     => \random_int(0, 3) === 3 ? 'product' : 'variant',
+                    'quantity' => $position->quantity,
+                    'reserve'  => $position->reserve,
+                    'price'    => $position->price,
+                    'discount' => $position->discount,
+                    'currency' => $position->currency
+                ]),
+                $order->positions
+            )
+        ]);
+    }
+
+    /**
+     * Создать OrderCreateDTO из OrderDTO
+     *
+     * @param OrderDTO $order Заказ
+     *
+     * @return OrderUpdateDTO
+     */
+    protected static function fakeOrderUpdateDtoFromOrder(OrderDTO $order): OrderUpdateDTO
+    {
+        return OrderUpdateDTO::fromArray([
+            'id'             => $order->id,
+            'created'        => $order->created,
+            'status'         => $order->status,
+            'shipmentDate'   => $order->shipmentDate,
+            'deliveringDate' => $order->deliveringDate,
+            'description'    => $order->description,
+            'additionals'    => \array_map(
+                fn ($additional) => AdditionalUpdateDTO::fromArray([
+                    'id'       => $additional->id,
+                    'entityId' => $additional->entityId,
+                    'value'    => $additional->value
+                ]),
+                $order->additionals
             )
         ]);
     }

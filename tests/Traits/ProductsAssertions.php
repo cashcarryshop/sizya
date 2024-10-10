@@ -42,7 +42,11 @@ trait ProductsAssertions
      */
     protected function assertProducts(array $expected, array $items): void
     {
-        $this->assertSameSize($expected, $items);
+        $this->assertSameSize(
+            $expected,
+            $items,
+            'Products common size must be equals'
+        );
 
         [
             $products,
@@ -74,13 +78,13 @@ trait ProductsAssertions
         $this->assertSameSize(
             $expectedProducts,
             $products,
-            'Products must be have asme size with expected'
+            'Products must be have same size with expected'
         );
 
         $this->assertSameSize(
             $expectedErrors,
             $errors,
-            'Products errors must be have asme size with expected'
+            'Products errors must be have same size with expected'
         );
 
         \array_multisort(

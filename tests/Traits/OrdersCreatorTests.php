@@ -46,35 +46,7 @@ trait OrdersCreatorTests
         );
 
         $forCreate = \array_map(
-            fn ($order) => OrderCreateDTO::fromArray([
-                'created'        => $order->created,
-                'status'         => $order->status,
-                'shipmentDate'   => $order->shipmentDate,
-                'deliveringDate' => $order->deliveringDate,
-                'description'    => $order->description,
-                'additionals'    => \array_map(
-                    fn ($additional) => AdditionalCreateDTO::fromArray([
-                        'entityId' => $additional->entityId,
-                        'value'    => $additional->value
-                    ]),
-                    $order->additionals
-                ),
-                'positions' => \array_map(
-                    fn ($position) => PositionCreateDTO::fromArray([
-                        'productId' => \in_array($rand = \random_int(1, 3), [1, 2])
-                            ? $position->productId
-                            : null,
-                        'article'  => $rand === 2 ? $position->article : null,
-                        'type'     => $rand === 3 ? 'product' : 'variant',
-                        'quantity' => $position->quantity,
-                        'reserve'  => $position->reserve,
-                        'price'    => $position->price,
-                        'discount' => $position->discount,
-                        'currency' => $position->currency
-                    ]),
-                    $order->positions
-                )
-            ]),
+            fn ($order) => static::fakeOrderCreateDtoFromOrder($order),
             $expected
         );
 
@@ -88,35 +60,7 @@ trait OrdersCreatorTests
         $creator = $this->createOrdersCreator();
 
         $expected  = static::fakeOrderDto();
-        $forCreate = OrderCreateDTO::fromArray([
-            'created'        => $expected->created,
-            'status'         => $expected->status,
-            'shipmentDate'   => $expected->shipmentDate,
-            'deliveringDate' => $expected->deliveringDate,
-            'description'    => $expected->description,
-            'additionals'    => \array_map(
-                fn ($additional) => AdditionalCreateDTO::fromArray([
-                    'entityId' => $additional->entityId,
-                    'value'    => $additional->value
-                ]),
-                $expected->additionals
-            ),
-            'positions' => \array_map(
-                fn ($position) => PositionCreateDTO::fromArray([
-                    'productId' => \in_array($rand = \random_int(1, 3), [1, 2])
-                        ? $position->productId
-                        : null,
-                    'article'  => $rand === 2 ? $position->article : null,
-                    'type'     => $rand === 3 ? 'product' : 'variant',
-                    'quantity' => $position->quantity,
-                    'reserve'  => $position->reserve,
-                    'price'    => $position->price,
-                    'discount' => $position->discount,
-                    'currency' => $position->currency
-                ]),
-                $expected->positions
-            )
-        ]);
+        $forCreate = static::fakeOrderCreateDtoFromOrder($expected);
 
         $this->setUpBeforeTestCreateOrder($expected, $forCreate);
 

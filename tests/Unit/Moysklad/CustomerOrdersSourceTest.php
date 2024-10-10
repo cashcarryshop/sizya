@@ -102,6 +102,14 @@ class CustomerOrdersSourceTest extends TestCase
     {
         foreach ($orders as $order) {
             $order->deliveringDate = null;
+
+            foreach ($order->additionals as $additional) {
+                $additional->id = $additional->entityId;
+            }
+
+            foreach ($order->positions as $position) {
+                $position->currency = null;
+            }
         }
     }
 }

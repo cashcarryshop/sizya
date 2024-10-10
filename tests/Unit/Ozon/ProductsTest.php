@@ -56,7 +56,7 @@ class ProductsTest extends TestCase
         $this->_prepareProducts($expectedProducts);
 
         static::$handler->append(
-            static fn () => static::createMethodResponse(
+            static::createMethodResponse(
                 'v2/product/info/list', [
                     'expected' => $expectedProducts
                 ]
@@ -72,7 +72,7 @@ class ProductsTest extends TestCase
         $this->_prepareProducts($expectedProducts);
 
         static::$handler->append(
-            static fn () => static::createMethodResponse(
+            static::createMethodResponse(
                 'v2/product/info/list', [
                     'expected' => $expectedProducts
                 ]
@@ -100,8 +100,9 @@ class ProductsTest extends TestCase
     private function _prepareProducts(array $products): void
     {
         foreach ($products as $product) {
-            $product->id = (string) \random_int(100000000, 999999999);
+            $product->id     = (string) \random_int(100000000, 999999999);
             $product->prices = \array_slice($product->prices, 1, 2);
+            $product->type   = null;
 
             $product->prices[0]->id   = 'price';
             $product->prices[0]->name = 'Price';

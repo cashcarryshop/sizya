@@ -17,8 +17,8 @@ use CashCarryShop\Sizya\OrdersCreatorInterface;
 use CashCarryShop\Sizya\OrdersUpdaterInterface;
 use CashCarryShop\Synchronizer\SynchronizerTargetInterface;
 use CashCarryShop\Sizya\DTO\{OrderDTO, OrderCreateDTO, OrderUpdateDTO};
-use CashCarryShop\Sizya\DTO\{PositionDTO, PositionCreateDTO, PositionUpdateDTO};
-use CashCarryShop\Sizya\DTO\{AdditionalDTO, AdditionalCreateDTO, AdditionalUpdateDTO};
+use CashCarryShop\Sizya\DTO\{PositionCreateDTO, PositionUpdateDTO};
+use CashCarryShop\Sizya\DTO\{AdditionalCreateDTO, AdditionalUpdateDTO};
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -125,9 +125,6 @@ class CustomerOrdersTarget extends CustomerOrdersSource
         );
         unset($firstStepValidated);
 
-        $errors = \array_merge($firstStepErrors, $errors);
-        unset($firstStepErrors);
-
         $this->_prepareOrders($validated, $errors);
 
         $builder = $this->builder()
@@ -140,7 +137,11 @@ class CustomerOrdersTarget extends CustomerOrdersSource
         ] = SizyaUtils::getByChunks(
             $validated,
             fn ($order) => $this->_convertOrder($order),
-            static fn ($data) => (clone $builder)->body($data)->build('POST')
+            fn ($data) => $this->send(
+                (clone $builder)
+                    ->body($data)
+                    ->build('POST')
+            )
         );
 
         $orders = SizyaUtils::mapResults(
@@ -153,34 +154,25 @@ class CustomerOrdersTarget extends CustomerOrdersSource
                 return [
                     'values' => $chunk,
                     'dtos'   => \array_map(
-                        static fn ($item) => OrderDTO::fromArray([
+                        fn ($item) => OrderDTO::fromArray([
                             'id'           => $item['id'],
                             'created'      => Utils::dateToUtc($item['created']),
-                            'status'       => Utils::guidFromMeta($item['state']['meta']),
+                            'status'       => Utils::guidFromMeta(
+                                $item['state']['meta']
+                            ),
                             'externalCode' => $item['externalCode'],
-                            'shipmentDate' => Utils::dateToUtc($item['deliveryPlannedMoment']),
+                            'shipmentDate' => $item['deliveryPlannedMoment']
+                                ? Utils::dateToUtc($item['deliveryPlannedMoment'])
+                                : null,
                             'description'  => $item['description'],
                             'additionals'  => \array_map(
-                                static fn ($additional) => AdditionalDTO::fromArray([
-                                    'id'       => $additional['id'],
-                                    'entityId' => $additional['id'],
-                                    'name'     => $additional['name'],
-                                    'value'    => $additional['value'],
-                                    'original' => $additional
-                                ]),
+                                fn ($attribute)
+                                    => $this->convertAttributeToDto($attribute),
                                 $item['attributes']
                             ),
                             'positions' => \array_map(
-                                static fn ($position) => PositionDTO::fromArray([
-                                    'id'        => $position['id'],
-                                    'productId' => $position['assortment']['id'],
-                                    'type'      => $position['assortment']['meta']['type'],
-                                    'quantity'  => $position['quantity'],
-                                    'reserve'   => $position['reserve'] ?? 0,
-                                    'price'     => (float) ($position['price'] / 100),
-                                    'discount'  => (float) $position['discount'],
-                                    'original'  => $position
-                                ]),
+                                fn ($position) =>
+                                    $this->convertPositionToDto($position),
                                 $item['positions']['rows']
                             ),
                             'original' => $item
@@ -191,7 +183,7 @@ class CustomerOrdersTarget extends CustomerOrdersSource
             }
         );
 
-        return \array_merge($orders, $errors);
+        return \array_merge($orders, $firstStepErrors, $errors);
     }
 
     /**
@@ -217,9 +209,9 @@ class CustomerOrdersTarget extends CustomerOrdersSource
                 }
 
                 $data = [
-                    'oIdx'    => $oIdx,
-                    'pIdx'    => $pIdx,
-                    'article' => $position->article
+                    $oIdx,
+                    $pIdx,
+                    $position->article
                 ];
 
                 if (isset($articles[$position->article])) {
@@ -246,8 +238,16 @@ class CustomerOrdersTarget extends CustomerOrdersSource
                     continue;
                 }
 
-                $data = $articles[$item->article];
-                $validated[$data['oIdx']]->positions[$data['pIdx']]->offerId = $item->id;
+                $relations = $articles[$item->article];
+
+                foreach ($relations as $relation) {
+                    [
+                        $oIdx,
+                        $pIdx,
+                    ] = $relation;
+
+                    $validated[$oIdx]->positions[$pIdx]->productId = $item->id;
+                }
             }
         }
     }

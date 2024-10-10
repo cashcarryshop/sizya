@@ -183,27 +183,54 @@ class Products extends AbstractSource implements ProductsGetterInterface
         );
         unset($articles);
 
+        if (\count($validated) === 0) {
+            return $errors;
+        }
+
         $byArticles = $this->_getByFilter('article', $validated);
         $byCodes    = $this->_getByFilter('code',    $validated, 'article');
 
         return \array_merge(
             PromiseUtils::all([$byArticles, $byCodes])->then(
-                static function ($results) {
+                static function ($results) use ($validated) {
                     [$byArticles, $byCodes] = $results;
 
                     $products = [];
                     foreach ($byArticles as $idx => $byArticle) {
-                        if ($byArticle instanceof ByErrorDTO
-                            && !($byCodes[$idx] instanceof ByErrorDTO)
-                        ) {
-                            $products[$idx] = $byCodes[$idx];
+                        $byCode = $byCodes[$idx];
+
+                        if ($byArticle instanceof ByErrorDTO) {
+                            if ($byCode instanceof ByErrorDTO) {
+                                $item = [
+                                    'article' => $byArticle->value,
+                                    'value'   => $byArticle
+                                ];
+                            } else {
+                                $item = [
+                                    'article' => $byCode->article,
+                                    'value'   => $byCode
+                                ];
+                            }
+                        } else {
+                            $item = [
+                                'article' => $byArticle->article,
+                                'value'   => $byArticle
+                            ];
+                        }
+
+                        if (isset($products[$item['article']])) {
+                            $products[] = ByErrorDTO::fromArray([
+                                'type'  => ByErrorDTO::DUPLICATE,
+                                'value' => $item['article']
+                            ]);
+
                             continue;
                         }
 
-                        $products[$idx] = $byArticle;
+                        $products[$item['article']] = $item['value'];
                     }
 
-                    return $products;
+                    return \array_values($products);
                 }
             )->wait(),
             $errors

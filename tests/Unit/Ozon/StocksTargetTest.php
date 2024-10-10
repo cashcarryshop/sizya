@@ -58,7 +58,7 @@ class StocksTargetTest extends TestCase
                 }
 
                 if ($stock->warehouseId === $updateStock->warehouseId) {
-                    $updateStock->article = $warehouseId;
+                    $updateStock->warehouseId = $warehouseId;
                 }
             }
 

@@ -59,7 +59,7 @@ trait InteractsWithOzon
                     $options['expected']
                 );
 
-                $body['total'] = \count($body['result'])['items'];
+                $body['result']['total'] = \count($body['result']['items']);
 
                 return static::createJsonResponse(body: $body);
             },
@@ -95,10 +95,24 @@ trait InteractsWithOzon
                 $body['result']['postings'] = \array_map(
                     function ($order) use ($posting) {
                         $posting['posting_number'] = $order->id;
+                        $posting['status']         = $order->status;
+                        $posting['substatus']      = $order->status;
+                        $posting['in_process_at'] = Utils::dateToOzon($order->created);
+
+                        $posting['shipment_date'] =
+                            $order->shipmentDate
+                            ? Utils::dateToOzon($order->shipmentDate)
+                            : null;
+
+                        $posting['delivering_date'] =
+                            $order->deliveringDate
+                            ? Utils::dateToOzon($order->deliveringDate)
+                            : null;
 
                         $product = $posting['products'][0];
                         $posting['products'] = \array_map(
                             static function ($position) use ($product) {
+                                $product['price']         = (string) $position->price;
                                 $product['offer_id']      = $position->article;
                                 $product['quantity']      = (int) $position->quantity;
                                 $product['currency_code'] = $position->currency;
@@ -121,10 +135,12 @@ trait InteractsWithOzon
             'v3/posting/fbs/get' => function ($request, $options) {
                 $body = static::getResponseData('api-seller.ozon.ru/v3/posting/fbs/get')['body'];
 
-
                 $body['result']['posting_number'] = $options['expected']->id;
                 $body['result']['status']         = $options['expected']->status;
                 $body['result']['substatus']      = $options['expected']->status;
+                $body['result']['in_process_at'] =
+                    Utils::dateToOzon($options['expected']->created);
+
 
                 $body['result']['shipment_date'] =
                     $options['expected']->shipmentDate
@@ -144,6 +160,8 @@ trait InteractsWithOzon
                         $product['offer_id']      = $position->article;
                         $product['sku']           = ((int) $position->productId) + 10;
                         $product['quantity']      = $position->quantity;
+
+                        return $product;
                     },
                     $options['expected']->positions
                 );
@@ -176,11 +194,11 @@ trait InteractsWithOzon
 
                 $body['result'] = \array_map(
                     static fn ($stock) => [
-                        'warehous_id' => (int) $stock->warehouseId,
-                        'product_id'  => (int) $stock->id,
-                        'offer_id'    => $stock->article,
-                        'updated'     => true,
-                        'errors'      => []
+                        'warehouse_id' => (int) $stock->warehouseId,
+                        'product_id'   => (int) $stock->id,
+                        'offer_id'     => $stock->article,
+                        'updated'      => true,
+                        'errors'       => []
                     ],
                     $options['expected']
                 );

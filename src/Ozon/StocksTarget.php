@@ -78,9 +78,11 @@ class StocksTarget extends StocksSource
 
                 return $item;
             },
-            static fn ($data) => (clone $builder)
-                ->body(['stocks' => $data])
-                ->build('POST')
+            fn ($data) => $this->send(
+                (clone $builder)
+                    ->body(['stocks' => $data])
+                    ->build('POST')
+            )
         );
 
         $getApiError = static fn ($error) =>
@@ -97,7 +99,7 @@ class StocksTarget extends StocksSource
                     $dtos   = [];
 
                     foreach ($this->decodeResponse($response)['result'] as $idx => $answer) {
-                        $key = \array_key_exists($chunk, $answer['product_id'])
+                        $key = \array_key_exists($answer['product_id'], $chunk)
                             ? $answer['product_id'] : $answer['offer_id'];
 
                         $item        = $chunk[$key];
@@ -106,9 +108,9 @@ class StocksTarget extends StocksSource
 
                         if ($answer['updated']) {
                             $dtos[] = StockDTO::fromArray([
-                                'id'          => $answer['product_id'],
+                                'id'          => (string) $answer['product_id'],
                                 'article'     => $answer['offer_id'],
-                                'warehouseId' => $answer['warehouse_id'],
+                                'warehouseId' => (string) $answer['warehouse_id'],
                                 'quantity'    => $item->quantity,
                                 'original'    => $answer
                             ]);
@@ -124,7 +126,10 @@ class StocksTarget extends StocksSource
                         ]);
                     }
 
-                    return [$dtos, $chunk];
+                    return [
+                        'values' => $chunk,
+                        'dtos'   => $dtos
+                    ];
                 }
             ),
             $errors

@@ -27,6 +27,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @see DTOInterface
  *
  * @property string     $id       Идентификатор товара
+ * @property ?string    $type     Тип товара
  * @property string     $article  Артикул товара
  * @property string     $created  Дата создания товара
  * @property PriceDTO[] $prices   Цены товара
@@ -38,6 +39,7 @@ class ProductDTO extends AbstractDTO
      * Создать экземпляр товара.
      *
      * @param string     $id       Идентификатор товара
+     * @param ?string    $type     Тип товара
      * @param string     $article  Артикул товара
      * @param string     $created  Дата создания товара
      * @param PriceDTO[] $prices   Цены товара
@@ -47,6 +49,13 @@ class ProductDTO extends AbstractDTO
         #[Assert\Type('string')]
         #[Assert\NotBlank]
         public $id = null,
+
+        #[Assert\Type(['string', 'null'])]
+        #[Assert\When(
+            expression: 'value !== null',
+            constraints: [new Assert\NotBlank]
+        )]
+        public $type = null,
 
         #[Assert\Type('string')]
         #[Assert\NotBlank]

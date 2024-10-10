@@ -41,7 +41,7 @@ trait PositionsAssertions
         $this->assertEquals(
             $expected->id,
             $position->id,
-            'Position is is invalid'
+            'Position id is invalid'
         );
 
         $this->assertEquals(

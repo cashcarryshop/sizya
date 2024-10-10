@@ -29,6 +29,7 @@ use Throwable;
  *
  * @const TYPES      Типы ошибок
  * @const VALIDATION Тип ошибки `validation`. Ошибка валидации данных
+ * @const DUPLICATE  Тип ошибки `duplicate`.  Ошибка при дублировании данных
  * @const UNDEFINED  Тип ошибки `undefined`.  Неизвестная ошибка
  * @const NOT_FOUND  Тип ошибки `not_found`.  Элемент не найден
  * @const INTERNAL   Тип ошибки `internal`.   Ошибка в коде
@@ -42,6 +43,7 @@ class ErrorDTO extends AbstractDTO
     public const TYPES = [
         'validation',
         'undefined',
+        'duplicate',
         'not_found',
         'internal',
         'http',
@@ -49,6 +51,7 @@ class ErrorDTO extends AbstractDTO
     ];
 
     public const VALIDATION = 'validation';
+    public const DUPLICATE  = 'duplicate';
     public const UNDEFINED  = 'undefined';
     public const NOT_FOUND  = 'not_found';
     public const INTERNAL   = 'internal';
@@ -69,7 +72,7 @@ class ErrorDTO extends AbstractDTO
 
         #[Assert\Valid]
         #[Assert\When(
-            expression: 'this.type not in ["not_found"]',
+            expression: 'this.type not in ["not_found", "duplicate"]',
             constraints: [new Assert\NotBlank]
         )]
         #[Assert\When(

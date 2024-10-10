@@ -17,6 +17,7 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Client;
 use PHPUnit\Framework\Attributes\BeforeClass;
+use PHPUnit\Framework\Attributes\AfterClass;
 use PHPUnit\Framework\Attributes\After;
 
 /**
@@ -49,6 +50,12 @@ trait InteractsWithHttp
     protected function resetHttpHandler(): void
     {
         static::$handler->reset();
+    }
+
+    #[AfterClass]
+    public static function tearDownHttp(): void
+    {
+        static::$handler = null;
     }
 
     /**

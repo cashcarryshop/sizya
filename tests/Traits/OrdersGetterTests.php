@@ -79,13 +79,13 @@ trait OrdersGetterTests
             $ids
         );
 
-        $this->setUpBeforeTestGetOrders(
+        $this->setUpBeforeTestGetOrdersByIds(
             $expectedOrders,
             $expectedErrors,
             $expected
         );
 
-        $this->assertOrders($expected, $getter->getOrders());
+        $this->assertOrders($expected, $getter->getOrdersByIds($ids));
     }
 
     abstract protected function createOrdersGetter(): OrdersGetterInterface;

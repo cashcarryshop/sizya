@@ -31,11 +31,12 @@ class Utils
      *
      * @param string $date Дата
      *
-     * @return string
+     * @return string|false
      */
-    public static function dateToUtc(string $date): string
+    public static function dateToUtc(string $date): string|false
     {
         $date = \date_create_from_format('Y-m-d\TH:i:s.up', $date);
+
         return $date ? $date->format(DTOInterface::DATE_FORMAT) : $date;
     }
 

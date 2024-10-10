@@ -47,11 +47,58 @@ class CustomerOrdersTargetTest extends TestCase
     ): void {
         $this->_prepareOrders($expected);
 
-        static::$handler->append(
-            static::createMethodResponse('post@1.2/entity/customerorder', [
+        $responses = [];
+
+        if ($products = $this->_getProducts($forUpdate)) {
+            $responses[] = static::createMethodResponse(
+                'get@1.2/entity/assortment', [
+                    'expected' => $products
+                ]
+            );
+            $responses[] = static::createMethodResponse(
+                'get@1.2/entity/assortment', [
+                    'expected' => []
+                ]
+            );
+        }
+
+        $responses[] = static::createMethodResponse(
+            'post@1.2/entity/customerorder', [
                 'expected' => $expected
-            ])
+            ]
         );
+
+        static::$handler->append(...$responses);
+    }
+
+    protected function setUpBeforeTestMassCreateOrders(
+        array $expected,
+        array $forCreate
+    ): void {
+        $this->_prepareOrders($expected);
+
+        $responses = [];
+
+        if ($products = $this->_getProducts($forCreate)) {
+            $responses[] = static::createMethodResponse(
+                'get@1.2/entity/assortment', [
+                    'expected' => $products
+                ]
+            );
+            $responses[] = static::createMethodResponse(
+                'get@1.2/entity/assortment', [
+                    'expected' => []
+                ]
+            );
+        }
+
+        $responses[] = static::createMethodResponse(
+            'post@1.2/entity/customerorder', [
+                'expected' => $expected
+            ]
+        );
+
+        static::$handler->append(...$responses);
     }
 
     protected function setUpBeforeTestUpdateOrder(
@@ -60,11 +107,28 @@ class CustomerOrdersTargetTest extends TestCase
     ): void {
         $this->_prepareOrders([$expected]);
 
-        static::$handler->append(
-            static::createMethodResponse('post@1.2/entity/customerorder', [
+        $responses = [];
+
+        if ($products = $this->_getProducts([$forUpdate])) {
+            $responses[] = static::createMethodResponse(
+                'get@1.2/entity/assortment', [
+                    'expected' => $products
+                ]
+            );
+            $responses[] = static::createMethodResponse(
+                'get@1.2/entity/assortment', [
+                    'expected' => []
+                ]
+            );
+        }
+
+        $responses[] = static::createMethodResponse(
+            'post@1.2/entity/customerorder', [
                 'expected' => [$expected]
-            ])
+            ]
         );
+
+        static::$handler->append(...$responses);
     }
 
     protected function setUpBeforeTestCreateOrder(
@@ -73,11 +137,28 @@ class CustomerOrdersTargetTest extends TestCase
     ): void {
         $this->_prepareOrders([$expected]);
 
-        static::$handler->append(
-            static::createMethodResponse('post@1.2/entity/customerorder', [
+        $responses = [];
+
+        if ($products = $this->_getProducts([$forCreate])) {
+            $responses[] = static::createMethodResponse(
+                'get@1.2/entity/assortment', [
+                    'expected' => $products
+                ]
+            );
+            $responses[] = static::createMethodResponse(
+                'get@1.2/entity/assortment', [
+                    'expected' => []
+                ]
+            );
+        }
+
+        $responses[] = static::createMethodResponse(
+            'post@1.2/entity/customerorder', [
                 'expected' => [$expected]
-            ])
+            ]
         );
+
+        static::$handler->append(...$responses);
     }
 
     protected function createOrdersUpdater(): OrdersUpdaterInterface
@@ -103,6 +184,37 @@ class CustomerOrdersTargetTest extends TestCase
     }
 
     /**
+     * Получить товары из заказов
+     *
+     * @param array $orders Заказы
+     *
+     * @return array
+     */
+    private function _getProducts(array $orders): array
+    {
+        $products = [];
+        foreach ($orders as $order) {
+            if (\property_exists($order, 'positions')) {
+                foreach ($order->positions as $position) {
+                    if (isset($products[$position->article])) {
+                        continue;
+                    }
+
+                    if ($position->productId === null) {
+                        $products[$position->article] = static::fakeProductDto([
+                            'id'      => static::guidv4(),
+                            'article' => $position->article,
+                            'type'    => $position->type
+                        ]);
+                    }
+                }
+            }
+        }
+
+        return \array_values($products);
+    }
+
+    /**
      * Обработать заказы.
      *
      * @param OrderDTO $orders Заказы
@@ -113,6 +225,16 @@ class CustomerOrdersTargetTest extends TestCase
     {
         foreach ($orders as $order) {
             $order->deliveringDate = null;
+
+            foreach ($order->additionals as $additional) {
+                $additional->entityId = $additional->id;
+            }
+
+            if (\property_exists($order, 'positions')) {
+                foreach ($order->positions as $position) {
+                    $position->currency = null;
+                }
+            }
         }
     }
 }

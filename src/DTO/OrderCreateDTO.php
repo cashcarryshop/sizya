@@ -100,10 +100,12 @@ class OrderCreateDTO extends AbstractDTO
 
         #[Assert\Type('array')]
         #[Assert\All(new Assert\Type(AdditionalCreateDTO::class))]
+        #[Assert\Valid]
         public $additionals = [],
 
         #[Assert\Type('array')]
         #[Assert\All(new Assert\Type(PositionCreateDTO::class))]
+        #[Assert\Valid]
         public $positions = [],
 
         #[Assert\Type(['string', 'null'])]

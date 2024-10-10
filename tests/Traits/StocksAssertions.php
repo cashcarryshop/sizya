@@ -44,7 +44,11 @@ trait StocksAssertions
         array $expected,
         array $items
     ): void {
-        $this->assertSameSize($expected, $items);
+        $this->assertSameSize(
+            $expected,
+            $items,
+            'Stocks common size must be equals'
+        );
 
         [
             $stocks,
@@ -76,13 +80,13 @@ trait StocksAssertions
         $this->assertSameSize(
             $expectedStocks,
             $stocks,
-            'Stocks must be have asme size with expected'
+            'Stocks must be have same size with expected'
         );
 
         $this->assertSameSize(
             $expectedErrors,
             $errors,
-            'Stocks errors must be have asme size with expected'
+            'Stocks errors must be have same size with expected'
         );
 
         \array_multisort(

@@ -223,7 +223,9 @@ class Orders extends AbstractSource implements OrdersGetterInterface
                 $chunks,
                 PromiseUtils::settle($promises)->wait(),
                 function ($response) {
-                    $order = $this->_convertOrder($this->decodeResponse($response)['result']);
+                    $order = $this->_convertOrder(
+                        $this->decodeResponse($response)['result']
+                    );
 
                     return [
                         'dtos'   => [$order],
@@ -346,11 +348,14 @@ class Orders extends AbstractSource implements OrdersGetterInterface
                 $offset += 1000;
             }
 
-            foreach ($postings as $posting) {
+            foreach ($postings as $idx => $posting) {
                 $orders[] = $order = $this->_convertOrder($posting);
                 foreach ($order->positions as $index => $position) {
                     $skus[]          = $position->productId;
-                    $skusPositions[] = $index;
+                    $skusPositions[] = [
+                        $idx,
+                        $index
+                    ];
                 }
             }
         }
@@ -367,12 +372,25 @@ class Orders extends AbstractSource implements OrdersGetterInterface
      */
     private function _convertOrder(array $order): OrderDTO
     {
+        $shipmentDate   = $order['shipment_date'];
+        if ($shipmentDate) {
+            $shipmentDate = Utils::dateToUtc($shipmentDate) ?: $shipmentDate;
+        }
+
+        $deliveringDate = $order['delivering_date'];
+        if ($deliveringDate) {
+            $deliveringDate = Utils::dateToUtc($deliveringDate) ?: $deliveringDate;
+        }
+
+        $createdDate =
+            Utils::dateToUtc($order['in_process_at']) ?: $order['in_process_at'];
+
         return OrderDTO::fromArray([
             'id'             => $order['posting_number'],
-            'created'        => $order['in_process_at'],
+            'created'        => $createdDate,
             'status'         => $order['substatus'],
-            'shipmentDate'   => $order['shipment_date'],
-            'deliveringDate' => $order['delivering_date'],
+            'shipmentDate'   => $shipmentDate,
+            'deliveringDate' => $deliveringDate,
             'additionals'    => [],
             'positions'      => \array_map(
                 fn ($position) => $this->_convertPosition($position),
@@ -396,7 +414,6 @@ class Orders extends AbstractSource implements OrdersGetterInterface
             'id'        => (string) $position['sku'],
             'productId' => (string) $position['sku'],
             'article'   => $position['offer_id'],
-            'type'      => 'product',
             'quantity'  => $position['quantity'],
             'reserve'   => $position['quantity'],
             'currency'  => $position['currency_code'],
@@ -427,7 +444,10 @@ class Orders extends AbstractSource implements OrdersGetterInterface
             foreach ($orders as $idx => $order) {
                 foreach ($order->positions as $index => $position) {
                     $skus[]          = $position->productId;
-                    $skusPositions[] = $index;
+                    $skusPositions[] = [
+                        $idx,
+                        $index
+                    ];
                 }
             }
         }
@@ -489,15 +509,20 @@ class Orders extends AbstractSource implements OrdersGetterInterface
             if (\current($skus) === $sku) {
                 do {
                     $index = \key($skus);
+
+                    [
+                        $oIdx,
+                        $pIdx
+                    ] = $skusPositions[$index];
+
                     if ($error) {
-                        unset($orders[$index]);
+                        unset($orders[$oIdx]);
                         \next($skus);
                         continue;
                     }
 
-                    $orders[$index]
-                    ->positions[$skusPositions[$index]]
-                    ->productId = (string) $datas[$idx]['productId'];
+                    $orders[$oIdx]->positions[$pIdx]->productId =
+                        (string) $datas[$idx]['productId'];
                     \next($skus);
                 } while (\current($skus) === $sku);
             }

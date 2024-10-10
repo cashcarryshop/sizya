@@ -51,7 +51,10 @@ class ShortStocksTest extends TestCase
                 continue;
             }
 
-            $products[$stock->id] = static::fakeProductDto(['id' => $stock->id]);
+            $products[$stock->id] = static::fakeProductDto([
+                'id'       => $stock->id,
+                'article'  => $stock->article
+            ]);
         }
 
         static::$handler->append(

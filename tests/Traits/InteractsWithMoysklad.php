@@ -69,13 +69,27 @@ trait InteractsWithMoysklad
                     function ($order) use ($item) {
                         $replaces = [
                             '$id'      => $order->id,
-                            '$orderId' => $order->id
+                            '$orderId' => $order->id,
+                            '$stateId' => $order->status
                         ];
 
-                        $item['id'] = $order->id;
+                        $item['id']           = $order->id;
+                        $item['externalCode'] = $order->externalCode;
+                        $item['created']      = Utils::dateToMoysklad($order->created);
+                        $item['description']  = $order->description;
+
+                        $item['deliveryPlannedMoment'] = $order->shipmentDate
+                            ? Utils::dateToMoysklad($order->shipmentDate)
+                            : null;
+
+                        $item['state']['meta']['href'] = \strtr(
+                            $item['state']['meta']['href'],
+                            $replaces
+                        );
 
                         $item['meta']['href'] = \strtr(
-                            $item['meta']['href'], $replaces
+                            $item['meta']['href'],
+                            $replaces
                         );
 
                         $item['positions']['meta']['href'] = \strtr(
@@ -95,11 +109,27 @@ trait InteractsWithMoysklad
                         );
 
                         $item['positions']['rows'] = \array_map(
-                            fn ($position) => static::makePosition([
-                                'id'       => $position->id,
-                                'entityId' => $order->id,
-                                'category' => 'customerorder'
-                            ]),
+                            function ($position) use ($order) {
+                                $msPosition = static::makePosition([
+                                    'id'       => $position->id,
+                                    'entityId' => $order->id,
+                                    'quantity' => $position->quantity,
+                                    'reserve'  => $position->reserve,
+                                    'price'    => $position->price * 100,
+                                    'discount' => $position->discount,
+                                    'vat'      => $position->vat,
+                                    'category' => 'customerorder'
+                                ]);
+
+                                $msPosition['assortment'] =
+                                    static::makeAssortmentItem([
+                                        'id'      => $position->productId,
+                                        'article' => $position->article,
+                                        'type'    => $position->type
+                                    ]);
+
+                                return $msPosition;
+                            },
                             $order->positions
                         );
 
@@ -123,9 +153,10 @@ trait InteractsWithMoysklad
                     function ($expected) use ($item) {
                         $type = \random_int(0, 3) === 3 ? 'product' : 'variant';
 
-                        $item['id']      = $expected->id;
-                        $item['type']    = $type;
-                        $item['created'] = Utils::dateToMoysklad($expected->created);
+                        $item['id']           = $expected->id;
+                        $item['meta']['type'] = $type;
+
+                        $item['updated'] = Utils::dateToMoysklad($expected->created);
 
                         $item[
                             $type === 'product'
@@ -133,12 +164,12 @@ trait InteractsWithMoysklad
                                 : 'code'
                         ] = $expected->article;
 
-                        $item['minPrice']['value'] = $expected->prices[2]->value;
+                        $item['minPrice']['value'] = $expected->prices[2]->value * 100;
 
                         $salePrice = $item['salePrices'][0];
-                        $salePrices = \array_map(
+                        $item['salePrices'] = \array_map(
                             static function ($price) use ($salePrice) {
-                                $salePrice['value']             = $price->value;
+                                $salePrice['value']             = $price->value * 100;
                                 $salePrice['priceType']['name'] = $price->name;
 
                                 $salePrice['priceType']['meta']['href'] = \strtr(
@@ -193,10 +224,23 @@ trait InteractsWithMoysklad
                     function ($order) use ($item) {
                         $replaces = [
                             '$id'      => $order->id,
-                            '$orderId' => $order->id
+                            '$orderId' => $order->id,
+                            '$stateId' => $order->status
                         ];
 
-                        $item['id'] = $order->id;
+                        $item['id']           = $order->id;
+                        $item['created']      = Utils::dateToMoysklad($order->created);
+                        $item['externalCode'] = $order->externalCode;
+                        $item['description']  = $order->description;
+
+                        $item['deliveryPlannedMoment'] = $order->shipmentDate
+                            ? Utils::dateToMoysklad($order->shipmentDate)
+                            : null;
+
+                        $item['state']['meta']['href'] = \strtr(
+                            $item['state']['meta']['href'],
+                            $replaces
+                        );
 
                         $item['meta']['href'] = \strtr(
                             $item['meta']['href'], $replaces
@@ -218,13 +262,29 @@ trait InteractsWithMoysklad
                             $order->additionals
                         );
 
-                        $item['positions'] = \array_map(
-                            fn ($position) => static::makePosition([
-                                'id'       => $position->id,
-                                'entityId' => $order->id,
-                                'category' => 'customerorder'
-                            ]),
-                            $additional->positions
+                        $item['positions']['rows'] = \array_map(
+                            function ($position) use ($order) {
+                                $msPosition = static::makePosition([
+                                    'id'       => $position->id,
+                                    'entityId' => $order->id,
+                                    'quantity' => $position->quantity,
+                                    'reserve'  => $position->reserve,
+                                    'price'    => $position->price * 100,
+                                    'discount' => $position->discount,
+                                    'vat'      => $position->vat,
+                                    'category' => 'customerorder'
+                                ]);
+
+                                $msPosition['assortment'] =
+                                    static::makeAssortmentItem([
+                                        'id'      => $position->productId,
+                                        'article' => $position->article,
+                                        'type'    => $position->type
+                                    ]);
+
+                                return $msPosition;
+                            },
+                            $order->positions
                         );
 
                         return $item;
@@ -317,7 +377,8 @@ trait InteractsWithMoysklad
 
         $options = \array_replace(
             [
-                'id'   => static::guidv4(),
+                'id'      => static::guidv4(),
+                'article' => static::fakeArticle(),
                 'type' => \random_int(0, 3) === 3
                     ? 'product' : 'variant'
             ],
@@ -333,7 +394,8 @@ trait InteractsWithMoysklad
             '$type' => $options['type']
         ];
 
-        $assortment['id'] = $options['id'];
+        $assortment['id']           = $options['id'];
+        $assortment['meta']['type'] = $options['type'];
 
         $assortment['meta']['href'] = \strtr(
             $assortment['meta']['href'],
@@ -350,11 +412,12 @@ trait InteractsWithMoysklad
             $replaces
         );
 
-        $assortment[
-            $options['type'] === 'product'
-                ? 'article'
-                : 'code'
-        ] = static::fakeArticle();
+        $keys = $options['type'] === 'product'
+            ? ['article', 'code']
+            : ['code', 'article'];
+
+        $assortment[$keys[0]] = $options['article'];
+        $assortment[$keys[1]] = static::fakeArticle();
 
         return $assortment;
     }
@@ -419,8 +482,14 @@ trait InteractsWithMoysklad
             [
                 'id'       => static::guidv4(),
                 'entityId' => static::guidv4(),
+                'quantity' => $quantity = \random_int(0, 25),
+                'reserve'  => \random_int(0, $quantity),
+                'price'    => \random_int(0, 1000) * 100,
+                'discount' => \random_int(0, 50),
+                'vat'      => \random_int(0, 4) === 4,
                 'category' => 'customerorder'
-            ]
+            ],
+            $options
         );
 
         $position = $template ??= static::getResponseData(
@@ -434,7 +503,12 @@ trait InteractsWithMoysklad
             '$category' => $options['category']
         ];
 
-        $position['id'] = $options['id'];
+        $position['id']       = $options['id'];
+        $position['quantity'] = $options['quantity'];
+        $position['reserve']  = $options['reserve'];
+        $position['vat']      = $options['vat'];
+        $position['price']    = $options['price'];
+        $position['discount'] = $options['discount'];
 
         $position['meta']['href'] = \strtr(
             $position['meta']['href'], $replaces

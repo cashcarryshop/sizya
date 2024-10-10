@@ -45,22 +45,7 @@ trait OrdersUpdaterTests
         );
 
         $forUpdate = \array_map(
-            fn ($order) => OrderUpdateDTO::fromArray([
-                'id'             => $order->id,
-                'created'        => $order->created,
-                'status'         => $order->status,
-                'shipmentDate'   => $order->shipmentDate,
-                'deliveringDate' => $order->deliveringDate,
-                'description'    => $order->description,
-                'additionals'    => \array_map(
-                    fn ($additional) => AdditionalUpdateDTO::fromArray([
-                        'id'       => $additional->id,
-                        'entityId' => $additional->entityId,
-                        'value'    => $additional->value
-                    ]),
-                    $order->additionals
-                )
-            ]),
+            fn ($order) => static::fakeOrderUpdateDtoFromOrder($order),
             $expected
         );
 
@@ -74,22 +59,7 @@ trait OrdersUpdaterTests
         $updater = $this->createOrdersUpdater();
 
         $expected  = static::fakeOrderDto();
-        $forUpdate = OrderUpdateDTO::fromArray([
-            'id'             => $expected->id,
-            'created'        => $expected->created,
-            'status'         => $expected->status,
-            'shipmentDate'   => $expected->shipmentDate,
-            'deliveringDate' => $expected->deliveringDate,
-            'description'    => $expected->description,
-            'additionals'    => \array_map(
-                fn ($additional) => AdditionalUpdateDTO::fromArray([
-                    'id'       => $additional->id,
-                    'entityId' => $additional->entityId,
-                    'value'    => $additional->value
-                ]),
-                $expected->additionals
-            )
-        ]);
+        $forUpdate = static::fakeOrderUpdateDtoFromOrder($expected);
 
         $this->setUpBeforeTestUpdateOrder($expected, $forUpdate);
 

@@ -83,7 +83,14 @@ trait ProductsGetterTests
             $expected
         );
 
-        $this->assertProducts($expected, $getter->getProductsByIds($ids));
+        $this->assertProducts(
+            $expected, $getter->getProductsByIds(
+                \array_merge(
+                    \array_column($expectedProducts, 'id'),
+                    \array_column($expectedErrors, 'value')
+                )
+            )
+        );
     }
 
     public function testGetProductsByArticles(): void
@@ -125,7 +132,14 @@ trait ProductsGetterTests
             $expected
         );
 
-        $this->assertProducts($expected, $getter->getProductsByArticles($articles));
+        $this->assertProducts(
+            $expected, $getter->getProductsByArticles(
+                \array_merge(
+                    \array_column($expectedProducts, 'article'),
+                    \array_column($expectedErrors, 'value')
+                )
+            )
+        );
     }
 
     abstract protected function createProductsGetter(): ProductsGetterInterface;

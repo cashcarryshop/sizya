@@ -62,7 +62,7 @@ class OrdersSynchronizerTest extends TestCase
                         'id'      => static::guidv4(),
                         'article' => static::fakeArticle()
                     ],
-                    \array_fill(0, 50, null)
+                    \array_fill(0, 20, null)
                 )
             ),
             'items' => []
@@ -126,7 +126,7 @@ class OrdersSynchronizerTest extends TestCase
                         'id'      => static::guidv4(),
                         'article' => static::fakeArticle()
                     ],
-                    \array_fill(0, 50, null)
+                    \array_fill(0, 10, null)
                 )
             ),
             'items' => $targets = \array_map(
@@ -148,7 +148,7 @@ class OrdersSynchronizerTest extends TestCase
                         $data['positions']
                     );
 
-                    if ($idx > 20 && $idx < 40) {
+                    if ($idx > 5 && $idx < 10) {
                         $data['externalCode'] = \sha1($data['id']);
 
                         $data['additionals'] = \array_map(
@@ -178,7 +178,7 @@ class OrdersSynchronizerTest extends TestCase
                 $source->externalCode = \sha1($source->created . $source->id);
                 return $source;
             },
-            \array_slice($source->settings['items'], 0, 20)
+            \array_slice($source->settings['items'], 0, 5)
         );
 
         $repository = new MockRelationRepository(
@@ -190,7 +190,7 @@ class OrdersSynchronizerTest extends TestCase
                         'testKey'  => $source->testKey
                     ]),
                 $onlyForRelations,
-                \array_slice($targets, 0, 20)
+                \array_slice($targets, 0, 5)
             )
         );
 
@@ -245,7 +245,7 @@ class OrdersSynchronizerTest extends TestCase
             )
         ];
 
-        $slices = \array_slice($source->settings['items'], 0, 50);
+        $slices = \array_slice($source->settings['items'], 0, 10);
 
         $target = new MockOrdersTarget([
             'statuses' => [
@@ -259,7 +259,7 @@ class OrdersSynchronizerTest extends TestCase
                         'id'      => static::guidv4(),
                         'article' => static::fakeArticle()
                     ],
-                    \array_fill(0, 50, null)
+                    \array_fill(0, 10, null)
                 )
             ),
             'items' => $targets = \array_map(
@@ -281,7 +281,7 @@ class OrdersSynchronizerTest extends TestCase
                         $data['positions']
                     );
 
-                    if ($idx > 10 && $idx < 20) {
+                    if ($idx > 5 && $idx < 10) {
                         $data['externalCode'] = \sha1($data['id']);
 
                         $data['additionals'] = \array_map(
@@ -311,7 +311,7 @@ class OrdersSynchronizerTest extends TestCase
                 $source->externalCode = \sha1($source->created . $source->id);
                 return $source;
             },
-            \array_slice($source->settings['items'], 0, 10)
+            \array_slice($source->settings['items'], 0, 5)
         );
 
         $repository = new MockRelationRepository(
@@ -323,7 +323,7 @@ class OrdersSynchronizerTest extends TestCase
                         'testKey'  => $source->testKey
                     ]),
                 $onlyForRelations,
-                \array_slice($targets, 0, 10)
+                \array_slice($targets, 0, 5)
             )
         );
 

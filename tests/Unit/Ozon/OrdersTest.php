@@ -89,7 +89,7 @@ class OrdersTest extends TestCase
         foreach ($expected as $item) {
             if ($item instanceof OrderDTO) {
                 static::$handler->append(
-                    static:createMethodResponse(
+                    static::createMethodResponse(
                         'v3/posting/fbs/get', [
                             'expected' => $item
                         ]
@@ -133,10 +133,18 @@ class OrdersTest extends TestCase
     {
         foreach ($orders as $order) {
             $order->additionals = [];
+            $order->externalCode = \sha1($order->id);
+            $order->description = null;
 
             foreach ($order->positions as $position) {
-                $position->type      = 'product';
-                $position->productId = (string) \random_int(100000000, 999998888);
+                $productId = \random_int(100000000, 999998888);
+
+                $position->id        = (string) ($productId + 10);
+                $position->type      = null;
+                $position->productId = (string) $productId;
+                $position->discount  = 0.0;
+                $position->reserve   = $position->quantity;
+                $position->vat       = false;
             }
         }
     }

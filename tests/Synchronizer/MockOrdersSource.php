@@ -73,7 +73,7 @@ class MockOrdersSource
                 'id'      => static::guidv4(),
                 'article' => static::fakeArticle()
             ],
-            \array_fill(0, 100, null)
+            \array_fill(0, 10, null)
         );
 
         $countProducts = \count($products) - 1;
@@ -130,7 +130,7 @@ class MockOrdersSource
                             \array_fill(1, 5, null)
                         )
                     ]),
-                    \array_fill(0, 100, null)
+                    \array_fill(0, 20, null)
                 )
             ],
             $settings

@@ -44,7 +44,11 @@ trait OrdersAssertions
      */
     protected function assertOrders(array $expected, array $items): void
     {
-        $this->assertSameSize($expected, $items);
+        $this->assertSameSize(
+            $expected,
+            $items,
+            'Orders common size must be equals'
+        );
 
         [
             $orders,
@@ -58,7 +62,7 @@ trait OrdersAssertions
 
         $validator = Validation::createValidatorBuilder()
             ->enableAttributeMapping()
-            ->getValidator();;
+            ->getValidator();
 
         $violations = $validator->validate($items, [new Assert\Valid]);
         $this->assertCount(0, $violations, (string) $violations);
@@ -73,17 +77,16 @@ trait OrdersAssertions
             ]
         );
 
-
         $this->assertSameSize(
             $expectedOrders,
             $orders,
-            'Orders must be have asme size with expected'
+            'Orders must be have same size with expected'
         );
 
         $this->assertSameSize(
             $expectedErrors,
             $errors,
-            'Orders errors must be have asme size with expected'
+            'Orders errors must be have same size with expected'
         );
 
         \array_multisort(
@@ -172,7 +175,7 @@ trait OrdersAssertions
         );
 
         \reset($order->additionals);
-        foreach ($expected as $expects) {
+        foreach ($expected->additionals as $expects) {
             $this->assertAdditional($expects, \current($order->additionals));
             \next($order->additionals);
         }

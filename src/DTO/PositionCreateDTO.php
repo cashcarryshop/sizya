@@ -81,7 +81,6 @@ class PositionCreateDTO extends AbstractDTO
         #[Assert\PositiveOrZero]
         public readonly int $reserve = 0,
 
-
         #[Assert\Type(['float'])]
         #[Assert\PositiveOrZero]
         public $price = 0.0,

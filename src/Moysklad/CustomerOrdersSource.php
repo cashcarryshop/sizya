@@ -132,24 +132,15 @@ class CustomerOrdersSource extends CustomerOrders
      */
     public function getOrdersByAdditional(string $entityId, array $values): array
     {
-        $additionalKey = null;
-
         return $this->_getByFilter(
-            $this->meta()->href(
-                "entity/customerorder/metadata/attributes/$entityId"
-            ),
+            $this->meta()->href("entity/customerorder/metadata/attributes/$entityId"),
             $values,
-            static function ($order) use ($entityId, &$additionalKey) {
-                if ($additionalKey === null) {
-                    foreach ($order->additionals as $key => $additional) {
-                        if ($additional->entityId === $entityId) {
-                            $additionalKey = $key;
-                            return $additional->value;
-                        }
+            static function ($order) use ($entityId) {
+                foreach ($order->additionals as $key => $additional) {
+                    if ($additional->entityId === $entityId) {
+                        return $additional->value;
                     }
                 }
-
-                return $order->additionals[$additionalKey];
             }
         );
     }
@@ -268,17 +259,20 @@ class CustomerOrdersSource extends CustomerOrders
             'status'    => Utils::guidFromMeta($order['state']['meta']),
             'externalCode' => $order['externalCode'],
             'positions' => \array_map(
-                fn ($position) => $this->_convertPosition($position),
+                fn ($position) => $this->convertPositionToDto($position),
                 $order['positions']['rows']
             ),
             'additionals' => \array_map(
-                fn ($additional) => $this->_convertAdditional($additional),
+                fn ($attribute) => $this->convertAttributeToDto($attribute),
                 $order['attributes'] ?? []
             ),
-            'original' => $order
+            'original' => $order,
+            'description' => $order['description'] ?? null
         ];
 
-        if (isset($order['deliveryPlannedMoment'])) {
+        if (isset($order['deliveryPlannedMoment'])
+            && $order['deliveryPlannedMoment']
+        ) {
             $data['shipmentDate'] = Utils::dateToUtc(
                 $order['deliveryPlannedMoment']
             );
@@ -294,7 +288,7 @@ class CustomerOrdersSource extends CustomerOrders
      *
      * @return PositionDTO
      */
-    private function _convertPosition(array $position): PositionDTO
+    protected function convertPositionToDto(array $position): PositionDTO
     {
         $data = [
             'id'        => $position['id'],
@@ -304,6 +298,7 @@ class CustomerOrdersSource extends CustomerOrders
             'reserve'   => (int) ($position['reserve'] ?? 0),
             'price'     => (float) ($position['price'] / 100),
             'discount'  => (float) $position['discount'],
+            'vat'       => $position['vat'],
             'original'  => $position
         ];
 
@@ -332,18 +327,18 @@ class CustomerOrdersSource extends CustomerOrders
      * Преобразовать дополнительное поле
      * заказа покупателя
      *
-     * @param array $additional Данные дополнительного поля
+     * @param array $attribute Данные дополнительного поля
      *
      * @return AdditionalDTO
      */
-    private function _convertAdditional(array $additional): AdditionalDTO
+    protected function convertAttributeToDto(array $attribute): AdditionalDTO
     {
         return AdditionalDTO::fromArray([
-            'id'        => $additional['id'],
-            'entityId'  => $additional['id'],
-            'name'      => $additional['name'],
-            'value'     => $additional['value'],
-            'original'  => $additional
+            'id'        => $attribute['id'],
+            'entityId'  => $attribute['id'],
+            'name'      => $attribute['name'],
+            'value'     => $attribute['value'],
+            'original'  => $attribute
         ]);
     }
 }
