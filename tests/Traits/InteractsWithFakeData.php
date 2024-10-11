@@ -14,7 +14,7 @@
 namespace CashCarryShop\Sizya\Tests\Traits;
 
 use CashCarryShop\Sizya\DTO\DTOInterface;
-use CashCarryShop\Sizya\DTO\ProductDTO;
+use CashCarryShop\Sizya\DTO\{ProductDTO, ProductPricesDTO};
 use CashCarryShop\Sizya\DTO\PriceDTO;
 use CashCarryShop\Sizya\DTO\{OrderDTO, OrderCreateDTO, OrderUpdateDTO};
 use CashCarryShop\Sizya\DTO\{AdditionalDTO, AdditionalCreateDTO, AdditionalUpdateDTO};
@@ -93,6 +93,39 @@ trait InteractsWithFakeData
             'type'    => $options['type'] ??
                 \random_int(0, 3) === 3 ? 'product' : 'variant',
             'created' => static::fakeDtoDate(),
+            'prices'  => $options['prices'] ?? [
+                PriceDTO::fromArray([
+                    'id'    => static::guidv4(),
+                    'name'  => static::fakeArticle(),
+                    'value' => (float) \random_int(0, 10000)
+                ]),
+                PriceDTO::fromArray([
+                    'id'    => static::guidv4(),
+                    'name'  => static::fakeArticle(),
+                    'value' => (float) \random_int(0, 10000)
+                ]),
+                PriceDTO::fromArray([
+                    'id'    => 'minPrice',
+                    'name'  => 'Min price',
+                    'value' => (float) \random_int(0, 10000)
+                ])
+            ]
+        ]);
+    }
+
+
+    /**
+     * Создать фейковый DTO цен товара.
+     *
+     * @param array $options Опции
+     *
+     * @return ProductPricesDTO
+     */
+    protected static function fakeProductPricesDto($options = []): ProductPricesDTO
+    {
+        return ProductPricesDTO::fromArray([
+            'id'      => $options['id'] ?? static::guidv4(),
+            'article' => $options['article'] ?? static::fakeArticle(),
             'prices'  => [
                 PriceDTO::fromArray([
                     'id'    => static::guidv4(),
@@ -110,6 +143,22 @@ trait InteractsWithFakeData
                     'value' => (float) \random_int(0, 10000)
                 ])
             ]
+        ]);
+    }
+
+    /**
+     * Создать ProductDTO из ProductPricesDTO
+     *
+     * @param ProductPricesDTO $productPrices Цены товара
+     *
+     * @return ProductDTO
+     */
+    protected static function fakeProductDtoFromProductPrices(ProductPricesDTO $productPrices): ProductDTO
+    {
+        return static::fakeProductDto([
+            'id'      => $productPrices->id,
+            'article' => $productPrices->article,
+            'prices'  => $productPrices->prices
         ]);
     }
 
