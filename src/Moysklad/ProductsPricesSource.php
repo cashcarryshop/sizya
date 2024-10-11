@@ -128,18 +128,14 @@ class ProductsPricesSource extends Products implements ProductsPricesGetterInter
         return \array_map(
             function ($item) use ($pricesIds) {
                 if ($item instanceof ByErrorDTO) {
-                    $item->value = [
-                        'value'     => $item->value,
-                        'pricesIds' => $pricesIds
-                    ];
-
                     return $item;
                 }
 
                 return ProductPricesDTO::fromArray([
-                    'id'      => $item->id,
-                    'article' => $item->article,
-                    'prices'  => $this->_filtPrices($item->prices, $pricesIds)
+                    'id'       => $item->id,
+                    'article'  => $item->article,
+                    'prices'   => $this->_filtPrices($item->prices, $pricesIds),
+                    'original' => $item->original
                 ]);
             },
             $items
