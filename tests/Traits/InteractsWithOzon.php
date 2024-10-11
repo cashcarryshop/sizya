@@ -204,6 +204,28 @@ trait InteractsWithOzon
                 );
 
                 return static::createJsonResponse(body: $body);
+            },
+            'v4/product/info/prices' => function ($request, $options) {
+                $body = static::getResponseData(
+                    'api-seller.ozon.ru/v4/product/info/prices'
+                )['body'];
+
+                $item = $body['result']['items'][0];
+                $body['result']['items'] = \array_map(
+                    function ($productPrices) use ($item) {
+                        $item['product_id']     = (int) $productPrices->id;
+                        $item['offer_id']       = $productPrices->article;
+                        $item['price']['price'] = $productPrices->prices[0]->value;
+
+                        $item['price']['marketing_price'] =
+                            $productPrices->prices[1]->value;
+
+                        return $item;
+                    },
+                    $options['expected']
+                );
+
+                return static::createJsonResponse(body: $body);
             }
         ];
 
