@@ -30,6 +30,7 @@ use Symfony\Component\Validator\Validation;
 trait ProductsAssertions
 {
     use ByErrorAssertions;
+    use PricesAssertions;
     use AssertAndSplitByClassesTrait;
 
     /**
@@ -136,41 +137,6 @@ trait ProductsAssertions
             'Product created date is invalid'
         );
 
-        \array_multisort(
-            \array_column($expected->prices, 'id'),
-            SORT_STRING,
-            $expected->prices
-        );
-
-        \array_multisort(
-            \array_column($product->prices, 'id'),
-            SORT_STRING,
-            $product->prices
-        );
-
-        \reset($expected->prices);
-        foreach ($product->prices as $price) {
-            $expectedPrice = \current($expected->prices);
-
-            $this->assertEquals(
-                $expectedPrice->id,
-                $price->id,
-                'Price id is invalid'
-            );
-
-            $this->assertEquals(
-                $expectedPrice->name,
-                $price->name,
-                'Price name is invalid'
-            );
-
-            $this->assertEquals(
-                $expectedPrice->value,
-                $price->value,
-                'Price value is invalid'
-            );
-
-            \next($expected->prices);
-        }
+        $this->assertPrices($expected->prices, $product->prices);
     }
 }
