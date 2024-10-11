@@ -137,9 +137,9 @@ class ProductsPricesSource extends Products implements ProductsPricesGetterInter
                 }
 
                 return ProductPricesDTO::fromArray([
-                    'id'      => $product->id,
-                    'article' => $product->article,
-                    'prices'  => $this->_filtPrices($product->prices, $pricesIds)
+                    'id'      => $item->id,
+                    'article' => $item->article,
+                    'prices'  => $this->_filtPrices($item->prices, $pricesIds)
                 ]);
             },
             $items
