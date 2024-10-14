@@ -90,23 +90,26 @@ class ProductsPricesSourceTest extends TestCase
     }
 
     /**
-     * Обработать объект ожидаемых товаров.
+     * Обработать объект ожидаемых цен товаров.
      *
-     * @param array $products Товары
+     * @param array $productsPrices Цены товаров
      *
      * @return void
      */
-    private function _prepareProducts(array $products): void
+    private function _prepareProducts(array $productsPrices): void
     {
-        foreach ($products as $product) {
-            $product->id     = (string) \random_int(100000000, 999999999);
-            $product->prices = \array_slice($product->prices, 1, 2);
+        foreach ($productsPrices as $productPrices) {
+            $productPrices->id     = (string) \random_int(100000000, 999999999);
+            $productPrices->prices = \array_slice($productPrices->prices, 0, 3);
 
-            $product->prices[0]->id   = 'price';
-            $product->prices[0]->name = 'Price';
+            $productPrices->prices[0]->id   = 'price';
+            $productPrices->prices[0]->name = 'Price';
 
-            $product->prices[1]->id   = 'minPrice';
-            $product->prices[1]->name = 'Min price';
+            $productPrices->prices[1]->id   = 'oldPrice';
+            $productPrices->prices[1]->name = 'Old price';
+
+            $productPrices->prices[2]->id   = 'minPrice';
+            $productPrices->prices[2]->name = 'Min price';
         }
     }
 }

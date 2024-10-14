@@ -30,7 +30,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @license  Unlicense <https://unlicense.org>
  * @link     https://github.com/cashcarryshop/sizya
  *
- * @see ProductsGetterInterface
+ * @see ProductsPricesGetterInterface
  */
 class ProductsPricesSource extends AbstractSource
     implements ProductsPricesGetterInterface
@@ -320,6 +320,12 @@ class ProductsPricesSource extends AbstractSource
                     'id'       => 'price',
                     'name'     => 'Price',
                     'value'    => (float) $item['price']['price'],
+                    'original' => $item['price']
+                ]),
+                PriceDTO::fromArray([
+                    'id'       => 'oldPrice',
+                    'name'     => 'Old price',
+                    'value'    => (float) $item['price']['old_price'],
                     'original' => $item['price']
                 ]),
                 PriceDTO::fromArray([

@@ -217,11 +217,31 @@ trait InteractsWithOzon
                         $item['offer_id']       = $productPrices->article;
                         $item['price']['price'] = $productPrices->prices[0]->value;
 
-                        $item['price']['marketing_price'] =
+                        $item['price']['old_price'] =
                             $productPrices->prices[1]->value;
+
+                        $item['price']['marketing_price'] =
+                            $productPrices->prices[2]->value;
 
                         return $item;
                     },
+                    $options['expected']
+                );
+
+                return static::createJsonResponse(body: $body);
+            },
+            'v1/product/import/prices' => function ($request, $options) {
+                $body = static::getResponseData(
+                    'api-seller.ozon.ru/v1/product/import/prices'
+                )['body'];
+
+                $body['result'] = \array_map(
+                    fn ($productPrices) => [
+                        'product_id' => (int) $productPrices->id,
+                        'offer_id'   => $productPrices->article,
+                        'updated'    => true,
+                        'errors'     => []
+                    ],
                     $options['expected']
                 );
 

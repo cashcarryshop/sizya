@@ -1145,5 +1145,18 @@
         "last_id": ""
       }
     }
+  },
+  "api-seller.ozon.ru/v1/product/import/prices": {
+    "headers": {},
+    "body": {
+      "result": [
+        {
+          "product_id": 1386,
+          "offer_id": "PH8865",
+          "updated": true,
+          "errors": [ ]
+        }
+      ]
+    }
   }
 }
