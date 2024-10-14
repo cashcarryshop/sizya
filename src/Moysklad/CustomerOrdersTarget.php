@@ -125,6 +125,10 @@ class CustomerOrdersTarget extends CustomerOrdersSource
         );
         unset($firstStepValidated);
 
+        if (\count($validated) === 0) {
+            return \array_merge($firstStepErrors, $errors);
+        }
+
         $this->_prepareOrders($validated, $errors);
 
         $builder = $this->builder()

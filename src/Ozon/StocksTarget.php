@@ -46,16 +46,28 @@ class StocksTarget extends StocksSource
     public function updateStocks(array $stocks): array
     {
         [
-            $validated,
-            $errors
+            $firstStepValidated,
+            $firstStepErrors
         ] = SizyaUtils::splitByValidationErrors(
             $this->getValidator(), $stocks, [
                 new Assert\NotBlank,
-                new Assert\Type(StockUpdateDTO::class),
-                new Assert\Valid
+                new Assert\Type(StockUpdateDTO::class)
             ]
         );
         unset($stocks);
+
+        [
+            $validated,
+            $errors
+        ] = SizyaUtils::splitByValidationErrors(
+            $this->getValidator(),
+            $firstStepValidated,
+            [new Assert\Valid]
+        );
+
+        if (\count($validated) === 0) {
+            return \array_merge($firstStepErrors, $errors);
+        }
 
         $builder = $this->builder()->point('v2/products/stocks');
 
@@ -132,6 +144,7 @@ class StocksTarget extends StocksSource
                     ];
                 }
             ),
+            $firstStepErrors,
             $errors
         );
     }

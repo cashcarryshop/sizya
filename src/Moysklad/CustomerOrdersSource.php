@@ -199,6 +199,10 @@ class CustomerOrdersSource extends CustomerOrders
         array    $values,
         callable $pluck
     ): array {
+        if (\count($values) === 0) {
+            return [];
+        }
+
         return Utils::getByFilter(
             $filter,
             $values,
