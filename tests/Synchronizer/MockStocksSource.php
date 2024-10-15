@@ -79,7 +79,6 @@ class MockStocksSource implements SynchronizerSourceInterface, StocksGetterInter
         );
     }
 
-
     /**
      * Получить остатки товаров
      *
