@@ -60,7 +60,7 @@ class MockStocksSource implements SynchronizerSourceInterface, StocksGetterInter
 
         $countWarehouses = \count($warehouses) - 1;
         $countProducts   = \count($products) - 1;
-x
+
         $this->settings = \array_replace(
             [
                 'warehouses' => $warehouses,
