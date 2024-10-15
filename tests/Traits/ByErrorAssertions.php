@@ -55,6 +55,12 @@ trait ByErrorAssertions
             $expects = \current($expected);
 
             $this->assertEquals(
+                $expects->type,
+                $error->type,
+                'By error types must be equals'
+            );
+
+            $this->assertEquals(
                 $expects->value,
                 $error->value,
                 'Values by error must be equals'
