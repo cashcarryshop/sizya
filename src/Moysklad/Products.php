@@ -219,7 +219,7 @@ class Products extends AbstractSource implements ProductsGetterInterface
                         }
 
                         if (isset($products[$item['article']])) {
-                            $products[] = ByErrorDTO::fromArray([
+                            $products[$item['article']] = ByErrorDTO::fromArray([
                                 'type'  => ByErrorDTO::DUPLICATE,
                                 'value' => $item['article']
                             ]);
