@@ -126,7 +126,7 @@ trait InteractsWithFakeData
         return ProductPricesDTO::fromArray([
             'id'      => $options['id'] ?? static::guidv4(),
             'article' => $options['article'] ?? static::fakeArticle(),
-            'prices'  => [
+            'prices'  => $options['prices'] ?? [
                 PriceDTO::fromArray([
                     'id'    => static::guidv4(),
                     'name'  => static::fakeArticle(),
