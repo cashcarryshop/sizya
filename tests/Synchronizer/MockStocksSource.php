@@ -55,12 +55,12 @@ class MockStocksSource implements SynchronizerSourceInterface, StocksGetterInter
                 'id'      => static::guidv4(),
                 'article' => static::fakeArticle()
             ],
-            \array_fill(0, 100, null)
+            \array_fill(0, 50, null)
         );
 
         $countWarehouses = \count($warehouses) - 1;
         $countProducts   = \count($products) - 1;
-
+x
         $this->settings = \array_replace(
             [
                 'warehouses' => $warehouses,
@@ -72,7 +72,7 @@ class MockStocksSource implements SynchronizerSourceInterface, StocksGetterInter
                         'warehouseId' => $warehouses[\random_int(0, $countWarehouses)]['id'],
                         'quantity'    => \random_int(0, 10)
                     ]),
-                    \array_fill(0, 200, null)
+                    \array_fill(0, 100, null)
                 )
             ],
             $settings
