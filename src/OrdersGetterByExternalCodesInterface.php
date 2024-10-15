@@ -33,6 +33,10 @@ interface OrdersGetterByExternalCodesInterface
      * Количество возвращаемых элементов должно
      * соответствовать переданным.
      *
+     * Если на запросе по 1 коду было больше
+     * 1го элемента, первый должен быть OrderDTO,
+     * а остальные ByErrorDTO::DUPLICATE.
+     *
      * @param string[] $codes Внешние коды
      *
      * @see OrderDTO

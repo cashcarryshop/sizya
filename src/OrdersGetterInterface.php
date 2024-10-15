@@ -42,6 +42,10 @@ interface OrdersGetterInterface
      * Количество возвращаемых элементов должно
      * соответствовать переданным.
      *
+     * Если на запросе по 1 идентификатору было больше
+     * 1го элемента, первый должен быть OrderDTO,
+     * а остальные ByErrorDTO::DUPLICATE.
+     *
      * @param array<string> $ordersIds Идентификаторы заказов
      *
      * @see OrderDTO

@@ -30,6 +30,13 @@ interface OrdersGetterByAdditionalInterface
     /**
      * Получить заказы по доп. полю
      *
+     * Количество возвращаемых элементов должно
+     * соответствовать переданным.
+     *
+     * Если на запросе по 1 значению было больше
+     * 1го элемента, первый должен быть OrderDTO,
+     * а остальные ByErrorDTO::DUPLICATE.
+     *
      * @param string            $entityId Идентификатор сущности
      * @param array<int, mixed> $values   Значения доп. поля
      *

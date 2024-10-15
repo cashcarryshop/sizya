@@ -57,6 +57,10 @@ interface ProductsGetterInterface
      * Количество возвращаемых элементов должно
      * соответствовать переданным.
      *
+     * Если на запросе по 1 идентификатору было больше
+     * 1го элемента, первый должен быть ProductDTO,
+     * а остальные ByErrorDTO::DUPLICATE.
+     *
      * @param array $productsIds Идентификаторы товаров
      *
      * @see ProductDTO
@@ -86,6 +90,10 @@ interface ProductsGetterInterface
      *
      * Количество возвращаемых элементов должно
      * соответствовать переданным.
+     *
+     * Если на запросе по 1 артикулу было больше
+     * 1го элемента, первый должен быть ProductDTO,
+     * а остальные ByErrorDTO::DUPLICATE.
      *
      * @param array $articles Артикулы
      *
