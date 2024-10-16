@@ -30,6 +30,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @property ?string    $type     Тип товара
  * @property string     $article  Артикул товара
  * @property string     $created  Дата создания товара
+ * @property ?array     $barcodes Штрихкоды товарв
  * @property PriceDTO[] $prices   Цены товара
  * @property mixed      $original Исходные данные
  */
@@ -42,6 +43,7 @@ class ProductDTO extends AbstractDTO
      * @param ?string    $type     Тип товара
      * @param string     $article  Артикул товара
      * @param string     $created  Дата создания товара
+     * @param ?array     $barcodes Штрихкоды товарв
      * @param PriceDTO[] $prices   Цены товара
      * @param mixed      $original Исходные данные
      */
@@ -65,6 +67,10 @@ class ProductDTO extends AbstractDTO
         #[Assert\NotBlank]
         #[Assert\DateTime(ProductDTO::DATE_FORMAT)]
         public $created = null,
+
+        #[Assert\Type('array')]
+        #[Assert\All(new Assert\Type('string'))]
+        public $barcodes = [],
 
         #[Assert\Type('array')]
         #[Assert\All(new Assert\Type(PriceDTO::class))]
