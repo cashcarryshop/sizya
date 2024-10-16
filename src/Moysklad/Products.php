@@ -14,6 +14,7 @@
 namespace CashCarryShop\Sizya\Moysklad;
 
 use CashCarryShop\Sizya\ProductsGetterInterface;
+use CashCarryShop\Sizya\ProductsGetterByBarcodesInterface;
 use CashCarryShop\Sizya\DTO\ProductDTO;
 use CashCarryShop\Sizya\DTO\PriceDTO;
 use CashCarryShop\Sizya\DTO\ByErrorDTO;
@@ -42,8 +43,8 @@ class Products extends AbstractSource implements ProductsGetterInterface
     public function __construct(array $settings)
     {
         $defaults = [
-            'limit'        => 100,
-            'groupBy'      => 'consignment'
+            'limit'            => 100,
+            'variantsIncludes' => true
         ];
 
         parent::__construct(\array_replace($defaults, $settings));
@@ -61,11 +62,10 @@ class Products extends AbstractSource implements ProductsGetterInterface
             parent::rules(), [
                 'limit' => [
                     new Assert\Type('int'),
-                    new Assert\Range(min: 100)
+                    new Assert\Range(min: 1)
                 ],
-                'groupBy' => [
-                    new Assert\Type('string'),
-                    new Assert\Choice(['consignment', 'variant', 'product'])
+                'variantsIncludes' => [
+                    new Assert\Type('bool')
                 ]
             ]
         );
@@ -80,12 +80,14 @@ class Products extends AbstractSource implements ProductsGetterInterface
      */
     public function getProducts(): array
     {
-        $builder = $this->builder()->point('entity/assortment');
+        $builder = $this->builder()
+            ->point('entity/assortment')
+            ->filter('type', 'product')
+            ->filter('type', 'bundle');
 
-        if ($groupBy = $this->getSettings('groupBy')) {
-            $builder->param('groupBy', $groupBy);
+        if ($this->getSettings('variantsIncludes')) {
+            $builder->filter('type', 'variant');
         }
-        unset($groupBy);
 
         $products = Utils::getAll(
             $builder,
@@ -188,7 +190,12 @@ class Products extends AbstractSource implements ProductsGetterInterface
         }
 
         $byArticles = $this->_getByFilter('article', $validated);
-        $byCodes    = $this->_getByFilter('code',    $validated, 'article');
+
+        if (!$this->getSettings('variantsIncludes')) {
+            return \array_merge($byArticles->wait(), $errors);
+        }
+
+        $byCodes = $this->_getByFilter('code', $validated, 'article');
 
         return \array_merge(
             PromiseUtils::all([$byArticles, $byCodes])->then(
@@ -238,6 +245,20 @@ class Products extends AbstractSource implements ProductsGetterInterface
     }
 
     /**
+     * Получить товары по штрихкодам.
+     *
+     * @param array $articles Артикулы
+     *
+     * @see ProductsGetterByBarcodes
+     *
+     * @return array<int, ProductDTO|ByErrorDTO>
+     */
+    // public function getProductsByBarcodes(array $barcodes): array
+    // {
+
+    // }
+
+    /**
      * Получить элементы с помощью фильтров
      *
      * Возвращает PromiseInterface
@@ -251,14 +272,23 @@ class Products extends AbstractSource implements ProductsGetterInterface
     private function _getByFilter(
         string  $filter,
         array   $values,
-        string  $field = null
+        string  $field = null,
     ): PromiseInterface {
         $field = $field ? $field : $filter;
+
+        $builder = $this->builder()
+            ->point('entity/assortment')
+            ->filter('type', 'product')
+            ->filter('type', 'bundle');
+
+        if ($this->getSettings('variantsIncludes')) {
+            $builder->filter('type', 'variant');
+        }
 
         return Utils::getByFilter(
             $filter,
             $values,
-            $this->builder()->point('entity/assortment'),
+            $builder,
             [$this, 'send'],
             function ($response, $chunk) use ($field) {
                 $dtos   = [];
@@ -293,8 +323,16 @@ class Products extends AbstractSource implements ProductsGetterInterface
 
         return ProductDTO::fromArray([
             'id'       => $product['id'],
+            'type'     => $product['meta']['type'],
             'article'  => $article,
             'created'  => Utils::dateToUtc($product['updated']),
+            'barcodes' => isset($product['barcodes'])
+                ? \array_merge(
+                    ...\array_map(
+                        static fn ($barcodes) => \array_values($barcodes),
+                        $product['barcodes']
+                    )
+                ) : [],
             'prices'   => \array_merge(
                 \array_map(
                     static fn ($salePrice) => PriceDTO::fromArray([
@@ -305,12 +343,14 @@ class Products extends AbstractSource implements ProductsGetterInterface
                     ]),
                     $product['salePrices']
                 ),
-                [PriceDTO::fromArray([
-                    'id'       => 'minPrice',
-                    'name'     => 'Min price',
-                    'value'    => (float) ($product['minPrice']['value'] / 100),
-                    'original' => $product['minPrice']
-                ])]
+                isset($product['minPrice'])
+                    ? [PriceDTO::fromArray([
+                        'id'       => 'minPrice',
+                        'name'     => 'Min price',
+                        'value'    => (float) ($product['minPrice']['value'] / 100),
+                        'original' => $product['minPrice']
+                    ])]
+                    : []
             ),
             'original' => $product
         ]);
