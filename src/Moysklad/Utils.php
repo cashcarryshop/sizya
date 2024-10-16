@@ -243,7 +243,7 @@ class Utils
         $offset = 0;
 
         $counter   = $limit;
-        $maxOffset = $limit - 100;
+        $maxOffset = $limit;
 
         $items = [];
 
@@ -257,9 +257,9 @@ class Utils
                 $chunk = $getDtos($send($clone->build('GET'))->wait())
             );
 
-            $offset  += 100;
-            $counter -= 100;
-        } while (\count($chunk) === $chunkLimit && $offset < $maxOffset);
+            $offset  += $chunkLimit;
+            $counter -= $chunkLimit;
+        } while (\count($chunk) === $chunkLimit && $counter > 0);
 
         return $items;
     }
