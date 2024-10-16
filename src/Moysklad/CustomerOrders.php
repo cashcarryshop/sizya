@@ -31,6 +31,13 @@ use Symfony\Component\Validator\Constraints as Assert;
 abstract class CustomerOrders extends AbstractSource
 {
     /**
+     * Объект для получения товаров МойСклад.
+     *
+     * @var Products
+     */
+    protected Products $products;
+
+    /**
      * Создать экземпляр класса для
      * работы с заказами покупателей
      * МойСклад
@@ -40,27 +47,26 @@ abstract class CustomerOrders extends AbstractSource
     public function __construct(array $settings)
     {
         $defaults = [
-            'organization' => null,
-            'agent'        => null,
-            'project'      => null,
-            'contract'     => null,
-            'salesChannel' => null,
-            'store'        => null,
-            'limit'        => 100,
-            'order'        => [['created', 'desc']],
-            'vatEnabled'   => false,
-            'vatIncluded'  => false,
-            'products'     => null
+            'organization'     => null,
+            'agent'            => null,
+            'project'          => null,
+            'contract'         => null,
+            'salesChannel'     => null,
+            'store'            => null,
+            'limit'            => 100,
+            'order'            => [['created', 'desc']],
+            'vatEnabled'       => false,
+            'vatIncluded'      => false,
+            'variantsIncludes' => true
         ];
 
         parent::__construct(\array_replace($defaults, $settings));
 
-        if ($this->getSettings('products') === null) {
-            $this->settings['products'] = new Products([
-                'credentials' => $this->getSettings('credentials'),
-                'client'      => $this->getSettings('client')
-            ]);
-        }
+        $this->products = new Products([
+            'credentials'      => $this->getSettings('credentials'),
+            'client'           => $this->getSettings('client'),
+            'variantsIncludes' => $this->getSettings('variantsIncludes')
+        ]);
     }
 
     /**
@@ -118,7 +124,7 @@ abstract class CustomerOrders extends AbstractSource
                 ],
                 'limit' => [
                     new Assert\Type('int'),
-                    new Assert\Range(min: 100)
+                    new Assert\Range(min: 1)
                 ],
                 'order' => new Assert\All(
                     new Assert\Collection([
@@ -139,9 +145,9 @@ abstract class CustomerOrders extends AbstractSource
                         ]
                     ])
                 ),
-                'products'    => [new Assert\Type([null, Products::class])],
-                'vatEnabled'  => [new Assert\Type('bool')],
-                'vatIncluded' => [new Assert\Type('bool')]
+                'vatEnabled'       => [new Assert\Type('bool')],
+                'vatIncluded'      => [new Assert\Type('bool')],
+                'variantsIncludes' => [new Assert\Type('bool')]
             ]
         );
     }

@@ -70,8 +70,9 @@ class ProductsTest extends TestCase
     protected function createProductsGetter(): Products
     {
         return new Products([
-            'credentials' => ['login', 'password'],
-            'client'      => static::createHttpClient(static::$handler)
+            'credentials'      => ['login', 'password'],
+            'client'           => static::createHttpClient(static::$handler),
+            'variantsIncludes' => true
         ]);
     }
 }

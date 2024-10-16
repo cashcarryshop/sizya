@@ -228,8 +228,7 @@ class CustomerOrdersTarget extends CustomerOrdersSource
         }
 
         if ($articles) {
-            $products = $this->getSettings('products')
-                ->getProductsByArticles(\array_keys($articles));
+            $products = $this->products->getProductsByArticles(\array_keys($articles));
 
             foreach ($products as $item) {
                 if ($item instanceof ByErrorDTO) {
