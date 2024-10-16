@@ -241,7 +241,9 @@ class Utils
         callable       $getDtos
     ): array {
         $offset = 0;
-        $maxOffset = $counter = $limit;
+
+        $counter   = $limit;
+        $maxOffset = $limit - 100;
 
         $items = [];
 
