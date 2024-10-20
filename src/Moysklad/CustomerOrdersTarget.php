@@ -232,12 +232,15 @@ class CustomerOrdersTarget extends CustomerOrdersSource
 
             foreach ($products as $item) {
                 if ($item instanceof ByErrorDTO) {
+                    [$oIdx,] = $articles[$item->value][0];
+
                     $errors[] = ByErrorDTO::fromArray([
                         'type'   => ByErrorDTO::NOT_FOUND,
-                        'value'  => $validated[$articles[$item->value]['oIdx']],
-                        'reason' => $item
+                        'value'  => $validated[$oIdx],
+                        'reason' => $item->reason
                     ]);
-                    unset($validated[$articles[$item->value]['oIdx']]);
+                    unset($validated[$oIdx]);
+
                     continue;
                 }
 
