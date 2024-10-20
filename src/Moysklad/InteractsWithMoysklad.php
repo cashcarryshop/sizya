@@ -54,7 +54,7 @@ trait InteractsWithMoysklad
      */
     protected function rules(): array
     {
-        return array_merge(
+        return \array_merge(
             $this->_httpRules(), [
                 'credentials' => [
                     new Assert\All([

@@ -94,25 +94,15 @@ trait InteractsWithFakeData
                 \random_int(0, 3) === 3 ? 'product' : 'variant',
             'created' => static::fakeDtoDate(),
             'prices'  => $options['prices'] ?? [
-                PriceDTO::fromArray([
-                    'id'    => static::guidv4(),
-                    'name'  => static::fakeArticle(),
-                    'value' => (float) \random_int(0, 10000)
-                ]),
-                PriceDTO::fromArray([
-                    'id'    => static::guidv4(),
-                    'name'  => static::fakeArticle(),
-                    'value' => (float) \random_int(0, 10000)
-                ]),
-                PriceDTO::fromArray([
-                    'id'    => 'minPrice',
-                    'name'  => 'Min price',
-                    'value' => (float) \random_int(0, 10000)
+                static::fakePriceDto(),
+                static::fakePriceDto(),
+                static::fakePriceDto([
+                    'id'   => 'minPrice',
+                    'name' => 'Min price'
                 ])
             ]
         ]);
     }
-
 
     /**
      * Создать фейковый DTO цен товара.
@@ -127,22 +117,29 @@ trait InteractsWithFakeData
             'id'      => $options['id'] ?? static::guidv4(),
             'article' => $options['article'] ?? static::fakeArticle(),
             'prices'  => $options['prices'] ?? [
-                PriceDTO::fromArray([
-                    'id'    => static::guidv4(),
-                    'name'  => static::fakeArticle(),
-                    'value' => (float) \random_int(0, 10000)
-                ]),
-                PriceDTO::fromArray([
-                    'id'    => static::guidv4(),
-                    'name'  => static::fakeArticle(),
-                    'value' => (float) \random_int(0, 10000)
-                ]),
-                PriceDTO::fromArray([
-                    'id'    => 'minPrice',
-                    'name'  => 'Min price',
-                    'value' => (float) \random_int(0, 10000)
+                static::fakePriceDto(),
+                static::fakePriceDto(),
+                static::fakePriceDto([
+                    'id'   => 'minPrice',
+                    'name' => 'Min price'
                 ])
             ]
+        ]);
+    }
+
+    /**
+     * Создать фейковый объект PriceDTO.
+     *
+     * @param array $options Опции
+     *
+     * @return PriceDTO
+     */
+    protected static function fakePriceDto(array $options = []): PriceDTO
+    {
+        return PriceDTO::fromArray([
+            'id'    => $options['id']   ?? static::guidv4(),
+            'name'  => $options['name'] ?? static::fakeArticle(),
+            'value' => (float) \random_int(0, 10000)
         ]);
     }
 

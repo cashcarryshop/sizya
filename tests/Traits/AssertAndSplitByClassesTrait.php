@@ -51,13 +51,20 @@ trait AssertAndSplitByClassesTrait
 
             $this->fail(
                 sprintf(
-                    'Item must be implementation of %s classes',
+                    'Item must be implementation of %s classes, [%s] given',
                     \array_reduce(
                         $classes,
                         static fn ($carry, $item) =>
                             (null === $carry ?: "{$carry}, ")
                             . "[{$item}]"
-                    )
+                    ),
+                    \is_object($item)
+                        ? \get_class($item)
+                        : (
+                            \is_array($item)
+                                ? 'Array'
+                                : $item
+                        )
                 )
             );
         }

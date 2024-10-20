@@ -198,9 +198,6 @@ class Utils
             $addSize,
             $maxLength
         );
-        unset($additionalSize);
-        unset($chunkSize);
-        unset($values);
 
         foreach ($chunks as $chunk) {
             $clone = clone $builder;
@@ -213,11 +210,12 @@ class Utils
         }
 
         return PromiseUtils::settle($promises)->then(
-            static fn ($results) => SizyaUtils::mapResults(
-                $chunks,
-                $results,
-                $getData
-            )
+            static fn ($results) =>
+                SizyaUtils::mapResults(
+                    $chunks,
+                    $results,
+                    $getData
+                )
         );
     }
 
