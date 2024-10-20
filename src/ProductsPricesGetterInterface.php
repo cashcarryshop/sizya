@@ -42,11 +42,11 @@ interface ProductsPricesGetterInterface
      * Получить цены товаров по идентификаторам товаров.
      *
      * Количество возвращаемых элементов должно
-     * соответствовать переданным.
+     * соответствовать переданным или быть больше.
      *
-     * Если на запросе по 1 идентификатору было больше
-     * 1го элемента, первый должен быть ProductPricesDTO,
-     * а остальные ByErrorDTO::DUPLICATE.
+     * Если в $productsIds было передано 2 одинаковых значения,
+     * должна быть ошибка ByErrorDTO::DUPLICATE
+     * или ByErrorDTO::VALIDATION.
      *
      * @param string[] $productsIds Идентификаторы товаров
      * @param string[] $pricesIds   Фильтры по идентификаторам цен
@@ -60,8 +60,6 @@ interface ProductsPricesGetterInterface
 
     /**
      * Получить цены товаров по идентификаторам товаров.
-     *
-     * Может возникнуть ошибка при получении цен.
      *
      * @param string   $productId Идентификаторы товаров
      * @param string[] $pricesIds Фильтровать по идентификаторам цен
@@ -80,11 +78,11 @@ interface ProductsPricesGetterInterface
      * Получить цены товаров по артикулам товаров.
      *
      * Количество возвращаемых элементов должно
-     * соответствовать переданным.
+     * соответствовать переданным или быть больше.
      *
-     * Если на запросе по 1 артикулу было больше
-     * 1го элемента, первый должен быть ProductPricesDTO,
-     * а остальные ByErrorDTO::DUPLICATE.
+     * Если в $articles было передано 2 одинаковых значения,
+     * должна быть ошибка ByErrorDTO::DUPLICATE
+     * или ByErrorDTO::VALIDATION.
      *
      * @param string[] $articles  Идентификаторы товаров
      * @param string[] $pricesIds Фильтровать по идентификаторам цен
@@ -98,8 +96,6 @@ interface ProductsPricesGetterInterface
 
     /**
      * Получить цены товаров по идентификаторам товаров.
-     *
-     * Может возникнуть ошибка при получении цен.
      *
      * @param string   $article   Идентификаторы товаров
      * @param string[] $pricesIds Фильтровать по идентификаторам цен

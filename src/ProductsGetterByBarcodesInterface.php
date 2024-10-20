@@ -32,13 +32,13 @@ interface ProductsGetterByBarcodesInterface
      * Получить товары по штрихкодам.
      *
      * Количество возвращаемых элементов должно
-     * соответствовать переданным.
+     * соответствовать переданным или быть больше.
      *
-     * Если на запросе по 1 штрихкоду было больше
-     * 1го элемента, первый должен быть ProductDTO,
-     * а остальные ByErrorDTO::DUPLICATE.
+     * Если в $barcodes было передано 2 одинаковых значения,
+     * должна быть ошибка ByErrorDTO::DUPLICATE
+     * или ByErrorDTO::VALIDATION.
      *
-     * @param array $articles Артикулы
+     * @param array $barcodes Артикулы
      *
      * @see ProductDTO
      * @see ByErrorDTO

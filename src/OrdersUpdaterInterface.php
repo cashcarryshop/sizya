@@ -34,6 +34,10 @@ interface OrdersUpdaterInterface
      * Количество возвращаемых элементов должно
      * соответствовать переданным.
      *
+     * Если в $orders было передано 2 одинаковых значения,
+     * должна быть ошибка ByErrorDTO::DUPLICATE
+     * или ByErrorDTO::VALIDATION.
+     *
      * @param OrderUpdateDTO[] $orders Заказы
      *
      * @see OrderUpdateDTO

@@ -31,6 +31,13 @@ interface ProductsPricesUpdaterInterface
     /**
      * Обновить цены товаров.
      *
+     * Количество возвращаемых элементов должно
+     * соответствовать переданным.
+     *
+     * Если в $productsPrices было передано 2 одинаковых значения,
+     * должна быть ошибка ByErrorDTO::DUPLICATE
+     * или ByErrorDTO::VALIDATION.
+     *
      * @param ProductPricesUpdateDTO[] $productsPrices Цены товаров
      *
      * @return array<int, ProductPricesDTO|ByErrorDTO>

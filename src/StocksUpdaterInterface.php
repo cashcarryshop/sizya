@@ -34,6 +34,10 @@ interface StocksUpdaterInterface
      * Количество возвращаемых элементов должно
      * соответствовать переданным.
      *
+     * Если в $stocks было передано 2 одинаковых значения,
+     * должна быть ошибка ByErrorDTO::DUPLICATE
+     * или ByErrorDTO::VALIDATION.
+     *
      * @param StockUpdateDTO[] $stocks Остатки
      *
      * @see StockUpdateDTO
