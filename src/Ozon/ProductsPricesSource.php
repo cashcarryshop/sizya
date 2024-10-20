@@ -63,7 +63,7 @@ class ProductsPricesSource extends AbstractSource
             parent::rules(), [
                 'limit' => [
                     new Assert\Type('int'),
-                    new Assert\Range(min: 100)
+                    new Assert\Range(min: 1)
                 ],
                 'visibility' => [
                     new Assert\Type('string'),
@@ -167,7 +167,7 @@ class ProductsPricesSource extends AbstractSource
         } while (
             $lastId
                 && \count($data['result']['items']) === $chunkLimit
-                && \count($ids) < $this->getSettings('limit')
+                && \count($productsPrices) < $this->getSettings('limit')
         );
 
         return $productsPrices;
