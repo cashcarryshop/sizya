@@ -48,83 +48,55 @@ trait ProductsPricesGetterTests
 
     public function testGetProductsPricesByIds(): void
     {
-        [
-            'values'  => $ids,
-            'valid'   => $validIds,
-            'invalid' => $invalidIds
-        ] = static::generateFakeData();
+        [$ids, $expected] = $this->getProductsPricesByIdsProvider();
 
         $getter = $this->createProductsPricesGetter();
 
-        $expectedProductsPrices = [];
-        $expectedErrors   = [];
-        $expected         = \array_map(
-            function ($id) use (
-                $invalidIds,
-                &$expectedProductsPrices,
-                &$expectedErrors
-            ) {
-                if (\in_array($id, $invalidIds)) {
-                    return $expectedErrors[] = ByErrorDTO::fromArray([
-                        'type'  => ByErrorDTO::NOT_FOUND,
-                        'value' => $id
-                    ]);
-                }
-
-                return $expectedProductsPrices[] =
-                    static::fakeProductPricesDto(['id' => $id]);
-            },
-            $ids
-        );
-
-        $this->setUpBeforeTestGetProductsPricesByIds(
-            $expectedProductsPrices,
-            $expectedErrors,
-            $expected
-        );
-
         $this->assertProductsPrices(
-            $expected, $getter->getProductsPricesByIds(
-                \array_merge(
-                    \array_column($expectedProductsPrices, 'id'),
-                    \array_column($expectedErrors, 'value')
-                )
-            )
+            $expected,
+            $getter->getProductsPricesByIds($ids)
         );
     }
 
     public function testGetProductsPricesByArticles(): void
     {
-        [
-            'values'  => $articles,
-            'valid'   => $validArticles,
-            'invalid' => $invalidArticles
-        ] = static::generateFakeData([
-            'validGenerator' => static fn () => static::fakeArticle()
-        ]);
+        $expected = \array_merge(
+            $expectedProductsPrices = [
+                static::fakeProductPricesDto(['article' => 'CCS00555']),
+                static::fakeProductPricesDto(['article' => 'CCS00289']),
+                static::fakeProductPricesDto(['article' => 'CCS00473']),
+                static::fakeProductPricesDto(['article' => 'CCS00558']),
+                static::fakeProductPricesDto(['article' => 'CCS00409']),
+            ],
+            $expectedErrors = [
+                ByErrorDTO::fromArray([
+                    'type'  => ByErrorDTO::NOT_FOUND,
+                    'value' => 'CCS00301'
+                ]),
+                ByErrorDTO::fromArray([
+                    'type'  => ByErrorDTO::DUPLICATE,
+                    'value' => 'CCS00301'
+                ]),
+                ByErrorDTO::fromArray([
+                    'type'  => ByErrorDTO::NOT_FOUND,
+                    'value' => 'CCS00347'
+                ]),
+                ByErrorDTO::fromArray([
+                    'type'  => ByErrorDTO::NOT_FOUND,
+                    'value' => 'CCS00795'
+                ]),
+                ByErrorDTO::fromArray([
+                    'type'  => ByErrorDTO::NOT_FOUND,
+                    'value' => 'CCS00219'
+                ]),
+                ByErrorDTO::fromArray([
+                    'type'  => ByErrorDTO::DUPLICATE,
+                    'value' => 'CCS00409'
+                ])
+            ]
+        );
 
         $getter = $this->createProductsPricesGetter();
-
-        $expectedProductsPrices = [];
-        $expectedErrors   = [];
-        $expected         = \array_map(
-            function ($article) use (
-                $invalidArticles,
-                &$expectedProductsPrices,
-                &$expectedErrors
-            ) {
-                if (\in_array($article, $invalidArticles)) {
-                    return $expectedErrors[] = ByErrorDTO::fromArray([
-                        'type'  => ByErrorDTO::NOT_FOUND,
-                        'value' => $article
-                    ]);
-                }
-
-                return $expectedProductsPrices[] =
-                    static::fakeProductPricesDto(['article' => $article]);
-            },
-            $articles
-        );
 
         $this->setUpBeforeTestGetProductsPricesByArticles(
             $expectedProductsPrices,
@@ -149,12 +121,67 @@ trait ProductsPricesGetterTests
         // ...
     }
 
-    protected function setUpBeforeTestGetProductsPricesByIds(
-        array $expectedProductsPrices,
-        array $expectedErrors,
-        array $expected
-    ): void {
-        // ...
+    protected function getProductsPricesByIdsProvider(): array
+    {
+        return [
+            [
+                // Valid ids
+                'aeeaa834-d679-4db4-9d8e-0e2233be5651',
+                '4446c69b-d46b-49bb-87f1-0b626dcbff73',
+                'b8e63a83-d73b-4794-b579-51c85ec5f057',
+                'af7343aa-df5d-405e-9a68-a4baa5288e1a',
+                '45561b18-5f48-46ac-80db-8974e69984e6',
+
+                // Invalid ids
+                '690ac8f6-4731-4795-89ec-29c4af4a22b6',
+                '690ac8f6-4731-4795-89ec-29c4af4a22b6',
+                '618cae53-9781-4c27-a7d6-4012818696a5',
+                '9cf96d21-f3df-4de7-b210-cf96b29aa420',
+                '786810cf-d841-49b0-90e9-96282624e9b4',
+                '45561b18-5f48-46ac-80db-8974e69984e6',
+            ],
+            [
+                static::fakeProductPricesDto([
+                    'id' => 'aeeaa834-d679-4db4-9d8e-0e2233be5651'
+                ]),
+                static::fakeProductPricesDto([
+                    'id' => '4446c69b-d46b-49bb-87f1-0b626dcbff73'
+                ]),
+                static::fakeProductPricesDto([
+                    'id' => 'b8e63a83-d73b-4794-b579-51c85ec5f057'
+                ]),
+                static::fakeProductPricesDto([
+                    'id' => 'af7343aa-df5d-405e-9a68-a4baa5288e1a'
+                ]),
+                static::fakeProductPricesDto([
+                    'id' => '45561b18-5f48-46ac-80db-8974e69984e6'
+                ]),
+                ByErrorDTO::fromArray([
+                    'type' => ByErrorDTO::NOT_FOUND,
+                    'value' => '690ac8f6-4731-4795-89ec-29c4af4a22b6'
+                ]),
+                ByErrorDTO::fromArray([
+                    'type' => ByErrorDTO::DUPLICATE,
+                    'value' => '690ac8f6-4731-4795-89ec-29c4af4a22b6'
+                ]),
+                ByErrorDTO::fromArray([
+                    'type' => ByErrorDTO::NOT_FOUND,
+                    'value' => '618cae53-9781-4c27-a7d6-4012818696a5'
+                ]),
+                ByErrorDTO::fromArray([
+                    'type' => ByErrorDTO::NOT_FOUND,
+                    'value' => '9cf96d21-f3df-4de7-b210-cf96b29aa420'
+                ]),
+                ByErrorDTO::fromArray([
+                    'type' => ByErrorDTO::NOT_FOUND,
+                    'value' => '786810cf-d841-49b0-90e9-96282624e9b4'
+                ]),
+                ByErrorDTO::fromArray([
+                    'type' => ByErrorDTO::DUPLICATE,
+                    'value' => '45561b18-5f48-46ac-80db-8974e69984e6'
+                ])
+            ]
+        ];
     }
 
     protected function setUpBeforeTestGetProductsPricesByArticles(

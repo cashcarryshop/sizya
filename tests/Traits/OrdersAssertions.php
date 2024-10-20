@@ -44,10 +44,11 @@ trait OrdersAssertions
      */
     protected function assertOrders(array $expected, array $items): void
     {
-        $this->assertSameSize(
-            $expected,
-            $items,
-            'Orders common size must be equals'
+        $this->assertGreaterThanOrEqual(
+            \count($expected),
+            \count($items),
+            'Orders common size must '
+            . 'be equals or more then expected'
         );
 
         [
@@ -77,10 +78,10 @@ trait OrdersAssertions
             ]
         );
 
-        $this->assertSameSize(
-            $expectedOrders,
-            $orders,
-            'Orders must be have same size with expected'
+        $this->assertGreaterThanOrEqual(
+            \count($expectedOrders),
+            \count($orders),
+            'Orders size must be equals or more then expected'
         );
 
         $this->assertSameSize(
@@ -103,8 +104,13 @@ trait OrdersAssertions
 
         \reset($orders);
         foreach ($expectedOrders as $expected) {
-            $this->assertOrder($expected, \current($orders));
-            \next($orders);
+            do {
+                $this->assertOrder($expected, \current($orders));
+                \next($orders);
+            } while (
+                \current($orders) !== false
+                    && $expected->id === \current($orders)->id
+            );
         }
 
         $this->assertByErrors($expectedErrors, $errors);

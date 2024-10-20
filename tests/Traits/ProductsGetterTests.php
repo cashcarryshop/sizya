@@ -48,95 +48,15 @@ trait ProductsGetterTests
 
     public function testGetProductsByIds(): void
     {
-        $ids = [
-            // Valid ids
-            'aeeaa834-d679-4db4-9d8e-0e2233be5651',
-            '4446c69b-d46b-49bb-87f1-0b626dcbff73',
-            'b8e63a83-d73b-4794-b579-51c85ec5f057',
-            'af7343aa-df5d-405e-9a68-a4baa5288e1a',
-            '45561b18-5f48-46ac-80db-8974e69984e6',
-
-            // Invalid ids
-            '690ac8f6-4731-4795-89ec-29c4af4a22b6',
-            '618cae53-9781-4c27-a7d6-4012818696a5',
-            '9cf96d21-f3df-4de7-b210-cf96b29aa420',
-            '786810cf-d841-49b0-90e9-96282624e9b4'
-        ];
-
-        $expected = \array_merge(
-            $expectedProducts = [
-                static::fakeProductDto([
-                    'id' => 'aeeaa834-d679-4db4-9d8e-0e2233be5651'
-                ]),
-                static::fakeProductDto([
-                    'id' => '4446c69b-d46b-49bb-87f1-0b626dcbff73'
-                ]),
-                static::fakeProductDto([
-                    'id' => 'b8e63a83-d73b-4794-b579-51c85ec5f057'
-                ]),
-                static::fakeProductDto([
-                    'id' => 'af7343aa-df5d-405e-9a68-a4baa5288e1a'
-                ]),
-                static::fakeProductDto([
-                    'id' => '45561b18-5f48-46ac-80db-8974e69984e6'
-                ])
-            ],
-
-            $expectedErrors = [
-                ByErrorDTO::fromArray([
-                    'type' => ByErrorDTO::NOT_FOUND,
-                    'value' => '690ac8f6-4731-4795-89ec-29c4af4a22b6'
-                ]),
-                ByErrorDTO::fromArray([
-                    'type' => ByErrorDTO::NOT_FOUND,
-                    'value' => '618cae53-9781-4c27-a7d6-4012818696a5'
-                ]),
-                ByErrorDTO::fromArray([
-                    'type' => ByErrorDTO::NOT_FOUND,
-                    'value' => '9cf96d21-f3df-4de7-b210-cf96b29aa420'
-                ]),
-                ByErrorDTO::fromArray([
-                    'type' => ByErrorDTO::NOT_FOUND,
-                    'value' => '786810cf-d841-49b0-90e9-96282624e9b4'
-                ])
-            ]
-        );
+        [$ids, $expected] = $this->getProductsByIdsProvider();
 
         $getter = $this->createProductsGetter();
 
-        $this->setUpBeforeTestGetProductsByIds(
-            $expectedProducts,
-            $expectedErrors,
-            $expected
-        );
-
-        $this->assertProducts(
-            $expected, $getter->getProductsByIds(
-                \array_merge(
-                    \array_column($expectedProducts, 'id'),
-                    \array_column($expectedErrors, 'value')
-                )
-            )
-        );
+        $this->assertProducts($expected, $getter->getProductsByIds($ids));
     }
 
     public function testGetProductsByArticles(): void
     {
-        $articles = [
-            // Valid articles
-            'CCS00555',
-            'CCS00289',
-            'CCS00473',
-            'CCS00558',
-            'CCS00409',
-
-            // Invalid articles
-            'CCS00301',
-            'CCS00347',
-            'CCS00795',
-            'CCS00219'
-        ];
-
         $expected = \array_merge(
             $expectedProducts = [
                 static::fakeProductDto(['article' => 'CCS00555']),
@@ -151,6 +71,10 @@ trait ProductsGetterTests
                     'value' => 'CCS00301'
                 ]),
                 ByErrorDTO::fromArray([
+                    'type' => ByErrorDTO::DUPLICATE,
+                    'value' => 'CCS00301'
+                ]),
+                ByErrorDTO::fromArray([
                     'type' => ByErrorDTO::NOT_FOUND,
                     'value' => 'CCS00347'
                 ]),
@@ -161,6 +85,10 @@ trait ProductsGetterTests
                 ByErrorDTO::fromArray([
                     'type' => ByErrorDTO::NOT_FOUND,
                     'value' => 'CCS00219'
+                ]),
+                ByErrorDTO::fromArray([
+                    'type' => ByErrorDTO::DUPLICATE,
+                    'value' => 'CCS00409'
                 ])
             ]
         );
@@ -187,15 +115,70 @@ trait ProductsGetterTests
 
     protected function setUpBeforeTestGetProducts(array $expected): void
     {
-        // ...
+
     }
 
-    protected function setUpBeforeTestGetProductsByIds(
-        array $expectedProducts,
-        array $expectedErrors,
-        array $expected
-    ): void {
-        // ...
+    protected function getProductsByIdsProvider(): array
+    {
+        return [
+            [
+                // Valid ids
+                'aeeaa834-d679-4db4-9d8e-0e2233be5651',
+                '4446c69b-d46b-49bb-87f1-0b626dcbff73',
+                'b8e63a83-d73b-4794-b579-51c85ec5f057',
+                'af7343aa-df5d-405e-9a68-a4baa5288e1a',
+                '45561b18-5f48-46ac-80db-8974e69984e6',
+
+                // Invalid ids
+                '690ac8f6-4731-4795-89ec-29c4af4a22b6',
+                '690ac8f6-4731-4795-89ec-29c4af4a22b6',
+                '618cae53-9781-4c27-a7d6-4012818696a5',
+                '9cf96d21-f3df-4de7-b210-cf96b29aa420',
+                '786810cf-d841-49b0-90e9-96282624e9b4',
+                '45561b18-5f48-46ac-80db-8974e69984e6',
+            ],
+            [
+                static::fakeProductDto([
+                    'id' => 'aeeaa834-d679-4db4-9d8e-0e2233be5651'
+                ]),
+                static::fakeProductDto([
+                    'id' => '4446c69b-d46b-49bb-87f1-0b626dcbff73'
+                ]),
+                static::fakeProductDto([
+                    'id' => 'b8e63a83-d73b-4794-b579-51c85ec5f057'
+                ]),
+                static::fakeProductDto([
+                    'id' => 'af7343aa-df5d-405e-9a68-a4baa5288e1a'
+                ]),
+                static::fakeProductDto([
+                    'id' => '45561b18-5f48-46ac-80db-8974e69984e6'
+                ]),
+                ByErrorDTO::fromArray([
+                    'type' => ByErrorDTO::NOT_FOUND,
+                    'value' => '690ac8f6-4731-4795-89ec-29c4af4a22b6'
+                ]),
+                ByErrorDTO::fromArray([
+                    'type' => ByErrorDTO::DUPLICATE,
+                    'value' => '690ac8f6-4731-4795-89ec-29c4af4a22b6'
+                ]),
+                ByErrorDTO::fromArray([
+                    'type' => ByErrorDTO::NOT_FOUND,
+                    'value' => '618cae53-9781-4c27-a7d6-4012818696a5'
+                ]),
+                ByErrorDTO::fromArray([
+                    'type' => ByErrorDTO::NOT_FOUND,
+                    'value' => '9cf96d21-f3df-4de7-b210-cf96b29aa420'
+                ]),
+                ByErrorDTO::fromArray([
+                    'type' => ByErrorDTO::NOT_FOUND,
+                    'value' => '786810cf-d841-49b0-90e9-96282624e9b4'
+                ]),
+                ByErrorDTO::fromArray([
+                    'type' => ByErrorDTO::DUPLICATE,
+                    'value' => '45561b18-5f48-46ac-80db-8974e69984e6'
+                ])
+            ]
+        ];
     }
 
     protected function setUpBeforeTestGetProductsByArticles(

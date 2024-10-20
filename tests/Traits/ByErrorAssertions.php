@@ -40,12 +40,14 @@ trait ByErrorAssertions
     {
         \array_multisort(
             \array_column($expected, 'value'),
+            \array_column($expected, 'type'),
             SORT_REGULAR,
             $expected
         );
 
         \array_multisort(
             \array_column($errors, 'value'),
+            \array_column($errors, 'type'),
             SORT_REGULAR,
             $errors
         );

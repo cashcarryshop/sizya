@@ -43,10 +43,11 @@ trait ProductsAssertions
      */
     protected function assertProducts(array $expected, array $items): void
     {
-        $this->assertSameSize(
-            $expected,
-            $items,
-            'Products common size must be equals'
+        $this->assertGreaterThanOrEqual(
+            \count($expected),
+            \count($items),
+            'Products common size must '
+            . 'be equals or more then expected'
         );
 
         [
@@ -76,10 +77,11 @@ trait ProductsAssertions
             ]
         );
 
-        $this->assertSameSize(
-            $expectedProducts,
-            $products,
-            'Products must be have same size with expected'
+        $this->assertGreaterThanOrEqual(
+            \count($expectedProducts),
+            \count($products),
+            'Products size must '
+            . 'be equals or more then expected'
         );
 
         $this->assertSameSize(
@@ -102,8 +104,13 @@ trait ProductsAssertions
 
         \reset($products);
         foreach ($expectedProducts as $expected) {
-            $this->assertProduct($expected, \current($products));
-            \next($products);
+            do {
+                $this->assertProduct($expected, \current($products));
+                \next($products);
+            } while (
+                \current($products) !== false
+                    && $expected->id === \current($products)->id
+            );
         }
 
         $this->assertByErrors($expectedErrors, $errors);
