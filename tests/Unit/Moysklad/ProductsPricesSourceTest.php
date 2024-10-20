@@ -13,6 +13,7 @@
 
 namespace CashCarryShop\Sizya\Tests\Unit\Moysklad;
 
+use CashCarryShop\Sizya\DTO\ProductPricesDTO;
 use CashCarryShop\Sizya\Moysklad\ProductsPricesSource;
 use CashCarryShop\Sizya\Tests\Traits\InteractsWithMoysklad;
 use CashCarryShop\Sizya\Tests\Traits\ProductsPricesGetterTests;
@@ -32,7 +33,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 class ProductsPricesSourceTest extends TestCase
 {
     use InteractsWithMoysklad;
-    use ProductsPricesGetterTests;
+    use ProductsPricesGetterTests {
+        getProductsPricesByIdsProvider as private _getProductsPricesByIdsData;
+    }
 
     protected function setUpBeforeTestGetProductsPrices(array $expected): void
     {
@@ -48,21 +51,32 @@ class ProductsPricesSourceTest extends TestCase
         );
     }
 
-    protected function setUpBeforeTestGetProductsPricesByIds(
-        array $expectedProductsPrices,
-        array $expectedErrors,
-        array $expected
-    ): void {
+    protected function getProductsPricesByIdsProvider(): array
+    {
+        [$ids, $expected] = $this->_getProductsPricesByIdsData();
+
         static::$handler->append(
             static::createMethodResponse('1.2/entity/assortment', [
                 'expected' => \array_map(
                     fn ($productPrices) => static::fakeProductDtoFromProductPrices(
                         $productPrices
                     ),
-                    $expectedProductsPrices
+                    \array_filter(
+                        $expected,
+                        static fn ($item) => $item instanceof ProductPricesDTO
+                    )
                 )
             ]),
         );
+
+        return [$ids, $expected];
+    }
+    protected function setUpBeforeTestGetProductsPricesByIds(
+        array $expectedProductsPrices,
+        array $expectedErrors,
+        array $expected
+    ): void {
+
     }
 
     protected function setUpBeforeTestGetProductsPricesByArticles(

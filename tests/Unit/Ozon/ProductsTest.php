@@ -13,6 +13,7 @@
 
 namespace CashCarryShop\Sizya\Tests\Unit\Ozon;
 
+use CashCarryShop\Sizya\DTO\ByErrorDTO;
 use CashCarryShop\Sizya\Ozon\Products;
 use CashCarryShop\Sizya\Tests\Traits\InteractsWithOzon;
 use CashCarryShop\Sizya\Tests\Traits\ProductsGetterTests;
@@ -48,20 +49,131 @@ class ProductsTest extends TestCase
         );
     }
 
-    protected function setUpBeforeTestGetProductsByIds(
-        array $expectedProducts,
-        array $expectedErrors,
-        array $expected
-    ): void {
-        $this->_prepareProducts($expectedProducts);
+    protected function getProductsByIdsProvider(): array
+    {
+        $data = [
+            [
+                // Valid ids
+                '555672251',
+                '610161857',
+                '651428131',
+                '248262915',
+                '110129554',
+
+                // Invalid ids
+                '668957496',
+                '668957496',
+                '833076380',
+                '804216824',
+                '227465657',
+                '110129554',
+            ],
+            \array_merge(
+                $products = [
+                    static::fakeProductDto([
+                        'id'     => '555672251',
+                        'prices' => [
+                            static::fakePriceDto([
+                                'id'   => 'price',
+                                'name' => 'Price'
+                            ]),
+                            static::fakePriceDto([
+                                'id'   => 'minPrice',
+                                'name' => 'Min price'
+                            ])
+                        ]
+                    ]),
+                    static::fakeProductDto([
+                        'id'     => '610161857',
+                        'prices' => [
+                            static::fakePriceDto([
+                                'id'   => 'price',
+                                'name' => 'Price'
+                            ]),
+                            static::fakePriceDto([
+                                'id'   => 'minPrice',
+                                'name' => 'Min price'
+                            ])
+                        ]
+                    ]),
+                    static::fakeProductDto([
+                        'id'     => '651428131',
+                        'prices' => [
+                            static::fakePriceDto([
+                                'id'   => 'price',
+                                'name' => 'Price'
+                            ]),
+                            static::fakePriceDto([
+                                'id'   => 'minPrice',
+                                'name' => 'Min price'
+                            ])
+                        ]
+                    ]),
+                    static::fakeProductDto([
+                        'id'     => '248262915',
+                        'prices' => [
+                            static::fakePriceDto([
+                                'id'   => 'price',
+                                'name' => 'Price'
+                            ]),
+                            static::fakePriceDto([
+                                'id'   => 'minPrice',
+                                'name' => 'Min price'
+                            ])
+                        ]
+                    ]),
+                    static::fakeProductDto([
+                        'id'     => '110129554',
+                        'prices' => [
+                            static::fakePriceDto([
+                                'id'   => 'price',
+                                'name' => 'Price'
+                            ]),
+                            static::fakePriceDto([
+                                'id'   => 'minPrice',
+                                'name' => 'Min price'
+                            ])
+                        ]
+                    ])
+                ],
+                [
+                    ByErrorDTO::fromArray([
+                        'type' => ByErrorDTO::NOT_FOUND,
+                        'value' => '668957496'
+                    ]),
+                    ByErrorDTO::fromArray([
+                        'type' => ByErrorDTO::DUPLICATE,
+                        'value' => '668957496'
+                    ]),
+                    ByErrorDTO::fromArray([
+                        'type' => ByErrorDTO::NOT_FOUND,
+                        'value' => '833076380'
+                    ]),
+                    ByErrorDTO::fromArray([
+                        'type' => ByErrorDTO::NOT_FOUND,
+                        'value' => '804216824'
+                    ]),
+                    ByErrorDTO::fromArray([
+                        'type' => ByErrorDTO::NOT_FOUND,
+                        'value' => '227465657'
+                    ]),
+                    ByErrorDTO::fromArray([
+                        'type' => ByErrorDTO::DUPLICATE,
+                        'value' => '110129554'
+                    ])
+                ]
+            )
+        ];
 
         static::$handler->append(
             static::createMethodResponse(
                 'v2/product/info/list', [
-                    'expected' => $expectedProducts
+                    'expected' => $products
                 ]
             )
         );
+
+        return $data;
     }
 
     protected function setUpBeforeTestGetProductsByArticles(

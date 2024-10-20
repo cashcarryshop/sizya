@@ -13,6 +13,7 @@
 
 namespace CashCarryShop\Sizya\Tests\Unit\Moysklad;
 
+use CashCarryShop\Sizya\DTO\ProductDTO;
 use CashCarryShop\Sizya\Moysklad\Products;
 use CashCarryShop\Sizya\Tests\Traits\InteractsWithMoysklad;
 use CashCarryShop\Sizya\Tests\Traits\ProductsGetterTests;
@@ -32,7 +33,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 class ProductsTest extends TestCase
 {
     use InteractsWithMoysklad;
-    use ProductsGetterTests;
+    use ProductsGetterTests {
+        getProductsByIdsProvider as private _getProductsByIds;
+    }
 
     protected function setUpBeforeTestGetProducts(array $expected): void
     {
@@ -43,16 +46,20 @@ class ProductsTest extends TestCase
         );
     }
 
-    protected function setUpBeforeTestGetProductsByIds(
-        array $expectedProducts,
-        array $expectedErrors,
-        array $expected
-    ): void {
+    protected function getProductsByIdsProvider(): array
+    {
+        [$ids, $expected] = $this->_getProductsByIds();
+
         static::$handler->append(
             static::createMethodResponse('1.2/entity/assortment', [
-                'expected' => $expectedProducts
-            ]),
+                'expected' => \array_filter(
+                    $expected,
+                    static fn ($item) => $item instanceof ProductDTO
+                )
+            ])
         );
+
+        return [$ids, $expected];
     }
 
     protected function setUpBeforeTestGetProductsByArticles(
