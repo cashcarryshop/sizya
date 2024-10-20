@@ -204,40 +204,26 @@ class Products extends AbstractSource implements ProductsGetterInterface
 
                     $products = [];
                     foreach ($byArticles as $idx => $byArticle) {
-                        $byCode = $byCodes[$idx];
+                        $byCode = $byCodes[$idx] ?? null;
 
                         if ($byArticle instanceof ByErrorDTO) {
                             if ($byCode instanceof ByErrorDTO) {
-                                $item = [
-                                    'article' => $byArticle->value,
-                                    'value'   => $byArticle
-                                ];
-                            } else {
-                                $item = [
-                                    'article' => $byCode->article,
-                                    'value'   => $byCode
-                                ];
+                                $products[] = $byArticle;
+                                continue;
                             }
-                        } else {
-                            $item = [
-                                'article' => $byArticle->article,
-                                'value'   => $byArticle
-                            ];
-                        }
 
-                        if (isset($products[$item['article']])) {
-                            $products[$item['article']] = ByErrorDTO::fromArray([
-                                'type'  => ByErrorDTO::DUPLICATE,
-                                'value' => $item['article']
-                            ]);
-
+                            $products[] = $byCode ?? $byArticle;
                             continue;
                         }
 
-                        $products[$item['article']] = $item['value'];
+                        $products[] = $byArticle;
+
+                        if ($byCode instanceof ProductDTO) {
+                            $products[] = $byCode;
+                        }
                     }
 
-                    return \array_values($products);
+                    return $products;
                 }
             )->wait(),
             $errors

@@ -98,19 +98,33 @@ class Utils
                     \asort($data['values'], SORT_REGULAR);
                     \asort($chunk,          SORT_REGULAR);
 
+                    \reset($chunk);
                     \reset($data['values']);
+
+                    $previous = false;
+
                     foreach ($chunk as $value) {
+                        if ($previous === $value) {
+                            $items[] = ByErrorDTO::fromArray([
+                                'value' => $value,
+                                'type'  => ByErrorDTO::DUPLICATE
+                            ]);
+
+                            continue;
+                        }
+
                         if (\current($data['values']) === $value) {
                             do {
                                 $items[] = $data['dtos'][\key($data['values'])];
-                                \next($data['values']);
-                            } while (\current($data['values']) === $value);
+                            } while (\next($data['values']) === $value);
+
+                            $previous = $value;
 
                             continue;
                         }
 
                         $items[] = ByErrorDTO::fromArray([
-                            'value' => $value,
+                            'value' => $previous = $value,
                             'type'  => ByErrorDTO::NOT_FOUND,
                         ]);
                     }
